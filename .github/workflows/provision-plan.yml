@@ -60,7 +60,7 @@ jobs:
           dir="infrastructure/opentofu/environments/${{ inputs.environment }}"
           tofu -chdir="$dir" init -input=false -backend-config="$GITHUB_WORKSPACE/backend.hcl"
           uv run l9-deploy infra plan --environment "${{ inputs.environment }}" --working-directory "$dir" --plan-file "$GITHUB_WORKSPACE/tfplan" --output "$GITHUB_WORKSPACE/infrastructure-plan.json" --json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: infrastructure-plan-${{ inputs.environment }}-${{ github.run_id }}
           path: |
