@@ -34,7 +34,7 @@ jobs:
       source-run-id: ${{ steps.metadata.outputs.source_run_id }}
       base-url: ${{ steps.metadata.outputs.base_url }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           persist-credentials: false
       - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ needs.validate.outputs.environment }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           persist-credentials: false
       - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
@@ -100,7 +100,7 @@ jobs:
     needs: [validate, authorize]
     runs-on: [self-hosted, l9-deployment, hetzner-private]
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           persist-credentials: false
       - run: uv sync --all-extras --frozen
