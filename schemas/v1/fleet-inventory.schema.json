@@ -1,0 +1,139 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/fleet-inventory/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "environments": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_source_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "approval_required": {
+            "type": "boolean"
+          },
+          "concurrency_group": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "approval_required",
+          "concurrency_group"
+        ],
+        "type": "object"
+      },
+      "minProperties": 1,
+      "type": "object"
+    },
+    "management": {
+      "additionalProperties": false,
+      "properties": {
+        "private_cidr": {
+          "type": "string"
+        },
+        "runner_server_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "runner_server_id",
+        "private_cidr"
+      ],
+      "type": "object"
+    },
+    "projects": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "environments": {
+            "additionalProperties": {
+              "additionalProperties": false,
+              "properties": {
+                "public_hostnames": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "server_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "infisical_environment": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "server_ids"
+              ],
+              "type": "object"
+            },
+            "minProperties": 1,
+            "type": "object"
+          },
+          "id": {
+            "pattern": "^[a-z][a-z0-9-]{1,63}$",
+            "type": "string"
+          },
+          "profile_path": {
+            "minLength": 1,
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+          },
+          "repository": {
+            "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "repository",
+          "profile_path",
+          "environments"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "const": "l9.fleet-inventory/v1"
+    },
+    "servers": {
+      "items": {
+        "$ref": "https://schemas.quantum-l9.invalid/l9/server-profile/v1"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "management",
+    "environments",
+    "servers",
+    "projects"
+  ],
+  "title": "L9 Fleet Inventory",
+  "type": "object"
+}

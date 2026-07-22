@@ -1,0 +1,28 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [governance, architecture]
+# tags: [L9_CONTRACT, transport-classification]
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.transport-classification/v1
+repository: Quantum-L9/l9-deployment-platform
+classification: infrastructure_control_plane
+constellation_node: false
+transport_packet:
+  required_for_repository_internal_control_flow: false
+  required_when_addressing_constellation_nodes: true
+  canonical_wire_format: TransportPacket
+  packet_envelope_allowed: false
+gate:
+  required_for_infrastructure_provider_calls: false
+  required_for_github_actions: false
+  required_for_ssh_host_management: false
+  required_for_ghcr_operations: false
+  required_for_infisical_operations: false
+  required_for_follow_up_constellation_work: true
+boundaries:
+  - deployment requests are GitHub control-plane contracts, not inter-node messages
+  - host execution is infrastructure management, not node-to-node egress
+  - no runtime node workflow or routing state is owned here

@@ -1,0 +1,43 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+- name: Install runner tooling prerequisites
+  ansible.builtin.apt: {name: [pipx, nodejs, npm, software-properties-common, apt-transport-https], state: present}
+- name: Install pinned uv
+  community.general.pipx: {name: uv, source: "uv==0.11.14", state: present}
+- name: Install pinned Ansible Core
+  community.general.pipx: {name: ansible-core, source: "ansible-core==2.18.6", state: present}
+- name: Install pinned Infisical CLI
+  community.general.npm: {name: "@infisical/cli", version: "0.43.84", global: true, state: present}
+- name: Install OpenTofu repository keys
+  ansible.builtin.shell: |
+    set -euo pipefail
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://get.opentofu.org/opentofu.gpg -o /etc/apt/keyrings/opentofu.gpg
+    curl -fsSL https://packages.opentofu.org/opentofu/tofu/gpgkey | gpg --no-tty --batch --dearmor -o /etc/apt/keyrings/opentofu-repo.gpg
+    chmod a+r /etc/apt/keyrings/opentofu.gpg /etc/apt/keyrings/opentofu-repo.gpg
+  args: {executable: /bin/bash, creates: /etc/apt/keyrings/opentofu-repo.gpg}
+- name: Configure OpenTofu repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/opentofu.list
+    mode: "0644"
+    content: |
+      deb [signed-by=/etc/apt/keyrings/opentofu.gpg,/etc/apt/keyrings/opentofu-repo.gpg] https://packages.opentofu.org/opentofu/tofu/any/ any main
+- name: Install pinned OpenTofu
+  ansible.builtin.apt: {name: "tofu=1.11.7-*", state: present, update_cache: true}
+- name: Hold OpenTofu version
+  ansible.builtin.dpkg_selections: {name: tofu, selection: hold}
+- name: Install GitHub CLI repository key
+  ansible.builtin.get_url: {url: https://cli.github.com/packages/githubcli-archive-keyring.gpg, dest: /usr/share/keyrings/githubcli-archive-keyring.gpg, mode: "0644"}
+- name: Configure GitHub CLI repository
+  ansible.builtin.apt_repository: {repo: "deb [arch={{ ansible_architecture | replace('x86_64','amd64') }} signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main", state: present}
+- name: Install GitHub CLI
+  ansible.builtin.apt: {name: gh, state: present, update_cache: true}

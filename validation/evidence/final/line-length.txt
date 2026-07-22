@@ -1,0 +1,1 @@
+PASS: maximum maintained Python line length is 100

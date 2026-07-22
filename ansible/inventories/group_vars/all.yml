@@ -1,0 +1,23 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+l9_deploy_user: l9deploy
+l9_deploy_group: l9deploy
+l9_deploy_root: /srv/l9
+l9_management_cidr: 10.90.1.0/24
+l9_runtime_network: l9-runtime
+l9_ssh_port: 22
+l9_allowed_public_ports: [80, 443]
+l9_runner_version: "2.334.0"
+l9_runner_labels: "l9-deployment,hetzner-private"
+l9_runner_repository: "Quantum-L9/l9-deployment-platform"
+l9_caddy_version: "2.11.3"
+l9_unattended_reboot_time: "03:30"

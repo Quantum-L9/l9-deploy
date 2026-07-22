@@ -1,0 +1,10 @@
+python=Python 3.13.5
+uv=AVAILABLE:/opt/pyvenv/bin/uv
+ruff=BLOCKED:not installed
+mypy=BLOCKED:not installed
+semgrep=BLOCKED:not installed
+l9-ci=BLOCKED:not installed
+tofu=BLOCKED:not installed
+ansible-playbook=BLOCKED:not installed
+docker=BLOCKED:not installed
+gh=BLOCKED:not installed

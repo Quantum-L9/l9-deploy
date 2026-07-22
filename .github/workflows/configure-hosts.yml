@@ -1,0 +1,86 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [ci, configuration]
+# tags: [L9_CONTRACT, protected-environment, ansible]
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Configure Hosts
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        required: true
+        options: [management, staging, production]
+      playbook:
+        type: choice
+        required: true
+        options: [bootstrap, harden, configure-runner, configure-runtime, configure-backups, verify]
+      expected-plan-digest:
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+jobs:
+  authorize:
+    name: authorize
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
+      - run: uv sync --all-extras --frozen
+      - uses: ./.github/actions/collect-approval
+        with:
+          request-id: config-${{ github.run_id }}
+          requester: ${{ github.actor }}
+          environment: ${{ inputs.environment }}
+          plan-digest: ${{ inputs.expected-plan-digest }}
+          job-name: authorize
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: configuration-approval-${{ github.run_id }}
+          path: artifacts/approval
+          if-no-files-found: error
+          retention-days: 90
+  configure:
+    needs: authorize
+    runs-on: [self-hosted, l9-deployment, hetzner-private]
+    concurrency: config-${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: uv sync --all-extras --frozen
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: configuration-approval-${{ github.run_id }}
+          path: artifacts/approval
+      - run: uv run python scripts/generate-inventory.py
+      - name: Check configuration
+        run: >-
+          uv run l9-deploy config check
+          --playbook "ansible/playbooks/${{ inputs.playbook }}.yml"
+          --inventory ansible/inventories/generated/hosts.yml
+          --limit "${{ inputs.environment }}"
+          --json
+      - name: Apply configuration
+        run: >-
+          uv run l9-deploy config apply
+          --environment "${{ inputs.environment }}"
+          --expected-plan-digest "${{ inputs.expected-plan-digest }}"
+          --approval-receipt artifacts/approval/approval-receipt.json
+          --approval-history artifacts/approval/approval-history.json
+          --approval-run-id "${{ github.run_id }}"
+          --request-id "config-${{ github.run_id }}"
+          --requester "${{ github.actor }}"
+          --playbook "ansible/playbooks/${{ inputs.playbook }}.yml"
+          --inventory ansible/inventories/generated/hosts.yml
+          --limit "${{ inputs.environment }}"
+          --json

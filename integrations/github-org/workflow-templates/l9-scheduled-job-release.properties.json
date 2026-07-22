@@ -1,0 +1,11 @@
+{
+  "name": "L9 Scheduled Job Release",
+  "description": "Thin caller for an L9 bounded scheduled job release.",
+  "iconName": "octicon package",
+  "categories": [
+    "Deployment"
+  ],
+  "filePatterns": [
+    "^\\.l9/deployment\\.yaml$"
+  ]
+}

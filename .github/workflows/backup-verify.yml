@@ -1,0 +1,41 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Backup Verification
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        type: string
+        required: true
+      environment:
+        type: choice
+        required: true
+        options: [staging, production]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: [self-hosted, l9-deployment, hetzner-private]
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - run: uv sync --all-extras --frozen
+      - run: uv run l9-deploy backup verify --project "${{ inputs.project }}" --environment "${{ inputs.environment }}" --fleet fleet/registry.yaml --output backup-verification.json --json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: backup-verification-${{ github.run_id }}
+          path: backup-verification.json
+          if-no-files-found: warn
+          retention-days: 90

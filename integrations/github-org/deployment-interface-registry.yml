@@ -1,0 +1,33 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema_version: "1.0"
+provider: Quantum-L9/l9-deployment-platform
+compatibility_ref: v1
+interfaces:
+  - name: release-request
+    schema: l9.deployment-request/v1
+    transport: repository_dispatch
+  - name: deployment-profile
+    schema: l9.deployment-profile/v1
+  - name: deployment-receipt
+    schema: l9.deployment-receipt/v1
+  - name: rollback-receipt
+    schema: l9.rollback-receipt/v1
+  - name: container-release
+    provider: Quantum-L9/l9-ci-core
+    path: .github/workflows/container-release.yml
+    compatibility_ref: v1
+    deployment_request_schema: l9.deployment-request/v1
+    description: Build, attest, publish, and dispatch one immutable OCI release.
+rules:
+  - consumers use @v1, never @main
+  - public repositories never target self-hosted deployment runners

@@ -1,0 +1,16 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.runtime-profile/v1
+id: worker-service
+requires: [exact_image_digest, command_probe, private_dependency_network]
+allows: [persistent_volumes, external_dependencies]
+forbids: [public_ingress_by_default, source_checkout, server_side_build, mutable_image_tag]

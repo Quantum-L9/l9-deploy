@@ -1,0 +1,36 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+- name: Verify required commands
+  ansible.builtin.command: "{{ item }} --version"
+  loop: [docker, curl, jq]
+  changed_when: false
+
+- name: Verify runtime root permissions
+  ansible.builtin.stat:
+    path: "{{ l9_deploy_root }}"
+  register: l9_root_stat
+
+- name: Require secure runtime root
+  ansible.builtin.assert:
+    that:
+      - l9_root_stat.stat.exists
+      - l9_root_stat.stat.mode in ['0750', '0700']
+
+- name: Verify private SSH firewall rule
+  ansible.builtin.command: nft list ruleset
+  register: l9_nft_rules
+  changed_when: false
+
+- name: Require management CIDR in firewall
+  ansible.builtin.assert:
+    that:
+      - l9_management_cidr in l9_nft_rules.stdout

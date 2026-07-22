@@ -1,0 +1,17 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.health-probe/v1
+type: database
+command: [pg_isready]
+timeout_seconds: 10
+interval_seconds: 3
+attempts: 10

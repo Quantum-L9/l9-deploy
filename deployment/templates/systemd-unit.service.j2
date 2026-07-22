@@ -1,0 +1,25 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+[Unit]
+Description=L9 deployment {{ project_id }} {{ environment }}
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/docker compose -f {{ compose_path }} up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -f {{ compose_path }} down
+TimeoutStartSec={{ timeout_seconds }}
+
+[Install]
+WantedBy=multi-user.target

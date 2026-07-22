@@ -1,0 +1,16 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.integration-contract/v1
+producer: Quantum-L9/l9-deployment-platform
+consumer: Hetzner Cloud
+owns: [network desired state, server desired state, firewall desired state, volume desired state]
+authentication: Infisical-issued runtime credential

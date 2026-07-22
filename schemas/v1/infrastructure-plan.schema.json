@@ -1,0 +1,88 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/infrastructure-plan/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "change_summary": {
+      "additionalProperties": false,
+      "properties": {
+        "create": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "delete": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "replace": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "update": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "create",
+        "update",
+        "delete",
+        "replace"
+      ],
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "destructive_changes": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "environment": {
+      "pattern": "^[a-z][a-z0-9-]{1,31}$",
+      "type": "string"
+    },
+    "plan_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "plan_file_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "schema": {
+      "const": "l9.infrastructure-plan/v1"
+    },
+    "tofu_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "environment",
+    "created_at",
+    "tofu_version",
+    "plan_file_digest",
+    "change_summary",
+    "destructive_changes",
+    "plan_digest"
+  ],
+  "title": "Infrastructure Plan",
+  "type": "object"
+}

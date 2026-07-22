@@ -1,0 +1,178 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [repository, validation]
+# tags: [L9_META, deployment-platform, defect-matrix]
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.gap-defect-matrix/v1
+artifact: Quantum-L9/l9-deployment-platform
+artifact_version: 0.1.5
+source_lineage:
+- l9-deployment-platform-improved.zip
+- recursive_alignment_remediation
+- frontier_final_consolidation
+review_contract: validate_fill_gaps_fix_broken_code_harden_revised_pack
+baseline:
+  archive_files: 440
+  tests_passed: 54
+  warnings: 9
+  schemas: 18
+  warning_as_error: FAIL
+final_local:
+  tests_passed: 103
+  warnings: 0
+  branch_coverage_percent: 79.45
+  coverage_floor_percent: 75
+  schemas: 20
+findings:
+- id: FINAL-001
+  severity: high
+  type: contract_namespace_collision
+  evidence: nine DTOs declared wire field schema directly
+  correction: use schema_id with governed wire alias schema
+  validation: tests/contract/test_wire_aliases.py
+  status: resolved
+- id: FINAL-002
+  severity: high
+  type: wire_contract_regression_risk
+  evidence: alias-bearing DTOs lacked catalog-backed parity
+  correction: add catalog and runtime/schema parity checks
+  validation: scripts/validate-contracts.py
+  status: resolved
+- id: FINAL-003
+  severity: high
+  type: runtime_schema_drift
+  evidence: runtime defaults and requiredness differed from schemas
+  correction: align runtime and published v1 contracts
+  validation: tests/contract/test_wire_aliases.py
+  status: resolved
+- id: FINAL-004
+  severity: critical
+  type: idempotency_state_validation_gap
+  evidence: state used non-validating updates and lacked schema
+  correction: publish typed state schema and validate reconstruction
+  validation: tests/unit/test_idempotency_and_locks.py
+  status: resolved
+- id: FINAL-005
+  severity: high
+  type: illegal_idempotency_transitions
+  evidence: completion retry and replacement were weakly constrained
+  correction: enforce legal transitions and immutable completion
+  validation: tests/unit/test_idempotency_and_locks.py
+  status: resolved
+- id: FINAL-006
+  severity: high
+  type: non_standard_canonical_json
+  evidence: canonical JSON accepted NaN and infinity
+  correction: reject non-finite values
+  validation: tests/unit/test_canonical.py
+  status: resolved
+- id: FINAL-007
+  severity: critical
+  type: github_repository_guard_fail_open
+  evidence: missing repository context bypassed guard
+  correction: require exact repository context
+  validation: tests/unit/test_boundary_components.py
+  status: resolved
+- id: FINAL-008
+  severity: critical
+  type: infisical_environment_injection
+  evidence: unsafe duplicate or multiline values could reach env file
+  correction: validate key grammar uniqueness and values
+  validation: tests/unit/test_boundary_components.py
+  status: resolved
+- id: FINAL-009
+  severity: high
+  type: subprocess_secret_disclosure
+  evidence: explicit secret values were not always redacted
+  correction: redact secret-bearing environment values
+  validation: tests/unit/test_boundary_components.py
+  status: resolved
+- id: FINAL-010
+  severity: high
+  type: subprocess_timeout_resource_leak
+  evidence: timeout cleanup could leave pipes or descendants
+  correction: terminate group and drain pipes
+  validation: tests/unit/test_boundary_components.py
+  status: resolved
+- id: FINAL-011
+  severity: medium
+  type: health_probe_scheme_gap
+  evidence: HTTP probe accepted non-HTTP schemes
+  correction: permit only http and https
+  validation: tests/unit/test_boundary_components.py
+  status: resolved
+- id: FINAL-012
+  severity: high
+  type: unvalidated_evidence_record
+  evidence: evidence could bypass published-schema validation
+  correction: validate final record before return
+  validation: tests/unit/test_boundary_components.py
+  status: resolved
+- id: FINAL-013
+  severity: high
+  type: release_archive_assurance_gap
+  evidence: source and ZIP parity lacked one deterministic gate
+  correction: share inventory across build and validation
+  validation: tests/compliance/test_release_archive.py
+  status: resolved
+- id: FINAL-014
+  severity: low
+  type: empty_scaffold_file
+  evidence: generated inventory directory used empty gitkeep
+  correction: replace with ownership README
+  validation: release-root scan
+  status: resolved
+- id: FINAL-015
+  severity: critical
+  type: release_provenance_split_brain
+  evidence: archive checksum version and validation could describe different builds
+  correction: bind exact archive to source manifest with detached receipt
+  validation: tests/compliance/test_release_archive.py
+  status: resolved
+- id: FINAL-016
+  severity: critical
+  type: release_workflow_source_tree_collision
+  evidence: tag workflow wrote build output under the source root rejected by its
+    own release gate
+  correction: move all release outputs to runner temporary storage
+  validation: tests/workflows/test_workflows.py
+  status: resolved
+- id: FINAL-017
+  severity: high
+  type: coverage_gate_and_residue_gap
+  evidence: coverage was measured inconsistently and outputs could pollute releases
+  correction: enforce 75 percent branch floor and reject residue
+  validation: tests/compliance/test_coverage_policy.py
+  status: resolved
+- id: FINAL-018
+  severity: high
+  type: typed_backup_policy_runtime_failure
+  evidence: backup planner called dictionary get on typed StorageConfig
+  correction: read validated persistent_volumes directly
+  validation: tests/unit/test_contract_primitives.py
+  status: resolved
+- id: FINAL-019
+  severity: critical
+  type: inventory_cli_output_overwrite
+  evidence: generic emitter replaced the generated inventory at --output
+  correction: assign output ownership to inventory handler
+  validation: tests/unit/test_cli_surface.py
+  status: resolved
+- id: FINAL-020
+  severity: high
+  type: release_tooling_self_contamination
+  evidence: direct release generation created scripts and source bytecode caches that
+    the release validator rejected
+  correction: disable bytecode and remove repository bytecode before generation packaging
+    and validation
+  validation: tests/compliance/test_release_archive.py
+  status: resolved
+inherited_findings:
+  status: remain_resolved
+  families:
+  - recursive_alignment
+  - prior_validate_fill_gaps
+unresolved_local_findings: []

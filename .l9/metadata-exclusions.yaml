@@ -1,0 +1,30 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [governance, metadata]
+# tags: [L9_CONTRACT, metadata-exclusions]
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.metadata-exclusions/v1
+exclusions:
+- path: .python-version
+  reason: exact interpreter selector; comments are not portable across pyenv-compatible
+    readers
+- path: checksums.sha256
+  reason: generated integrity index; embedding metadata would create a self-referential
+    checksum
+- path: ansible/inventories/generated/.gitkeep
+  reason: zero-content directory sentinel
+- path: integrations/github-org/workflow-templates/l9-container-release.properties.json
+  reason: GitHub-owned starter-workflow properties schema; custom metadata keys may
+    be rejected
+- path: integrations/github-org/workflow-templates/l9-scheduled-job-release.properties.json
+  reason: GitHub-owned starter-workflow properties schema; custom metadata keys may
+    be rejected
+- path: integrations/github-org/workflow-templates/l9-stateful-container-release.properties.json
+  reason: GitHub-owned starter-workflow properties schema; custom metadata keys may
+    be rejected
+- path: integrations/github-org/workflow-templates/l9-worker-release.properties.json
+  reason: GitHub-owned starter-workflow properties schema; custom metadata keys may
+    be rejected

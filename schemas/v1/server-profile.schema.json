@@ -1,0 +1,116 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/server-profile/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "conformance": {
+      "additionalProperties": false,
+      "properties": {
+        "max_age_hours": {
+          "maximum": 720,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "profile": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile",
+        "max_age_hours"
+      ],
+      "type": "object"
+    },
+    "environment": {
+      "pattern": "^[a-z][a-z0-9-]{1,31}$",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^[a-z][a-z0-9-]{1,63}$",
+      "type": "string"
+    },
+    "labels": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "private_ip": {
+      "format": "ipv4",
+      "type": "string"
+    },
+    "provider": {
+      "const": "hetzner"
+    },
+    "public_ip": {
+      "format": "ipv4",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "roles": {
+      "items": {
+        "enum": [
+          "management",
+          "application",
+          "worker",
+          "database",
+          "cache",
+          "backup"
+        ]
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema": {
+      "const": "l9.server-profile/v1"
+    },
+    "ssh": {
+      "additionalProperties": false,
+      "properties": {
+        "port": {
+          "maximum": 65535,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "user": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "user",
+        "port"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "environment",
+    "provider",
+    "private_ip",
+    "ssh",
+    "roles",
+    "conformance"
+  ],
+  "title": "L9 Server Profile",
+  "type": "object"
+}

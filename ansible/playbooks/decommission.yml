@@ -1,0 +1,28 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+- name: Decommission a fleet host
+  hosts: all
+  become: true
+  serial: 1
+  tasks:
+    - name: Require explicit decommission approval
+      ansible.builtin.assert:
+        that: [l9_decommission_approved | default(false) | bool]
+        fail_msg: Decommission requires l9_decommission_approved=true
+    - name: Stop L9 application projects
+      ansible.builtin.shell: |
+        set -euo pipefail
+        find /srv/l9/projects -name compose.yaml -print0 | while IFS= read -r -d '' file; do docker compose -f "$file" down; done
+      args: {executable: /bin/bash}
+      changed_when: true
+    - name: Disable deployment account
+      ansible.builtin.user: {name: "{{ l9_deploy_user }}", shell: /usr/sbin/nologin}

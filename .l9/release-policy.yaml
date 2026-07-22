@@ -1,0 +1,20 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.release-policy/v1
+versioning: semver
+immutable_tags: true
+compatibility_tags: [v1]
+production:
+  approval_required: true
+  exact_image_digest_required: true
+  release_evidence_required: true
+  rollback_rehearsal_required_before_first_adoption: true

@@ -1,0 +1,109 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9.infrastructure-receipt/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "environment": {
+      "pattern": "^[a-z][a-z0-9-]{1,31}$",
+      "type": "string"
+    },
+    "image_ref": {
+      "pattern": "^ghcr\\.io/[a-z0-9._-]+/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "plan_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "previous_release": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "receipt_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "receipt_id": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "schema": {
+      "const": "l9.infrastructure-receipt/v1"
+    },
+    "source_commit_sha": {
+      "pattern": "^[a-f0-9]{40}$",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "PASS",
+        "PASS_WITH_FINDINGS",
+        "BLOCKED",
+        "FAIL",
+        "UNKNOWN"
+      ],
+      "type": "string"
+    },
+    "steps": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "unknowns": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "receipt_id",
+    "project_id",
+    "environment",
+    "status",
+    "started_at",
+    "completed_at",
+    "steps",
+    "artifacts",
+    "unknowns",
+    "receipt_digest"
+  ],
+  "title": "Infrastructure Receipt",
+  "type": "object"
+}

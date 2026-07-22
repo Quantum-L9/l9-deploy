@@ -1,0 +1,4 @@
+Exact archive validation is deliberately detached from the source ZIP.
+The final release set must include the deterministic ZIP, repository-release receipt,
+ZIP checksum, and detached validation report. Embedding the final archive digest inside
+the ZIP would change the artifact it claims to validate.

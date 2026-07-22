@@ -1,0 +1,179 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [repository, validation]
+# tags: [L9_META, deployment-platform, traceability]
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.remediation-traceability/v1
+artifact: Quantum-L9/l9-deployment-platform
+artifact_version: 0.1.5
+source_audits:
+- recursive_alignment
+- validate_fill_gaps_fix_broken_code_harden_revised_pack
+- frontier_final_consolidation
+findings:
+  FINAL-001:
+    defect: contract_namespace_collision
+    fixes:
+    - src/l9_deploy/contracts/models.py
+    - src/l9_deploy/contracts/alias_policy.py
+    - docs/adr/0007-wire-contract-field-aliases.md
+    validation:
+    - tests/contract/test_wire_aliases.py
+    - validation/evidence/final/pytest.txt
+  FINAL-002:
+    defect: wire_contract_regression_risk
+    fixes:
+    - src/l9_deploy/contracts/catalog.py
+    - scripts/validate-contracts.py
+    validation:
+    - scripts/validate-contracts.py
+    - validation/evidence/final/pytest.txt
+  FINAL-003:
+    defect: runtime_schema_drift
+    fixes:
+    - schemas/v1/server-profile.schema.json
+    - schemas/v1/deployment-receipt.schema.json
+    validation:
+    - tests/contract/test_wire_aliases.py
+    - validation/evidence/final/pytest.txt
+  FINAL-004:
+    defect: idempotency_state_validation_gap
+    fixes:
+    - schemas/v1/idempotency-store.schema.json
+    - src/l9_deploy/requests/idempotency.py
+    validation:
+    - tests/unit/test_idempotency_and_locks.py
+    - validation/evidence/final/pytest.txt
+  FINAL-005:
+    defect: illegal_idempotency_transitions
+    fixes:
+    - src/l9_deploy/requests/idempotency.py
+    validation:
+    - tests/unit/test_idempotency_and_locks.py
+    - validation/evidence/final/pytest.txt
+  FINAL-006:
+    defect: non_standard_canonical_json
+    fixes:
+    - src/l9_deploy/canonical.py
+    validation:
+    - tests/unit/test_canonical.py
+    - validation/evidence/final/pytest.txt
+  FINAL-007:
+    defect: github_repository_guard_fail_open
+    fixes:
+    - src/l9_deploy/integrations/github.py
+    validation:
+    - tests/unit/test_boundary_components.py
+    - validation/evidence/final/pytest.txt
+  FINAL-008:
+    defect: infisical_environment_injection
+    fixes:
+    - src/l9_deploy/integrations/infisical.py
+    validation:
+    - tests/unit/test_boundary_components.py
+    - validation/evidence/final/pytest.txt
+  FINAL-009:
+    defect: subprocess_secret_disclosure
+    fixes:
+    - src/l9_deploy/redaction.py
+    - src/l9_deploy/subprocesses.py
+    validation:
+    - tests/unit/test_boundary_components.py
+    - validation/evidence/final/pytest.txt
+  FINAL-010:
+    defect: subprocess_timeout_resource_leak
+    fixes:
+    - src/l9_deploy/subprocesses.py
+    validation:
+    - tests/unit/test_boundary_components.py
+    - validation/evidence/final/pytest.txt
+  FINAL-011:
+    defect: health_probe_scheme_gap
+    fixes:
+    - src/l9_deploy/execution/health.py
+    validation:
+    - tests/unit/test_boundary_components.py
+    - validation/evidence/final/pytest.txt
+  FINAL-012:
+    defect: unvalidated_evidence_record
+    fixes:
+    - src/l9_deploy/evidence/records.py
+    validation:
+    - tests/unit/test_boundary_components.py
+    - validation/evidence/final/pytest.txt
+  FINAL-013:
+    defect: release_archive_assurance_gap
+    fixes:
+    - src/l9_deploy/release_inventory.py
+    - scripts/build-release-archive.py
+    - scripts/validate-release-pack.py
+    validation:
+    - tests/compliance/test_release_archive.py
+    - validation/evidence/final/pytest.txt
+  FINAL-014:
+    defect: empty_scaffold_file
+    fixes:
+    - ansible/inventories/generated/README.md
+    validation:
+    - release-root scan
+    - validation/evidence/final/pytest.txt
+  FINAL-015:
+    defect: release_provenance_split_brain
+    fixes:
+    - schemas/v1/repository-release-receipt.schema.json
+    - src/l9_deploy/contracts/models.py
+    - scripts/build-release-archive.py
+    - scripts/validate-release-pack.py
+    validation:
+    - tests/compliance/test_release_archive.py
+    - validation/evidence/final/pytest.txt
+  FINAL-016:
+    defect: release_workflow_source_tree_collision
+    fixes:
+    - .github/workflows/release.yml
+    - Makefile
+    validation:
+    - tests/workflows/test_workflows.py
+    - validation/evidence/final/pytest.txt
+  FINAL-017:
+    defect: coverage_gate_and_residue_gap
+    fixes:
+    - pyproject.toml
+    - Makefile
+    - .github/workflows/validate.yml
+    - src/l9_deploy/release_inventory.py
+    validation:
+    - tests/compliance/test_coverage_policy.py
+    - validation/evidence/final/pytest.txt
+  FINAL-018:
+    defect: typed_backup_policy_runtime_failure
+    fixes:
+    - src/l9_deploy/planning/backups.py
+    validation:
+    - tests/unit/test_contract_primitives.py
+    - validation/evidence/final/pytest.txt
+  FINAL-019:
+    defect: inventory_cli_output_overwrite
+    fixes:
+    - src/l9_deploy/cli.py
+    validation:
+    - tests/unit/test_cli_surface.py
+    - validation/evidence/final/pytest.txt
+  FINAL-020:
+    defect: release_tooling_self_contamination
+    fixes:
+    - scripts/_bootstrap.py
+    - scripts/generate-release-artifacts.py
+    - scripts/build-release-archive.py
+    - scripts/validate-release-pack.py
+    - Makefile
+    - .github/workflows/release.yml
+    validation:
+    - tests/compliance/test_release_archive.py
+    - validation/evidence/final/release-behavior-tests.txt
+remaining_unknowns:
+  source: UNKNOWN_REGISTER.md
+  classification: external_acceptance_only

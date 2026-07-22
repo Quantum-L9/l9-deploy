@@ -1,0 +1,14 @@
+usage: l9-deploy [-h]
+                 {approval,contract,request,plan,deploy,promote,rollback,status,receipt,inventory,host,fleet,infra,config,backup,restore,adoption} ...
+
+positional arguments:
+  {approval,contract,request,plan,deploy,promote,rollback,status,receipt,inventory,host,fleet,infra,config,backup,restore,adoption}
+    plan                create a deterministic deployment plan
+    deploy              execute an approved deployment plan
+    promote             verify a promotion-bound plan
+    rollback            restore the previous verified release
+    status              read current deployment state
+
+options:
+  -h, --help            show this help message and exit
+CLI help rendered successfully

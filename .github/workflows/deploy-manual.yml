@@ -1,0 +1,48 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Deploy Manual
+on:
+  workflow_dispatch:
+    inputs:
+      request-path:
+        description: Path under requests/ to a deployment request JSON
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: write
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - name: Validate request path
+        env:
+          REQUEST_PATH: ${{ inputs.request-path }}
+        run: |
+          case "$REQUEST_PATH" in
+            requests/*.json) ;;
+            *) echo "request path must be under requests/" >&2; exit 2 ;;
+          esac
+          test -f "$REQUEST_PATH"
+      - name: Dispatch through canonical receiver
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUEST_PATH: ${{ inputs.request-path }}
+        run: |
+          jq -n \
+            --arg event_type 'l9.release.requested.v1' \
+            --slurpfile payload "$REQUEST_PATH" \
+            '{event_type:$event_type,client_payload:$payload[0]}' > dispatch.json
+          gh api --method POST "repos/${{ github.repository }}/dispatches" --input dispatch.json

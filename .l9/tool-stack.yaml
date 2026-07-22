@@ -1,0 +1,22 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.tool-stack/v1
+tools:
+  python: "3.12"
+  package_manager: uv
+  infrastructure: opentofu
+  configuration: ansible
+  runtime: docker-compose
+  registry: ghcr
+  secrets: infisical
+  cloud: hetzner
+  ingress: caddy

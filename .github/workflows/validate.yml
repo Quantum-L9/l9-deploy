@@ -1,0 +1,58 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [ci, governance]
+# tags: [L9_CONTRACT, validation, canonical-evidence]
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Validate
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  repository:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
+      - run: uv sync --all-extras --frozen
+      - name: Install pinned canonical contract providers
+        run: >-
+          uv pip install
+          semgrep==1.100.0
+          git+https://github.com/Quantum-L9/l9-ci-sdk.git@6368ba17a98231d461a13b71e149e114ad766834
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy src/l9_deploy
+      - run: >-
+          uv run pytest
+          --cov=l9_deploy
+          --cov-branch
+          --cov-report=term-missing
+          --cov-report=xml
+          --cov-fail-under=75
+      - run: uv run python scripts/validate-contracts.py
+      - run: uv run python scripts/validate-workflows.py
+      - run: uv run python scripts/verify-l9-meta.py
+      - run: uv run python scripts/fast-contract-scan.py
+      - run: uv run python scripts/validate-alignment.py
+      - run: uv run bash scripts/run-l9-contract-gates.sh
+      - run: bash -n scripts/*.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: l9-contract-evidence-${{ github.run_id }}
+          path: |
+            artifacts/l9-contracts
+            artifacts/coverage.xml
+          if-no-files-found: error
+          retention-days: 30

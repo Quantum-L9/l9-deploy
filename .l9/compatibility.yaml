@@ -1,0 +1,38 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.compatibility/v1
+current_major: 1
+compatible_schemas:
+- l9.approval-receipt/v1
+- l9.backup-receipt/v1
+- l9.ci-gate-binding/v1
+- l9.deployment-plan/v1
+- l9.deployment-profile/v1
+- l9.deployment-receipt/v1
+- l9.deployment-request/v1
+- l9.evidence-record/v1
+- l9.fleet-inventory/v1
+- l9.health-probe/v1
+- l9.host-conformance/v1
+- l9.idempotency-store/v1
+- l9.infrastructure-plan/v1
+- l9.infrastructure-receipt/v1
+- l9.migration-receipt/v1
+- l9.release-artifact-binding/v1
+- l9.release-evidence-reference/v1
+- l9.repository-release-receipt/v1
+- l9.rollback-receipt/v1
+- l9.server-profile/v1
+policy:
+  unknown_major: reject
+  additional_properties: reject_unless_schema_allows
+  consumer_ref: v1

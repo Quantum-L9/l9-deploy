@@ -1,0 +1,5 @@
+{
+  "findings": [],
+  "schema": "l9.fast-contract-scan/v1",
+  "status": "PASS"
+}

@@ -1,0 +1,19 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+* @Quantum-L9/platform
+/.github/workflows/ @Quantum-L9/platform @cryptoxdog
+/schemas/ @Quantum-L9/platform @cryptoxdog
+/infrastructure/ @Quantum-L9/platform @cryptoxdog
+/ansible/roles/github_runner/ @Quantum-L9/platform @cryptoxdog
+/src/l9_deploy/execution/ @Quantum-L9/platform @cryptoxdog
+/src/l9_deploy/security/ @Quantum-L9/platform @cryptoxdog
+/.l9/ @Quantum-L9/platform @cryptoxdog

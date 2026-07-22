@@ -1,0 +1,16 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.runtime-profile/v1
+id: stateful-container
+requires: [exact_image_digest, backup_contract, migration_contract, restore_test_contract, health_probe]
+allows: [persistent_volumes, managed_on_fleet_dependencies, public_ingress]
+forbids: [automatic_database_rollback_without_contract, deployment_without_backup_when_required, mutable_image_tag]

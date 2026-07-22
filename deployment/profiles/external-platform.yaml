@@ -1,0 +1,16 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.runtime-profile/v1
+id: external-platform
+requires: [named_adapter, explicit_contract, platform_specific_health_check]
+allows: [external_orchestrator]
+forbids: [generic_container_assumptions, implicit_ssh_mutation]

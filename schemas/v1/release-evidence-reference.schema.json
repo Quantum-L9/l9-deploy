@@ -1,0 +1,88 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/release-evidence-reference/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_name": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "bundle_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "bundle_path": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "provenance_reference": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "sbom_reference": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema": {
+      "const": "l9.release-evidence-reference/v1"
+    },
+    "schema_version": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "sdk_version": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "workflow_run_id": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "gate_binding_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "gate_binding_path": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "artifact_binding_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "artifact_binding_path": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "schema_version",
+    "sdk_version",
+    "bundle_digest",
+    "workflow_run_id",
+    "artifact_name",
+    "bundle_path",
+    "provenance_reference",
+    "sbom_reference",
+    "gate_binding_digest",
+    "gate_binding_path",
+    "artifact_binding_digest",
+    "artifact_binding_path"
+  ],
+  "title": "Release Evidence Reference",
+  "type": "object"
+}

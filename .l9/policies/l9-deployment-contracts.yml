@@ -1,0 +1,69 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [governance, security]
+# tags: [L9_CONTRACT, semgrep-policy]
+# owner: platform
+# status: active
+# --- /L9_META ---
+rules:
+  - id: l9.deployment.no-eval
+    languages: [python]
+    severity: ERROR
+    message: eval is prohibited in production code
+    paths:
+      include: [src/**, scripts/**]
+    pattern: eval(...)
+  - id: l9.deployment.no-exec
+    languages: [python]
+    severity: ERROR
+    message: exec is prohibited in production code
+    paths:
+      include: [src/**, scripts/**]
+    pattern: exec(...)
+  - id: l9.deployment.no-compile
+    languages: [python]
+    severity: ERROR
+    message: dynamic compile is prohibited in production code
+    paths:
+      include: [src/**, scripts/**]
+    pattern: compile(...)
+  - id: l9.deployment.no-print
+    languages: [python]
+    severity: ERROR
+    message: production code must use structured logging or explicit stdout/stderr writes
+    paths:
+      include: [src/**, scripts/**]
+    pattern: print(...)
+  - id: l9.deployment.no-unsafe-yaml-load
+    languages: [python]
+    severity: ERROR
+    message: yaml.load without SafeLoader is prohibited
+    paths:
+      include: [src/**, scripts/**]
+    patterns:
+      - pattern: yaml.load(...)
+      - pattern-not: yaml.load(..., Loader=yaml.SafeLoader)
+  - id: l9.deployment.no-packet-envelope
+    languages: [python]
+    severity: ERROR
+    message: deprecated packet envelope is prohibited
+    pattern-regex: Packet(?:Envelope)
+  - id: l9.deployment.no-not-implemented
+    languages: [python]
+    severity: ERROR
+    message: production stubs are prohibited
+    paths:
+      include: [src/**, scripts/**]
+    pattern-regex: raise\s+Not(?:ImplementedError)
+  # NAME-001 remains merge-blocking. The canonical contract model module is
+  # excluded here because the AST gates enforce the exact, catalog-backed exception:
+  # schema_id: Literal["l9.<contract>/vN"] = Field(alias="schema").
+  - id: l9.deployment.no-pydantic-alias
+    languages: [python]
+    severity: ERROR
+    message: Pydantic aliases are prohibited outside the schema identity exception
+    paths:
+      include: [src/**, scripts/**]
+      exclude: [src/l9_deploy/contracts/models.py]
+    pattern: Field(..., alias=..., ...)

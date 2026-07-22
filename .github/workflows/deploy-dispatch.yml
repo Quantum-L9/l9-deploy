@@ -1,0 +1,151 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [ci, deployment]
+# tags: [L9_CONTRACT, protected-environment, canonical-evidence]
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Deploy Dispatch
+on:
+  repository_dispatch:
+    types: [l9.release.requested.v1]
+permissions:
+  contents: read
+  actions: read
+  packages: read
+  attestations: read
+  id-token: write
+concurrency:
+  group: deploy-${{ github.event.client_payload.target.environment }}-${{ github.event.client_payload.source.repository }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.metadata.outputs.environment }}
+      project-id: ${{ steps.metadata.outputs.project_id }}
+      plan-digest: ${{ steps.metadata.outputs.plan_digest }}
+      request-id: ${{ steps.metadata.outputs.request_id }}
+      requester: ${{ steps.metadata.outputs.requester }}
+      infisical-environment: ${{ steps.metadata.outputs.infisical_environment }}
+      image-ref: ${{ steps.metadata.outputs.image_ref }}
+      source-repository: ${{ steps.metadata.outputs.source_repository }}
+      source-run-id: ${{ steps.metadata.outputs.source_run_id }}
+      base-url: ${{ steps.metadata.outputs.base_url }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
+      - run: uv sync --all-extras --frozen
+      - name: Materialize bounded request
+        env:
+          REQUEST_JSON: ${{ toJSON(github.event.client_payload) }}
+        run: printf '%s' "$REQUEST_JSON" > request.json
+      - name: Download immutable source-run evidence
+        env:
+          GH_TOKEN: ${{ secrets.DEPLOYMENT_EVIDENCE_READ_TOKEN }}
+        run: |
+          source_repo=$(jq -er '.source.repository' request.json)
+          source_run=$(jq -er '.evidence.workflow_run_id' request.json)
+          artifact_name=$(jq -er '.evidence.artifact_name' request.json)
+          test "$source_run" = "$(jq -er '.source.run_id' request.json)"
+          mkdir -p artifacts/canonical-evidence
+          gh run download "$source_run" --repo "$source_repo" --name "$artifact_name" --dir artifacts/canonical-evidence
+      - id: metadata
+        run: >-
+          uv run python scripts/prepare-deployment.py
+          --request request.json
+          --evidence-root artifacts/canonical-evidence
+          --plan plan.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: validated-deployment-${{ github.run_id }}
+          path: |
+            request.json
+            plan.json
+            artifacts/canonical-evidence
+          if-no-files-found: error
+          retention-days: 30
+  authorize:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: ${{ needs.validate.outputs.environment }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
+      - run: uv sync --all-extras --frozen
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-deployment-${{ github.run_id }}
+          path: artifacts/deployment
+      - uses: ./.github/actions/collect-approval
+        with:
+          request-id: ${{ needs.validate.outputs.request-id }}
+          requester: ${{ needs.validate.outputs.requester }}
+          environment: ${{ needs.validate.outputs.environment }}
+          plan-digest: ${{ needs.validate.outputs.plan-digest }}
+          job-name: authorize
+          output-directory: artifacts/approval
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: deployment-approval-${{ github.run_id }}
+          path: artifacts/approval
+          if-no-files-found: error
+          retention-days: 90
+  deploy:
+    needs: [validate, authorize]
+    runs-on: [self-hosted, l9-deployment, hetzner-private]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: uv sync --all-extras --frozen
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: validated-deployment-${{ github.run_id }}
+          path: artifacts/deployment
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: deployment-approval-${{ github.run_id }}
+          path: artifacts/approval
+      - name: Authenticate GHCR pull
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: printf '%s' "$GHCR_PULL_TOKEN" | docker login ghcr.io -u l9-deploy --password-stdin
+      - name: Render runtime secrets
+        env:
+          INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_IDENTITY_ID }}
+          INFISICAL_PROJECT_SLUG: ${{ needs.validate.outputs.project-id }}
+          INFISICAL_OIDC_AUDIENCE: https://github.com/Quantum-L9
+        run: scripts/infisical-oidc-env.sh '${{ needs.validate.outputs.infisical-environment }}' runtime.env
+      - name: Verify image provenance
+        run: scripts/verify-attestation.sh '${{ needs.validate.outputs.image-ref }}' '${{ needs.validate.outputs.source-repository }}'
+      - name: Execute exact approved plan
+        run: >-
+          uv run l9-deploy deploy
+          --plan artifacts/deployment/plan.json
+          --fleet fleet/registry.yaml
+          --environment '${{ needs.validate.outputs.environment }}'
+          --expected-plan-digest '${{ needs.validate.outputs.plan-digest }}'
+          --approval-receipt artifacts/approval/approval-receipt.json
+          --approval-history artifacts/approval/approval-history.json
+          --approval-run-id '${{ github.run_id }}'
+          --runtime-env-file runtime.env
+          --base-url '${{ needs.validate.outputs.base-url }}'
+          --request-digest "sha256:$(sha256sum artifacts/deployment/request.json | awk '{print $1}')"
+          --receipt-ledger-root receipts/ledger
+          --output receipts/latest/deployment.json
+          --json
+      - if: always()
+        run: rm -f runtime.env && docker logout ghcr.io || true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: deployment-receipts-${{ github.run_id }}
+          path: receipts
+          if-no-files-found: warn
+          retention-days: 365

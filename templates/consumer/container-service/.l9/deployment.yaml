@@ -1,0 +1,54 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.deployment-profile/v1
+project:
+  id: "{{PROJECT_ID}}"
+  repository: "{{REPOSITORY}}"
+  owner_team: platform
+  runtime_profile: container-service
+artifact:
+  registry: ghcr.io
+  image: "{{IMAGE}}"
+  require_digest: true
+  require_provenance_attestation: true
+  require_sbom_attestation: true
+runtime:
+  architecture: linux/amd64
+  user: non_root
+  read_only_root_filesystem: false
+  stop_grace_seconds: 30
+health:
+  startup: {type: http, path: /health, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 24}
+  post_deploy: {type: http, path: /health, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 12}
+release:
+  strategy: rolling-single-host
+  retain_successful_releases: 5
+  automatic_rollback: true
+  production_approval_required: true
+  stabilization_seconds: 30
+migrations:
+  enabled: false
+  backup_required: false
+secrets:
+  authority: infisical
+  runtime_mode: deploy_render
+  project_slug: "{{PROJECT_ID}}"
+  environment_mapping: {staging: staging, production: prod}
+network:
+  public_ingress: {enabled: true, hostnames: [], tls: automatic}
+  private_dependencies_only: true
+policy:
+  allowed_source_refs:
+    staging: [refs/heads/main]
+    production: [refs/tags/v*]
+  require_clean_ci_gate: true
+  require_profile_digest_match: true

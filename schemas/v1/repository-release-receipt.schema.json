@@ -1,0 +1,82 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "contracts",
+      "release"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform",
+      "release-receipt"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/repository-release-receipt/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "L9 Repository Release Receipt",
+  "description": "Detached receipt binding one deterministic source archive to its source manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "l9.repository-release-receipt/v1",
+      "type": "string"
+    },
+    "repository": {
+      "const": "Quantum-L9/l9-deployment-platform",
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "archive_name": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.zip$"
+    },
+    "archive_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "archive_size_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "archive_files": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_manifest_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "source_date_epoch": {
+      "type": "integer",
+      "minimum": 315532800
+    },
+    "built_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "receipt_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "schema",
+    "repository",
+    "version",
+    "archive_name",
+    "archive_sha256",
+    "archive_size_bytes",
+    "archive_files",
+    "source_manifest_sha256",
+    "source_date_epoch",
+    "built_at",
+    "receipt_digest"
+  ]
+}

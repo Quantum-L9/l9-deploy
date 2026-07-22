@@ -1,0 +1,44 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+- name: Validate runner registration inputs
+  ansible.builtin.assert:
+    that:
+      - l9_runner_registration_token is defined
+      - l9_runner_registration_token | length > 20
+      - l9_runner_sha256 is defined
+      - l9_runner_sha256 | length == 64
+    fail_msg: Runner token and approved tarball SHA-256 are required at runtime.
+  no_log: true
+- name: Create runner service account
+  ansible.builtin.user: {name: actions, groups: [docker, l9deploy], append: true, create_home: true, shell: /bin/bash}
+- name: Create runner directory
+  ansible.builtin.file: {path: /opt/actions-runner, state: directory, owner: actions, group: actions, mode: "0750"}
+- name: Download pinned GitHub runner
+  ansible.builtin.get_url:
+    url: "https://github.com/actions/runner/releases/download/v{{ l9_runner_version }}/actions-runner-linux-x64-{{ l9_runner_version }}.tar.gz"
+    dest: "/var/tmp/actions-runner-{{ l9_runner_version }}.tar.gz"
+    checksum: "sha256:{{ l9_runner_sha256 }}"
+    mode: "0644"
+- name: Extract runner
+  ansible.builtin.unarchive: {src: "/var/tmp/actions-runner-{{ l9_runner_version }}.tar.gz", dest: /opt/actions-runner, remote_src: true, owner: actions, group: actions, creates: /opt/actions-runner/config.sh}
+- name: Configure repository-scoped runner
+  become_user: actions
+  ansible.builtin.command: "./config.sh --unattended --replace --url https://github.com/{{ l9_runner_repository }} --token {{ l9_runner_registration_token }} --name {{ l9_runner_name }} --labels {{ l9_runner_labels }} --work {{ l9_runner_work_directory }}"
+  args: {chdir: /opt/actions-runner, creates: /opt/actions-runner/.runner}
+  no_log: true
+- name: Install runner service
+  ansible.builtin.command: ./svc.sh install actions
+  args: {chdir: /opt/actions-runner, creates: /etc/systemd/system/actions.runner.*.service}
+- name: Start runner service
+  ansible.builtin.command: ./svc.sh start
+  args: {chdir: /opt/actions-runner}
+  changed_when: true

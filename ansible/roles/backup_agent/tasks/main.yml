@@ -1,0 +1,17 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+- name: Install backup dependencies
+  ansible.builtin.apt: {name: [postgresql-client, gzip, restic], state: present}
+- name: Install canonical PostgreSQL backup command
+  ansible.builtin.copy: {src: l9-postgres-backup, dest: /usr/local/sbin/l9-postgres-backup, owner: root, group: l9deploy, mode: "0750"}
+- name: Install canonical backup verification command
+  ansible.builtin.copy: {src: l9-backup-verify, dest: /usr/local/sbin/l9-backup-verify, owner: root, group: l9deploy, mode: "0750"}

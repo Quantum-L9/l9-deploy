@@ -1,0 +1,11 @@
+{
+  "name": "L9 Stateful Container Release",
+  "description": "Thin caller for an L9 stateful container release.",
+  "iconName": "octicon package",
+  "categories": [
+    "Deployment"
+  ],
+  "filePatterns": [
+    "^\\.l9/deployment\\.yaml$"
+  ]
+}

@@ -1,0 +1,18 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+---
+l9_runner_version: "2.334.0"
+l9_runner_sha256: ""
+l9_runner_repository: "Quantum-L9/l9-deployment-platform"
+l9_runner_labels: "l9-deployment,hetzner-private"
+l9_runner_name: "{{ inventory_hostname }}"
+l9_runner_work_directory: "_work"

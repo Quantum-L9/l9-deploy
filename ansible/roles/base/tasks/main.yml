@@ -1,0 +1,18 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+- name: Refresh apt cache
+  ansible.builtin.apt: {update_cache: true, cache_valid_time: 3600}
+- name: Install base packages
+  ansible.builtin.apt: {name: "{{ l9_base_packages }}", state: present}
+- name: Create L9 root directories
+  ansible.builtin.file: {path: "{{ item }}", state: directory, owner: root, group: "{{ l9_deploy_group }}", mode: "0750"}
+  loop: ["{{ l9_deploy_root }}", "{{ l9_deploy_root }}/projects", "{{ l9_deploy_root }}/data", "{{ l9_deploy_root }}/backups", "{{ l9_deploy_root }}/receipts"]

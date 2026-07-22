@@ -1,0 +1,43 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": ["contracts"],
+    "tags": ["L9_META", "canonical-ci-evidence"],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/ci-gate-binding/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical CI Gate Binding",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schema": {"const": "l9.ci-gate-binding/v1"},
+    "status": {"const": "PASS"},
+    "source": {
+      "type": "object",
+      "required": ["repository", "commit_sha", "ref"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 3},
+        "commit_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+        "ref": {"type": "string", "pattern": "^refs/"}
+      }
+    },
+    "canonical": {
+      "type": "object",
+      "required": ["bundle_digest", "schema_version", "sdk_version"],
+      "properties": {
+        "bundle_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+        "schema_version": {"type": "string", "minLength": 1},
+        "sdk_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "required": ["artifact_name"],
+      "properties": {"artifact_name": {"type": "string", "minLength": 1}}
+    }
+  },
+  "required": ["schema", "status", "source", "canonical", "workflow"]
+}

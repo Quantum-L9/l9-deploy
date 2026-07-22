@@ -1,0 +1,93 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [repository, validation]
+# tags: [L9_META, deployment-platform, validation-report]
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.validation-report/v1
+artifact: Quantum-L9/l9-deployment-platform
+artifact_version: 0.1.5
+decision: APPROVED_WITH_FINDINGS
+production_decision: BLOCKED_ON_VALIDATION
+baseline:
+  archive_files: 440
+  tests:
+    status: PASS
+    passed: 54
+    warnings: 9
+  schemas: 18
+  warning_as_error: FAIL
+execution_environment:
+  observed_python: 3.13.5
+  observed_pytest: 9.0.2
+  locked_python: '3.12'
+  locked_pytest: 8.4.2
+  locked_toolchain_status: BLOCKED
+post_fix:
+  tests:
+    status: PASS
+    passed: 103
+    warnings: 0
+    branch_coverage_percent: 79.45
+    coverage_floor_percent: 75
+  canonical_contracts:
+    status: PASS
+    documents: 6
+    schemas: 20
+  workflow_policy:
+    status: PASS
+    duplicate_key_rejection: true
+    detached_release_outputs: true
+  metadata:
+    status: PASS
+    eligible_files: 326
+  fast_contract_scan:
+    status: PASS
+    findings: 0
+  recursive_alignment:
+    status: PASS
+  package_imports:
+    status: PASS
+    modules: 56
+  cli_help:
+    status: PASS
+  shell_syntax:
+    status: PASS
+  python_compile:
+    status: PASS
+  no_stub_placeholder_scaffold:
+    status: PASS
+  local_findings:
+    confirmed: 20
+    resolved: 20
+    remaining: 0
+archive_validation:
+  model: detached_repository_release_receipt
+  status_inside_source: DETACHED_REQUIRED
+  reason: embedding a final archive digest would mutate the archive
+blocked:
+- check: ruff_and_format
+  reason: tool_unavailable_and_network_disabled
+- check: mypy_strict
+  reason: tool_unavailable_and_network_disabled
+- check: canonical_semgrep_l9_ci
+  reason: tools_unavailable_and_network_disabled
+- check: uv_frozen_python_312
+  reason: interpreter_or_distributions_absent_from_offline_cache
+- check: python_distribution_build
+  reason: build_backend_absent_from_offline_cache
+- check: opentofu_ansible_docker
+  reason: tools_credentials_or_live_targets_unavailable
+- check: github_live_api
+  reason: authenticated_workflow_context_unavailable
+external_acceptance_required:
+- github_environment_approval
+- ghcr_attestation
+- hetzner_provisioning_and_state_locking
+- ansible_idempotency
+- dedicated_runner_isolation
+- infisical_oidc
+- staging_deployment_and_rollback
+- backup_restore

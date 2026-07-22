@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+set -euo pipefail
+project=${1:?project required}; environment=${2:?environment required}; request_id=${3:?request id required}
+root="/srv/l9/backups/$project/$environment"
+mkdir -p "$root"
+out="$root/$request_id.sql.gz"
+: "${DATABASE_URL:?DATABASE_URL required}"
+pg_dump --dbname="$DATABASE_URL" --format=plain --no-owner --no-privileges | gzip -c > "$out"
+test -s "$out"
+sha256sum "$out" > "$out.sha256"
+printf '%s\n' "$out"

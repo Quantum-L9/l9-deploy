@@ -1,0 +1,178 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.repo-spec/v1
+metadata:
+  repository: Quantum-L9/l9-deployment-platform
+  repository_url: https://github.com/Quantum-L9/l9-deployment-platform
+  spec_version: 1.0.0
+  status: implementation_complete_external_validation_pending
+  visibility: private
+  date: '2026-07-21'
+identity:
+  name: l9-deployment-platform
+  constellation_role: infrastructure_and_deployment_control_plane
+  architectural_plane: deployment_and_infrastructure
+  primary_cloud: hetzner
+  operating_model:
+  - declarative
+  - deterministic
+  - fail_closed
+  - evidence_bearing
+  - digest_addressed
+  - private_network_first
+purpose: 'Provision Hetzner infrastructure, configure and harden servers, operate
+  the dedicated deployment runner, validate bounded deployment requests, deploy exact
+  OCI image digests, execute backups and migrations, verify health, roll back failures,
+  and emit immutable receipts for Quantum-L9 projects.
+
+  '
+authority:
+  owns:
+  - infrastructure desired state
+  - Hetzner fleet topology
+  - OpenTofu modules and state workflows
+  - Ansible host configuration
+  - deployment request validation
+  - deployment planning and execution
+  - environment concurrency and host locks
+  - backup and migration orchestration
+  - rollback execution
+  - deployment domain schemas and receipts
+  - fleet conformance and drift reports
+  consumes:
+  - l9-ci-core release orchestration
+  - l9-ci-sdk canonical CI evidence references
+  - l9-assurance testkits
+  - GHCR OCI images and attestations
+  - Infisical secrets
+  - Quantum-L9/.github public interface registry
+  excludes:
+  - application source ownership
+  - provider-native CI report parsing
+  - canonical CI finding reconstruction
+  - centralized observability implementation
+  - central policy-pack implementation
+  - image registry implementation
+  - general secret storage
+  - Kubernetes in version 1
+invariants:
+- Consumer repositories never receive production SSH or Hetzner credentials.
+- Public pull requests never execute on the deployment runner.
+- Production servers never clone application repositories.
+- Production servers never build application source.
+- Deployments use immutable OCI digests, never mutable tags.
+- Staging and production promote the same image digest.
+- Deployment success requires executable health evidence.
+- Every mutation emits an immutable receipt.
+- Database rollback is never inferred from container rollback.
+- Unknown evidence or compatibility fails closed.
+- Private-network traffic is governed by host-level firewall policy.
+- Centralized observability remains an external shared capability.
+interfaces:
+  public_request_event: l9.release.requested.v1
+  deployment_profile: l9.deployment-profile/v1
+  deployment_request: l9.deployment-request/v1
+  deployment_receipt: l9.deployment-receipt/v1
+  rollback_receipt: l9.rollback-receipt/v1
+  infrastructure_receipt: l9.infrastructure-receipt/v1
+  compatibility_tag: v1
+runtime_profiles:
+- container-service
+- worker-service
+- stateful-container
+- scheduled-job
+- external-platform
+technology:
+  orchestration_cli: python-3.12
+  package_lock: uv.lock
+  infrastructure: OpenTofu
+  configuration_management: Ansible
+  container_runtime: Docker Engine and Compose
+  image_registry: ghcr.io
+  secrets: Infisical
+  workflow_orchestrator: GitHub Actions
+  deployment_runner: dedicated self-hosted GitHub Actions runner
+  network: Hetzner Cloud private network
+  ingress: Caddy or approved reverse-proxy adapter
+integrations:
+  Quantum-L9/.github:
+    role: public organization registry and starter templates
+    required_changes:
+    - deployment-interface-registry.yml
+    - deployment workflow templates
+    - profile README entry
+    - CODEOWNERS blast-radius rules
+  Quantum-L9/l9-ci-core:
+    role: public build, release, and request orchestration
+    required_changes:
+    - container-release reusable workflow with bounded deployment dispatch
+  Quantum-L9/l9-ci-sdk:
+    role: canonical CI evidence authority
+    required_changes: []
+  Quantum-L9/l9-assurance:
+    role: reusable assurance and security testkits
+    required_changes: []
+  Quantum-L9/l9-repo-template:
+    role: generated consumer adoption projection
+    required_changes:
+    - pinned deployment-profile template
+    - thin caller workflow
+    - projection lock and drift validation
+  consumer_repositories:
+    required_files:
+    - .l9/deployment.yaml
+    - .github/workflows/release.yml
+    - Dockerfile
+security:
+  repository_visibility: private
+  runner_repository_allowlist:
+  - Quantum-L9/l9-deployment-platform
+  workflow_secret_authentication: GitHub OIDC to Infisical
+  public_ingress_default: deny
+  application_public_ports:
+  - 80
+  - 443
+  application_ssh_source: management runner private IP only
+  required_controls:
+  - provenance attestation verification
+  - SBOM verification
+  - request replay protection
+  - environment approvals
+  - concurrency locks
+  - redaction before persistence
+  - state encryption and locking
+  - host firewall on private interfaces
+  runner_scope: repository-scoped to Quantum-L9/l9-deployment-platform
+phases:
+- id: P0
+  name: contract lock
+- id: P1
+  name: management infrastructure and runner
+- id: P2
+  name: deployment engine core
+- id: P3
+  name: public release bridge
+- id: P4
+  name: stateful deployment
+- id: P5
+  name: SEO-Bot reference adoption
+- id: P6
+  name: fleet rollout
+acceptance:
+- management runner can be destroyed and recreated from code
+- public repositories cannot schedule the deployment runner
+- image digest and attestation are verified before mutation
+- identical requests are idempotent
+- health failure proves automatic rollback
+- stateful deployment proves backup and restore
+- deployment receipts validate and hash deterministically
+- SEO-Bot completes staging, production, and rollback rehearsal

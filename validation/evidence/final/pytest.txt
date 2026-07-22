@@ -1,0 +1,46 @@
+........................................................................ [ 69%]
+...............................                                          [100%]
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.5-final-0 ________________
+
+Name                                       Stmts   Miss Branch BrPart   Cover   Missing
+---------------------------------------------------------------------------------------
+src/l9_deploy/__main__.py                      3      1      2      1  60.00%   18
+src/l9_deploy/canonical.py                    37      1      6      1  95.35%   67
+src/l9_deploy/cli.py                         445    178     70      9  55.53%   63, 68-73, 77, 81-84, 97-98, 118-128, 132-133, 143-144, 157-161, 165-174, 178-179, 185-192, 196-234, 238-244, 252-257, 261-303, 307-313, 320-325, 333, 356, 359-362, 374-404, 408-409, 418-422, 426-441, 449-452, 456-460, 464-472, 476-478, 484-495, 503-515, 521, 715, 722, 724-730, 734
+src/l9_deploy/contracts/alias_policy.py       51      8     30      9  79.01%   31, 33, 40, 43-44, 51, 55, 71, 84->79
+src/l9_deploy/contracts/compatibility.py      13      1      4      1  88.24%   27
+src/l9_deploy/contracts/loader.py             12      2      2      0  85.71%   28-29
+src/l9_deploy/contracts/models.py            333      2     22      3  98.59%   403, 408, 409->414
+src/l9_deploy/contracts/validator.py          45      1     14      3  93.22%   58, 61->55, 89->91
+src/l9_deploy/evidence/approval.py            81     18     44     16  69.60%   28, 35-39, 45, 48->47, 57, 63->61, 65, 71, 93, 97, 99, 101, 103, 105, 107, 109
+src/l9_deploy/evidence/ci.py                  77     15     26      8  73.79%   34, 37-55, 61, 68, 78, 85, 101, 152, 154, 156
+src/l9_deploy/evidence/ledger.py             157     39     50     17  68.12%   50, 52, 55-56, 87-89, 94-108, 113, 142-144, 155, 159, 162, 164, 168, 171, 175, 181, 184, 191, 193, 197, 200
+src/l9_deploy/evidence/publisher.py           13      1      2      1  86.67%   22, 32->41
+src/l9_deploy/evidence/receipts.py            30     10      4      1  61.76%   27, 89-107, 111-116
+src/l9_deploy/execution/backups.py            21      3      2      1  82.61%   38, 50-51
+src/l9_deploy/execution/compose.py            34      6     16      7  74.00%   32, 34, 36, 38->40, 42-43, 46->48, 55
+src/l9_deploy/execution/engine.py            119     10     32      5  90.07%   83, 103, 107-108, 137, 202, 237->250, 248-249, 280-281
+src/l9_deploy/execution/health.py             43     13     20      6  63.49%   40, 43-49, 51-56, 59, 62, 67
+src/l9_deploy/execution/images.py             20      1      4      1  91.67%   46
+src/l9_deploy/execution/remote.py             45     16      4      1  61.22%   35-36, 46-54, 71-80, 97, 111-113
+src/l9_deploy/execution/rollback.py           17      1      2      1  89.47%   35
+src/l9_deploy/integrations/ansible.py         15      0      4      2  89.47%   29->31, 38->40
+src/l9_deploy/integrations/infisical.py       41      1     12      1  96.23%   55
+src/l9_deploy/integrations/opentofu.py        41      4     14      2  85.45%   46, 50-52
+src/l9_deploy/inventory/resolver.py           16      2      4      2  80.00%   30, 34
+src/l9_deploy/logging.py                      20      1      4      2  87.50%   30->32, 40
+src/l9_deploy/planning/migrations.py           7      1      2      1  77.78%   17
+src/l9_deploy/planning/planner.py             27      1      6      3  87.88%   34->36, 43->45, 47
+src/l9_deploy/requests/allowlist.py           15      2      6      3  76.19%   20->19, 22, 31
+src/l9_deploy/requests/idempotency.py         95      5     20      1  94.78%   49-50, 103-104, 148
+src/l9_deploy/requests/parser.py              11      1      4      1  86.67%   27
+src/l9_deploy/requests/verifier.py            54     11     20      9  72.97%   45, 55, 57, 63, 65, 67, 72, 82, 99, 104-109
+src/l9_deploy/subprocesses.py                 39      3      8      0  93.62%   67-69
+---------------------------------------------------------------------------------------
+TOTAL                                       2181    359    486    119  79.45%
+
+25 files skipped due to complete coverage.
+Coverage XML written to file artifacts/coverage.xml
+Required test coverage of 75% reached. Total coverage: 79.45%
+103 passed in 23.37s

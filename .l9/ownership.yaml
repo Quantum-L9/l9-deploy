@@ -1,0 +1,25 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.ownership/v1
+rules:
+  - paths: ["schemas/**", "src/l9_deploy/contracts/**"]
+    owner: deployment-contracts
+  - paths: ["infrastructure/**"]
+    owner: infrastructure
+  - paths: ["ansible/**", "runner/**"]
+    owner: platform-operations
+  - paths: ["src/l9_deploy/execution/**", "deployment/**"]
+    owner: deployment-engine
+  - paths: [".github/workflows/**", "integrations/**", "templates/consumer/**"]
+    owner: platform-integrations
+  - paths: ["docs/**", "README.md", "RUNBOOK.md"]
+    owner: platform-documentation

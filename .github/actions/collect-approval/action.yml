@@ -1,0 +1,56 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [ci, authorization]
+# tags: [L9_CONTRACT, github-environment-approval]
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Collect protected-environment approval
+inputs:
+  request-id:
+    required: true
+  requester:
+    required: true
+  environment:
+    required: true
+  plan-digest:
+    required: true
+  job-name:
+    required: true
+  output-directory:
+    required: false
+    default: artifacts/approval
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REQUEST_ID: ${{ inputs.request-id }}
+        REQUESTER: ${{ inputs.requester }}
+        ENVIRONMENT_NAME: ${{ inputs.environment }}
+        PLAN_DIGEST: ${{ inputs.plan-digest }}
+        JOB_NAME: ${{ inputs.job-name }}
+        OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$OUTPUT_DIRECTORY"
+        api_path="repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/approvals"
+        gh api "$api_path" > "$OUTPUT_DIRECTORY/approval-history.json"
+        gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs" > "$OUTPUT_DIRECTORY/jobs.json"
+        job_id=$(jq -er --arg name "$JOB_NAME" '.jobs[] | select(.name == $name) | .id' "$OUTPUT_DIRECTORY/jobs.json" | head -n1)
+        uv run python scripts/collect-github-approval.py \
+          --approval-history "$OUTPUT_DIRECTORY/approval-history.json" \
+          --request-id "$REQUEST_ID" \
+          --requester "$REQUESTER" \
+          --environment "$ENVIRONMENT_NAME" \
+          --plan-digest "$PLAN_DIGEST" \
+          --repository "$GITHUB_REPOSITORY" \
+          --run-id "$GITHUB_RUN_ID" \
+          --run-attempt "$GITHUB_RUN_ATTEMPT" \
+          --job-id "$job_id" \
+          --workflow-ref "$GITHUB_WORKFLOW_REF" \
+          --approval-api-url "https://api.github.com/$api_path" \
+          --output "$OUTPUT_DIRECTORY/approval-receipt.json"
+        rm -f "$OUTPUT_DIRECTORY/jobs.json"

@@ -1,0 +1,103 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [ci, infrastructure]
+# tags: [L9_CONTRACT, protected-environment, opentofu]
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Provision Apply
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        required: true
+        options: [management, staging, production]
+      plan-run-id:
+        description: Workflow run ID that produced the approved plan artifact
+        type: string
+        required: true
+      artifact-name:
+        type: string
+        required: true
+      expected-plan-digest:
+        type: string
+        required: true
+      allow-destructive:
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+jobs:
+  authorize:
+    name: authorize
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
+      - run: uv sync --all-extras --frozen
+      - uses: ./.github/actions/collect-approval
+        with:
+          request-id: infra-${{ github.run_id }}
+          requester: ${{ github.actor }}
+          environment: ${{ inputs.environment }}
+          plan-digest: ${{ inputs.expected-plan-digest }}
+          job-name: authorize
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: infrastructure-approval-${{ github.run_id }}
+          path: artifacts/approval
+          if-no-files-found: error
+          retention-days: 90
+  apply:
+    needs: authorize
+    runs-on: [self-hosted, l9-deployment, hetzner-private]
+    concurrency: provision-${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: uv sync --all-extras --frozen
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: artifacts/plan
+          run-id: ${{ inputs.plan-run-id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: infrastructure-approval-${{ github.run_id }}
+          path: artifacts/approval
+      - name: Fetch infrastructure credentials through OIDC
+        env:
+          INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_IDENTITY_ID }}
+          INFISICAL_PROJECT_SLUG: ${{ vars.INFISICAL_PROJECT_SLUG }}
+          INFISICAL_OIDC_AUDIENCE: https://github.com/Quantum-L9
+        run: scripts/infisical-oidc-env.sh "${{ vars.INFISICAL_ENV_SLUG }}"
+      - name: Apply exact plan
+        env:
+          ALLOW_DESTRUCTIVE: ${{ inputs.allow-destructive }}
+        run: |
+          dir="infrastructure/opentofu/environments/${{ inputs.environment }}"
+          args=()
+          if [[ "$ALLOW_DESTRUCTIVE" == true ]]; then args+=(--allow-destructive); fi
+          uv run l9-deploy infra apply \
+            --environment "${{ inputs.environment }}" \
+            --working-directory "$dir" \
+            --plan-file "$GITHUB_WORKSPACE/artifacts/plan/tfplan" \
+            --plan-receipt "$GITHUB_WORKSPACE/artifacts/plan/infrastructure-plan.json" \
+            --expected-plan-digest "${{ inputs.expected-plan-digest }}" \
+            --approval-receipt artifacts/approval/approval-receipt.json \
+            --approval-history artifacts/approval/approval-history.json \
+            --approval-run-id "${{ github.run_id }}" \
+            --request-id "infra-${{ github.run_id }}" \
+            --requester "${{ github.actor }}" \
+            "${args[@]}" \
+            --json

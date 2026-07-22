@@ -1,0 +1,27 @@
+#!/usr/sbin/nft -f
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+flush ruleset
+table inet filter {
+ chain input {
+  type filter hook input priority 0; policy drop;
+  iif lo accept
+  ct state established,related accept
+  ip protocol icmp accept
+  ip6 nexthdr ipv6-icmp accept
+  ip saddr {{ l9_management_cidr }} tcp dport {{ l9_ssh_port }} accept
+  {% for port in l9_allowed_public_ports %}tcp dport {{ port }} accept
+  {% endfor %}
+ }
+ chain forward { type filter hook forward priority 0; policy drop; ct state established,related accept; }
+ chain output { type filter hook output priority 0; policy accept; }
+}

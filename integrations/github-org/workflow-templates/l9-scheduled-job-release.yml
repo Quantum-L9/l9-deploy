@@ -1,0 +1,36 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: L9 Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options: [staging, production]
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+jobs:
+  release:
+    uses: Quantum-L9/l9-ci-core/.github/workflows/container-release.yml@v1
+    with:
+      deployment-profile: .l9/deployment.yaml
+      image-repository: "{{IMAGE}}"
+      environment: ${{ inputs.environment || 'production' }}
+      verify-command: npm run verify:all
+    secrets: inherit

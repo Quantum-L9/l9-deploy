@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+set -euo pipefail
+file=${1:?backup file required}
+test -s "$file"
+sha256sum --check "$file.sha256"
+gzip -t "$file"

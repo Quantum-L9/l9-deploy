@@ -1,0 +1,39 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [governance, ci]
+# tags: [L9_CONTRACT, pre-commit]
+# owner: platform
+# status: active
+# --- /L9_META ---
+repos:
+  - repo: local
+    hooks:
+      - id: l9-meta
+        name: Verify L9 metadata coverage
+        entry: python scripts/verify-l9-meta.py
+        language: system
+        pass_filenames: false
+      - id: l9-fast-contract-scan
+        name: Run fast L9 contract preflight
+        entry: python scripts/fast-contract-scan.py
+        language: system
+        pass_filenames: false
+      - id: l9-recursive-alignment
+        name: Verify L9 deployment-platform alignment
+        entry: python scripts/validate-alignment.py
+        language: system
+        pass_filenames: false
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.10
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace

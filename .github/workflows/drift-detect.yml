@@ -1,0 +1,68 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Infrastructure Drift
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [management, staging, production]
+    environment: ${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
+      - run: uv sync --all-extras --frozen
+      - run: scripts/install-opentofu.sh 1.11.7
+      - run: npm install --global @infisical/cli@0.43.84
+      - name: Fetch state credentials
+        env:
+          INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_IDENTITY_ID }}
+          INFISICAL_PROJECT_SLUG: ${{ vars.INFISICAL_PROJECT_SLUG }}
+        run: scripts/infisical-oidc-env.sh "${{ vars.INFISICAL_ENV_SLUG }}"
+      - name: Render backend
+        run: |
+          umask 077
+          cat > backend.hcl <<EOF
+          bucket = "$L9_STATE_BUCKET"
+          key = "l9-deployment-platform/${{ matrix.environment }}/tofu.tfstate"
+          region = "$L9_STATE_REGION"
+          endpoints = { s3 = "$L9_STATE_ENDPOINT" }
+          access_key = "$AWS_ACCESS_KEY_ID"
+          secret_key = "$AWS_SECRET_ACCESS_KEY"
+          use_path_style = true
+          skip_credentials_validation = true
+          skip_region_validation = true
+          skip_requesting_account_id = true
+          skip_metadata_api_check = true
+          use_lockfile = true
+          EOF
+      - name: Plan drift
+        run: |
+          dir="infrastructure/opentofu/environments/${{ matrix.environment }}"
+          tofu -chdir="$dir" init -input=false -backend-config="$GITHUB_WORKSPACE/backend.hcl"
+          uv run l9-deploy infra plan --environment "${{ matrix.environment }}" --working-directory "$dir" --plan-file "$GITHUB_WORKSPACE/drift-${{ matrix.environment }}.tfplan" --output "$GITHUB_WORKSPACE/drift-${{ matrix.environment }}.json" --json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: drift-${{ matrix.environment }}-${{ github.run_id }}
+          path: drift-${{ matrix.environment }}.json
+          if-no-files-found: error
+          retention-days: 30

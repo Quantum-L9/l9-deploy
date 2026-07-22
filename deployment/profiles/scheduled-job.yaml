@@ -1,0 +1,16 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.runtime-profile/v1
+id: scheduled-job
+requires: [exact_image_digest, bounded_timeout, success_exit_code]
+allows: [external_dependencies, output_receipts]
+forbids: [unbounded_daemon, public_ingress, mutable_image_tag]

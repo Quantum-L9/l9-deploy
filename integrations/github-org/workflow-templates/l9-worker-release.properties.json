@@ -1,0 +1,11 @@
+{
+  "name": "L9 Worker Release",
+  "description": "Thin caller for an L9 background worker release.",
+  "iconName": "octicon package",
+  "categories": [
+    "Deployment"
+  ],
+  "filePatterns": [
+    "^\\.l9/deployment\\.yaml$"
+  ]
+}

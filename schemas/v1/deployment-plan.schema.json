@@ -1,0 +1,133 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/deployment-plan/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "environment": {
+      "pattern": "^[a-z][a-z0-9-]{1,31}$",
+      "type": "string"
+    },
+    "image_ref": {
+      "pattern": "^ghcr\\.io/[a-z0-9._-]+/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "plan_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "previous_release": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "profile_digest": {
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,63}$"
+    },
+    "request_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "requested_by": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema": {
+      "const": "l9.deployment-plan/v1"
+    },
+    "source_commit_sha": {
+      "pattern": "^[a-f0-9]{40}$",
+      "type": "string"
+    },
+    "steps": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "details": {
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "verify",
+              "backup",
+              "migration",
+              "pull",
+              "render",
+              "deploy",
+              "health",
+              "promote",
+              "cleanup",
+              "rollback"
+            ]
+          },
+          "mutating": {
+            "type": "boolean"
+          },
+          "timeout_seconds": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "mutating",
+          "timeout_seconds"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "target_servers": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema",
+    "request_id",
+    "requested_by",
+    "project_id",
+    "environment",
+    "source_commit_sha",
+    "image_ref",
+    "profile_digest",
+    "target_servers",
+    "previous_release",
+    "steps",
+    "created_at",
+    "plan_digest"
+  ],
+  "title": "L9 Deployment Plan",
+  "type": "object"
+}

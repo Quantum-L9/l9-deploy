@@ -1,0 +1,23 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [governance, integration]
+# tags: [L9_CONTRACT, canonical-provider]
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.governance-provider/v1
+metadata_provider:
+  authority: Quantum-L9/l9-meta-injector
+  integration_mode: contract-compatible local projection
+  note: local injector implements the canonical L9_META block contract until the provider is published as a consumable package
+contract_evidence_provider:
+  authority: Quantum-L9/l9-ci-sdk
+  executable: l9-ci
+  minimum_version: 1.0.0
+  pin_policy: immutable_sha_in_ci
+scanner:
+  provider: semgrep
+  policy: .l9/policies/l9-deployment-contracts.yml
+  normalization: l9-ci semgrep normalize
+  fail_closed: true

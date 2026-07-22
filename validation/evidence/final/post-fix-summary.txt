@@ -1,0 +1,14 @@
+version=0.1.5
+tests_passed=103
+warnings=0
+branch_coverage_percent=79.45
+coverage_floor_percent=75
+canonical_documents=6
+schemas=20
+metadata_eligible_files=326
+fast_contract_findings=0
+local_findings_confirmed=20
+local_findings_resolved=20
+local_findings_remaining=0
+exact_archive_validation=DETACHED_REQUIRED
+production_ready=UNKNOWN

@@ -1,0 +1,27 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.architecture/v1
+repository: Quantum-L9/l9-deployment-platform
+planes:
+  infrastructure:
+    owner: infrastructure/opentofu
+  host_configuration:
+    owner: ansible
+  deployment_execution:
+    owner: src/l9_deploy
+  consumer_projection:
+    owner: templates/consumer
+boundaries:
+  - l9-ci-sdk owns canonical CI evidence
+  - l9-ci-core owns CI and release orchestration
+  - this repository owns provisioning and deployment mutations
+  - centralized observability remains external

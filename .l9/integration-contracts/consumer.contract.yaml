@@ -1,0 +1,18 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.integration-contract/v1
+producer: consumer repository
+consumer: Quantum-L9/l9-deployment-platform
+transport: repository_dispatch
+event_type: l9.release.requested.v1
+requires: [exact source commit, exact OCI digest, profile digest, evidence digest, PASS gate, environment, idempotency key]
+prohibits: [arbitrary command, host override, SSH material, Hetzner credential, mutable tag]

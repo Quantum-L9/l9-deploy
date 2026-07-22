@@ -1,0 +1,64 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": ["contracts"],
+    "tags": ["L9_META", "release-artifact-binding"],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/release-artifact-binding/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Release Artifact Binding",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "l9.release-artifact-binding/v1"},
+    "binding_id": {"type": "string", "format": "uuid"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {"type": "string"},
+        "commit_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+        "ref": {"type": "string", "pattern": "^refs/"},
+        "run_id": {"type": "integer", "minimum": 1}
+      },
+      "required": ["repository", "commit_sha", "ref", "run_id"]
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image_ref": {"type": "string", "pattern": "^ghcr\\.io/[a-z0-9._-]+/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$"},
+        "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+      },
+      "required": ["image_ref", "digest"]
+    },
+    "canonical": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gate_binding_path": {"type": "string", "minLength": 1},
+        "gate_binding_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+        "bundle_path": {"type": "string", "minLength": 1},
+        "bundle_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+      },
+      "required": ["gate_binding_path", "gate_binding_digest", "bundle_path", "bundle_digest"]
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {"type": "string"},
+        "workflow_ref": {"type": "string"},
+        "run_id": {"type": "integer", "minimum": 1},
+        "artifact_name": {"type": "string", "minLength": 1}
+      },
+      "required": ["repository", "workflow_ref", "run_id", "artifact_name"]
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "binding_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  },
+  "required": ["schema", "binding_id", "source", "artifact", "canonical", "workflow", "created_at", "binding_digest"]
+}

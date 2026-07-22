@@ -1,0 +1,15 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+# Rendered from Infisical at deployment time.
+# This file is never committed and must remain mode 0600.
+{% for key, value in environment.items() %}{{ key }}={{ value }}
+{% endfor %}

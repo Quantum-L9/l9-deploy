@@ -1,0 +1,71 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.deployment-profile/v1
+project:
+  id: seo-bot
+  repository: Quantum-L9/SEO-Bot
+  owner_team: platform
+  runtime_profile: stateful-container
+artifact:
+  registry: ghcr.io
+  image: ghcr.io/quantum-l9/seo-bot
+  require_digest: true
+  require_provenance_attestation: true
+  require_sbom_attestation: true
+runtime:
+  architecture: linux/amd64
+  container_port: 3100
+  user: non_root
+  read_only_root_filesystem: false
+  stop_grace_seconds: 30
+health:
+  startup: {type: http, path: /health, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 24}
+  post_deploy: {type: http, path: /health, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 12}
+release:
+  strategy: rolling-single-host
+  retain_successful_releases: 5
+  automatic_rollback: true
+  production_approval_required: true
+  stabilization_seconds: 30
+migrations:
+  enabled: true
+  command: [npm, run, migrate]
+  mode: pre_start
+  use_release_image: true
+  backup_required: true
+  timeout_seconds: 600
+  rollback_safe: false
+storage:
+  persistent_volumes:
+    - {name: reports, mount_path: /app/data/reports, backup_policy: before_deploy}
+services:
+  postgres: {mode: managed_on_fleet, required: true}
+  redis: {mode: managed_on_fleet, required: true}
+backup:
+  command: [/usr/local/sbin/l9-postgres-backup, "{project}", "{environment}", "{request_id}"]
+  verify_command: [/usr/local/sbin/l9-backup-verify, /srv/l9/backups/seo-bot/production/latest.sql.gz]
+  restore_test_command: [/usr/local/sbin/l9-restore-test, "{project}", "{environment}"]
+  timeout_seconds: 1800
+secrets:
+  authority: infisical
+  runtime_mode: deploy_render
+  project_slug: seo-bot
+  environment_mapping: {staging: staging, production: prod}
+network:
+  public_ingress: {enabled: true, hostnames: [], tls: automatic}
+  private_dependencies_only: true
+policy:
+  allowed_source_refs:
+    staging: [refs/heads/main]
+    production: [refs/tags/v*]
+  require_clean_ci_gate: true
+  require_profile_digest_match: true

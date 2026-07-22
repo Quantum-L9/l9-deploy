@@ -1,0 +1,40 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.fleet-inventory/v1
+management:
+  runner_server_id: l9-deploy-01
+  private_cidr: 10.90.1.0/24
+environments:
+  management:
+    approval_required: true
+    concurrency_group: l9-management
+    allowed_source_refs: [refs/heads/main, refs/tags/v*]
+  staging:
+    approval_required: false
+    concurrency_group: l9-staging
+    allowed_source_refs: [refs/heads/main]
+  production:
+    approval_required: true
+    concurrency_group: l9-production
+    allowed_source_refs: [refs/tags/v*]
+servers:
+  - schema: l9.server-profile/v1
+    id: l9-deploy-01
+    environment: management
+    provider: hetzner
+    private_ip: 10.90.1.10
+    public_ip: null
+    ssh: {user: l9deploy, port: 22}
+    roles: [management]
+    labels: {managed_by: l9-deployment-platform}
+    conformance: {profile: management-runner, max_age_hours: 24}
+projects: []

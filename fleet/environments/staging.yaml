@@ -1,0 +1,16 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.fleet-environment/v1
+id: staging
+private_cidr: 10.90.10.0/24
+public_ingress: application_ports_only
+approval_required: false

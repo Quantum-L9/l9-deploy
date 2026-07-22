@@ -1,0 +1,17 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.migration-policy/v1
+rules:
+  - backup must succeed before a migration marked backup_required
+  - migrations run from the exact release image when use_release_image is true
+  - database rollback is never inferred from image rollback
+  - unknown compatibility blocks production deployment

@@ -1,0 +1,146 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/deployment-request/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "enum": [
+            "linux/amd64",
+            "linux/arm64"
+          ]
+        },
+        "digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "type": "string"
+        },
+        "image": {
+          "pattern": "^ghcr\\.io/[a-z0-9._-]+/[a-z0-9._/-]+$",
+          "type": "string"
+        },
+        "image_ref": {
+          "pattern": "^ghcr\\.io/[a-z0-9._-]+/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image",
+        "digest",
+        "image_ref"
+      ],
+      "type": "object"
+    },
+    "evidence": {
+      "$ref": "https://schemas.quantum-l9.invalid/l9/release-evidence-reference/v1"
+    },
+    "idempotency_key": {
+      "maxLength": 200,
+      "minLength": 16,
+      "type": "string"
+    },
+    "profile": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+        }
+      },
+      "required": [
+        "path",
+        "digest"
+      ],
+      "type": "object"
+    },
+    "request_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "requested_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "requested_by": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema": {
+      "const": "l9.deployment-request/v1"
+    },
+    "source": {
+      "additionalProperties": false,
+      "properties": {
+        "commit_sha": {
+          "pattern": "^[a-f0-9]{40}$",
+          "type": "string"
+        },
+        "ref": {
+          "pattern": "^refs/",
+          "type": "string"
+        },
+        "repository": {
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "type": "string"
+        },
+        "run_id": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "repository",
+        "commit_sha",
+        "ref",
+        "run_id"
+      ],
+      "type": "object"
+    },
+    "target": {
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "pattern": "^[a-z][a-z0-9-]{1,31}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "environment"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema",
+    "request_id",
+    "idempotency_key",
+    "source",
+    "artifact",
+    "profile",
+    "evidence",
+    "target",
+    "requested_by",
+    "requested_at"
+  ],
+  "title": "L9 Deployment Request",
+  "type": "object"
+}

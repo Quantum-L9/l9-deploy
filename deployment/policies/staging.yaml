@@ -1,0 +1,20 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.environment-policy/v1
+environment: staging
+approval_required: false
+exact_digest_required: true
+attestation_required: true
+sbom_required: true
+automatic_rollback: true
+receipt_persistence_required: true
+concurrency: 1

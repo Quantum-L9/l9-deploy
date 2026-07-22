@@ -1,0 +1,21 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+terraform {
+  required_version = ">= 1.8.0, < 2.0.0"
+
+  required_providers {
+    hcloud = {
+      source  = "hetznercloud/hcloud"
+      version = "1.66.1"
+    }
+  }
+}

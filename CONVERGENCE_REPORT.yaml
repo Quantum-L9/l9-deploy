@@ -1,0 +1,39 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [repository, validation]
+# tags: [L9_META, deployment-platform, convergence]
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.validation-convergence/v1
+artifact: Quantum-L9/l9-deployment-platform
+artifact_version: 0.1.5
+status: converged_with_external_validation_blockers
+passes:
+- complete_inventory_and_contract_extraction
+- baseline_execution_and_evidence_reconciliation
+- wire_alias_and_schema_parity_correction
+- transaction_security_and_idempotency_hardening
+- source_release_receipt_and_workflow_confinement
+- typed_backup_and_cli_output_ownership_repairs
+- warning_coverage_contract_and_l9_governance_gates
+- release_tooling_self_contamination_repair
+- deterministic_packaging_and_clean_archive_revalidation
+confirmed_findings:
+  total: 20
+  resolved: 20
+  unresolved: 0
+local_release_blockers: 0
+external_blockers:
+- github_environment_approval
+- ghcr_attestation
+- opentofu_remote_plan_and_apply
+- ansible_idempotency
+- dedicated_runner_isolation
+- infisical_oidc
+- staging_deployment_and_rollback
+- backup_restore
+- canonical_python_3_12_ci_toolchain
+same_result_after_adversarial_pass: true
+stop_condition: further_proof_requires_external_tools_credentials_or_live_infrastructure

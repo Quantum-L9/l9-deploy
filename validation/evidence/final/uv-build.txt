@@ -1,0 +1,8 @@
+  × Failed to build
+  │ `/mnt/data/l9-deployment-platform-frontier-work/l9-deployment-platform`
+  ╰─▶ No interpreter found for Python 3.12 in virtual environments, managed
+      installations, or search path
+
+      hint: A managed Python download is available for Python 3.12, but uv is
+      set to offline mode
+exit_code=2

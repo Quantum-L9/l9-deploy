@@ -1,0 +1,20 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: {{ project_id }}
+services:
+  app:
+    image: {{ image_ref }}
+    env_file: [{{ env_file }}]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+networks:
+  default: {external: true, name: l9-runtime}

@@ -1,0 +1,23 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+- name: Require pinned Caddy package version
+  ansible.builtin.assert: {that: [l9_caddy_package_version is defined], fail_msg: "Set l9_caddy_package_version to the exact apt package version approved for this fleet."}
+- name: Install Caddy repository key
+  ansible.builtin.get_url: {url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key, dest: /etc/apt/keyrings/caddy-stable.asc, mode: "0644"}
+- name: Configure Caddy repository
+  ansible.builtin.apt_repository: {repo: "deb [signed-by=/etc/apt/keyrings/caddy-stable.asc] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main", state: present}
+- name: Install pinned Caddy
+  ansible.builtin.apt: {name: "caddy={{ l9_caddy_package_version }}", state: present, update_cache: true}
+- name: Hold Caddy version
+  ansible.builtin.dpkg_selections: {name: caddy, selection: hold}
+- name: Enable Caddy
+  ansible.builtin.service: {name: caddy, state: started, enabled: true}

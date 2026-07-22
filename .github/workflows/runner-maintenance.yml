@@ -1,0 +1,86 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [ci, runner]
+# tags: [L9_CONTRACT, protected-environment, maintenance]
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Runner Maintenance
+on:
+  workflow_dispatch:
+    inputs:
+      expected-plan-digest:
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+jobs:
+  authorize:
+    name: authorize
+    runs-on: ubuntu-latest
+    environment: management
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
+      - run: uv sync --all-extras --frozen
+      - uses: ./.github/actions/collect-approval
+        with:
+          request-id: runner-${{ github.run_id }}
+          requester: ${{ github.actor }}
+          environment: management
+          plan-digest: ${{ inputs.expected-plan-digest }}
+          job-name: authorize
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: runner-approval-${{ github.run_id }}
+          path: artifacts/approval
+          if-no-files-found: error
+          retention-days: 90
+  maintenance:
+    needs: authorize
+    runs-on: [self-hosted, l9-deployment, hetzner-private]
+    concurrency: runner-maintenance
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: uv sync --all-extras --frozen
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: runner-approval-${{ github.run_id }}
+          path: artifacts/approval
+      - name: Verify independent management approval
+        run: >-
+          uv run l9-deploy approval verify
+          --environment management
+          --expected-plan-digest "${{ inputs.expected-plan-digest }}"
+          --approval-receipt artifacts/approval/approval-receipt.json
+          --approval-history artifacts/approval/approval-history.json
+          --approval-run-id "${{ github.run_id }}"
+          --request-id "runner-${{ github.run_id }}"
+          --requester "${{ github.actor }}"
+          --json
+      - run: uv run python scripts/generate-inventory.py
+      - name: Require runner maintenance credentials
+        env:
+          L9_RUNNER_REGISTRATION_TOKEN: ${{ secrets.L9_RUNNER_REGISTRATION_TOKEN }}
+          L9_RUNNER_SHA256: ${{ secrets.L9_RUNNER_SHA256 }}
+        run: |
+          test -n "$L9_RUNNER_REGISTRATION_TOKEN"
+          [[ "$L9_RUNNER_SHA256" =~ ^[a-f0-9]{64}$ ]]
+      - name: Reconcile repository-scoped runner
+        env:
+          L9_RUNNER_REGISTRATION_TOKEN: ${{ secrets.L9_RUNNER_REGISTRATION_TOKEN }}
+          L9_RUNNER_SHA256: ${{ secrets.L9_RUNNER_SHA256 }}
+        run: >-
+          ansible-playbook
+          -i ansible/inventories/generated/hosts.yml
+          ansible/playbooks/configure-runner.yml
+          --limit management
+          -e "l9_runner_registration_token=$L9_RUNNER_REGISTRATION_TOKEN"
+          -e "l9_runner_sha256=$L9_RUNNER_SHA256"

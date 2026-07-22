@@ -1,0 +1,123 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/approval-receipt/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GitHub Protected Environment Approval Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "l9.approval-receipt/v1"
+    },
+    "approval_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "request_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "environment": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,31}$"
+    },
+    "plan_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "requester": {
+      "type": "string",
+      "minLength": 1
+    },
+    "approved": {
+      "const": true
+    },
+    "approved_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authorization_method": {
+      "const": "github_protected_environment_review"
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "const": "Quantum-L9/l9-deployment-platform"
+        },
+        "run_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "run_attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "job_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "workflow_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "environment": {
+          "type": "string"
+        },
+        "approval_api_url": {
+          "type": "string",
+          "pattern": "^https://api\\.github\\.com/"
+        },
+        "approval_record_digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "repository",
+        "run_id",
+        "run_attempt",
+        "job_id",
+        "workflow_ref",
+        "environment",
+        "approval_api_url",
+        "approval_record_digest"
+      ]
+    },
+    "receipt_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "schema",
+    "approval_id",
+    "request_id",
+    "environment",
+    "plan_digest",
+    "requester",
+    "approved",
+    "approved_by",
+    "approved_at",
+    "authorization_method",
+    "workflow",
+    "receipt_digest"
+  ]
+}

@@ -1,0 +1,19 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+- name: Create deployment group
+  ansible.builtin.group: {name: "{{ l9_deploy_group }}", state: present}
+- name: Create deployment user
+  ansible.builtin.user: {name: "{{ l9_deploy_user }}", group: "{{ l9_deploy_group }}", groups: docker, append: true, create_home: true, shell: /bin/bash}
+- name: Install deployment authorized keys
+  ansible.posix.authorized_key: {user: "{{ l9_deploy_user }}", key: "{{ item }}", state: present, exclusive: false}
+  loop: "{{ l9_deploy_authorized_keys | default([]) }}"
+  no_log: true

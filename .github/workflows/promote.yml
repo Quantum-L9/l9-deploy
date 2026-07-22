@@ -1,0 +1,70 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Promote Staging Release
+on:
+  workflow_dispatch:
+    inputs:
+      source-run-id:
+        description: Workflow run that produced the staging request and receipt artifacts
+        type: string
+        required: true
+      request-artifact:
+        type: string
+        required: true
+      receipt-artifact:
+        type: string
+        required: true
+      expected-staging-receipt-digest:
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: write
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency: promote-production
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
+      - run: uv sync --all-extras --frozen
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ inputs.request-artifact }}
+          path: artifacts/request
+          run-id: ${{ inputs.source-run-id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ inputs.receipt-artifact }}
+          path: artifacts/receipt
+          run-id: ${{ inputs.source-run-id }}
+          github-token: ${{ github.token }}
+      - name: Create production request bound to staging evidence
+        run: >-
+          uv run python scripts/promote-request.py
+          --request artifacts/request/request.json
+          --staging-receipt artifacts/receipt/deployment-receipt.json
+          --expected-staging-receipt-digest "${{ inputs.expected-staging-receipt-digest }}"
+          --output production-request.json
+      - name: Dispatch production request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jq -n \
+            --arg event_type 'l9.release.requested.v1' \
+            --slurpfile payload production-request.json \
+            '{event_type:$event_type,client_payload:$payload[0]}' > dispatch.json
+          gh api --method POST "repos/${{ github.repository }}/dispatches" --input dispatch.json

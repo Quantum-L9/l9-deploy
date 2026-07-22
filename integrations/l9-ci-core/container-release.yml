@@ -1,0 +1,172 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [integration, ci]
+# tags: [L9_CONTRACT, l9-ci-core, canonical-evidence]
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: L9 Container Release Kernel
+on:
+  workflow_call:
+    inputs:
+      deployment-profile:
+        description: Repository-relative deployment profile path
+        required: true
+        type: string
+      image-repository:
+        description: GHCR repository without a tag
+        required: true
+        type: string
+      environment:
+        description: staging or production
+        required: true
+        type: string
+      canonical-evidence-artifact:
+        description: Artifact produced by l9-ci-core containing ci-gate-binding.json and finding-bundle.json
+        required: true
+        type: string
+      docker-context:
+        required: false
+        type: string
+        default: .
+      dockerfile:
+        required: false
+        type: string
+        default: Dockerfile
+      verify-command:
+        required: true
+        type: string
+    secrets:
+      deployment-broker-token:
+        required: true
+    outputs:
+      image-digest:
+        value: ${{ jobs.release.outputs.image-digest }}
+      image-ref:
+        value: ${{ jobs.release.outputs.image-ref }}
+      deployment-request-id:
+        value: ${{ jobs.release.outputs.deployment-request-id }}
+permissions:
+  contents: read
+  actions: read
+  packages: write
+  id-token: write
+  attestations: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      image-digest: ${{ steps.metadata.outputs.image_digest }}
+      image-ref: ${{ steps.metadata.outputs.image_ref }}
+      deployment-request-id: ${{ steps.request.outputs.request_id }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ inputs.canonical-evidence-artifact }}
+          path: artifacts/canonical-evidence
+      - name: Install pinned canonical SDK
+        run: |
+          git clone --filter=blob:none https://github.com/Quantum-L9/l9-ci-sdk.git .l9-ci-sdk
+          git -C .l9-ci-sdk checkout 6368ba17a98231d461a13b71e149e114ad766834
+          python3 -m pip install --disable-pip-version-check ./.l9-ci-sdk
+      - id: canonical
+        name: Verify canonical CI evidence
+        env:
+          EVIDENCE_ARTIFACT: ${{ inputs.canonical-evidence-artifact }}
+        run: |
+          test -f artifacts/canonical-evidence/ci-gate-binding.json
+          test -f artifacts/canonical-evidence/finding-bundle.json
+          l9-ci bundle validate artifacts/canonical-evidence/finding-bundle.json
+          bundle_digest="sha256:$(sha256sum artifacts/canonical-evidence/finding-bundle.json | awk '{print $1}')"
+          test "$(jq -er '.schema' artifacts/canonical-evidence/ci-gate-binding.json)" = 'l9.ci-gate-binding/v1'
+          test "$(jq -er '.status' artifacts/canonical-evidence/ci-gate-binding.json)" = 'PASS'
+          test "$(jq -er '.source.repository' artifacts/canonical-evidence/ci-gate-binding.json)" = '${{ github.repository }}'
+          test "$(jq -er '.source.commit_sha' artifacts/canonical-evidence/ci-gate-binding.json)" = '${{ github.sha }}'
+          test "$(jq -er '.source.ref' artifacts/canonical-evidence/ci-gate-binding.json)" = '${{ github.ref }}'
+          test "$(jq -er '.canonical.bundle_digest' artifacts/canonical-evidence/ci-gate-binding.json)" = "$bundle_digest"
+          test "$(jq -er '.workflow.artifact_name' artifacts/canonical-evidence/ci-gate-binding.json)" = "$EVIDENCE_ARTIFACT"
+          gate_binding_digest="sha256:$(sha256sum artifacts/canonical-evidence/ci-gate-binding.json | awk '{print $1}')"
+          echo "bundle_digest=$bundle_digest" >> "$GITHUB_OUTPUT"
+          echo "gate_binding_digest=$gate_binding_digest" >> "$GITHUB_OUTPUT"
+          echo "schema_version=$(jq -er '.canonical.schema_version' artifacts/canonical-evidence/ci-gate-binding.json)" >> "$GITHUB_OUTPUT"
+          echo "sdk_version=$(jq -er '.canonical.sdk_version' artifacts/canonical-evidence/ci-gate-binding.json)" >> "$GITHUB_OUTPUT"
+      - name: Run repository release verification
+        run: ${{ inputs.verify-command }}
+      - name: Authenticate to GHCR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build and publish one immutable OCI image
+        run: >-
+          docker buildx build
+          --file "${{ inputs.dockerfile }}"
+          --platform linux/amd64
+          --label "org.opencontainers.image.revision=${{ github.sha }}"
+          --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}"
+          --provenance=mode=max
+          --sbom=true
+          --metadata-file build-metadata.json
+          --tag "${{ inputs.image-repository }}:${{ github.sha }}"
+          --push
+          "${{ inputs.docker-context }}"
+      - id: metadata
+        name: Resolve published digest
+        env:
+          IMAGE_REPOSITORY: ${{ inputs.image-repository }}
+        run: |
+          digest=$(jq -er '."containerimage.digest"' build-metadata.json)
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "image_digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "image_ref=$IMAGE_REPOSITORY@$digest" >> "$GITHUB_OUTPUT"
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v2
+        with:
+          subject-name: ${{ inputs.image-repository }}
+          subject-digest: ${{ steps.metadata.outputs.image_digest }}
+          push-to-registry: true
+      - id: request
+        name: Bind external CI evidence to immutable image
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE_REPOSITORY: ${{ inputs.image-repository }}
+          IMAGE_DIGEST: ${{ steps.metadata.outputs.image_digest }}
+          IMAGE_REF: ${{ steps.metadata.outputs.image_ref }}
+          PROFILE: ${{ inputs.deployment-profile }}
+          BUNDLE_DIGEST: ${{ steps.canonical.outputs.bundle_digest }}
+          GATE_BINDING_DIGEST: ${{ steps.canonical.outputs.gate_binding_digest }}
+          SDK_VERSION: ${{ steps.canonical.outputs.sdk_version }}
+          SCHEMA_VERSION: ${{ steps.canonical.outputs.schema_version }}
+        run: |
+          profile_digest="sha256:$(sha256sum "$PROFILE" | awk '{print $1}')"
+          request_id=$(python3 -c 'import sys,uuid; sys.stdout.write(str(uuid.uuid4()))')
+          binding_id=$(python3 -c 'import sys,uuid; sys.stdout.write(str(uuid.uuid4()))')
+          requested_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          artifact_name="l9-release-evidence-${{ github.run_id }}"
+          jq -n             --arg binding_id "$binding_id"             --arg repository "${{ github.repository }}"             --arg commit_sha "${{ github.sha }}"             --arg ref "${{ github.ref }}"             --arg run_id "${{ github.run_id }}"             --arg image_ref "$IMAGE_REF"             --arg digest "$IMAGE_DIGEST"             --arg gate_binding_digest "$GATE_BINDING_DIGEST"             --arg bundle_digest "$BUNDLE_DIGEST"             --arg artifact_name "$artifact_name"             --arg created_at "$requested_at"             '{schema:"l9.release-artifact-binding/v1",binding_id:$binding_id,source:{repository:$repository,commit_sha:$commit_sha,ref:$ref,run_id:($run_id|tonumber)},artifact:{image_ref:$image_ref,digest:$digest},canonical:{gate_binding_path:"ci-gate-binding.json",gate_binding_digest:$gate_binding_digest,bundle_path:"finding-bundle.json",bundle_digest:$bundle_digest},workflow:{repository:$repository,workflow_ref:"${{ github.workflow_ref }}",run_id:($run_id|tonumber),artifact_name:$artifact_name},created_at:$created_at}' > release-artifact-binding.unsigned.json
+          binding_digest=$(python3 -c 'import hashlib,json,sys; d=json.load(open("release-artifact-binding.unsigned.json")); b=json.dumps(d,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode(); sys.stdout.write("sha256:"+hashlib.sha256(b).hexdigest())')
+          jq --arg digest "$binding_digest" '. + {binding_digest:$digest}' release-artifact-binding.unsigned.json > release-artifact-binding.json
+          artifact_binding_file_digest="sha256:$(sha256sum release-artifact-binding.json | awk '{print $1}')"
+          mkdir -p release-evidence
+          cp artifacts/canonical-evidence/finding-bundle.json release-evidence/finding-bundle.json
+          cp artifacts/canonical-evidence/ci-gate-binding.json release-evidence/ci-gate-binding.json
+          cp release-artifact-binding.json release-evidence/release-artifact-binding.json
+          jq -n             --arg request_id "$request_id"             --arg repository "${{ github.repository }}"             --arg commit_sha "${{ github.sha }}"             --arg ref "${{ github.ref }}"             --arg run_id "${{ github.run_id }}"             --arg image "$IMAGE_REPOSITORY"             --arg digest "$IMAGE_DIGEST"             --arg image_ref "$IMAGE_REF"             --arg profile_path "$PROFILE"             --arg profile_digest "$profile_digest"             --arg bundle_digest "$BUNDLE_DIGEST"             --arg gate_binding_digest "$GATE_BINDING_DIGEST"             --arg artifact_binding_digest "$artifact_binding_file_digest"             --arg artifact_name "$artifact_name"             --arg schema_version "$SCHEMA_VERSION"             --arg sdk_version "$SDK_VERSION"             --arg environment "$ENVIRONMENT"             --arg actor "${{ github.actor }}"             --arg requested_at "$requested_at"             '{schema:"l9.deployment-request/v1",request_id:$request_id,idempotency_key:("release:"+$repository+":"+$commit_sha+":"+$environment),source:{repository:$repository,commit_sha:$commit_sha,ref:$ref,run_id:($run_id|tonumber)},artifact:{image:$image,digest:$digest,image_ref:$image_ref,architecture:"linux/amd64"},profile:{path:$profile_path,digest:$profile_digest},evidence:{schema:"l9.release-evidence-reference/v1",schema_version:$schema_version,sdk_version:$sdk_version,bundle_digest:$bundle_digest,gate_binding_digest:$gate_binding_digest,artifact_binding_digest:$artifact_binding_digest,workflow_run_id:($run_id|tonumber),artifact_name:$artifact_name,bundle_path:"finding-bundle.json",gate_binding_path:"ci-gate-binding.json",artifact_binding_path:"release-artifact-binding.json",provenance_reference:("oci://"+$image_ref+"#provenance"),sbom_reference:("oci://"+$image_ref+"#sbom")},target:{environment:$environment},requested_by:$actor,requested_at:$requested_at}' > deployment-request.json
+          echo "request_id=$request_id" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: l9-release-evidence-${{ github.run_id }}
+          path: release-evidence
+          if-no-files-found: error
+          retention-days: 90
+      - name: Dispatch private deployment control plane
+        env:
+          GH_TOKEN: ${{ secrets.deployment-broker-token }}
+        run: |
+          jq -n --arg event_type 'l9.release.requested.v1' --slurpfile payload deployment-request.json '{event_type:$event_type,client_payload:$payload[0]}' > dispatch.json
+          gh api --method POST repos/Quantum-L9/l9-deployment-platform/dispatches --input dispatch.json
+      - if: always()
+        run: docker logout ghcr.io || true
