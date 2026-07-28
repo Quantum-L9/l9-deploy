@@ -16,7 +16,6 @@ on:
 permissions:
   contents: read
   actions: read
-  id-token: write
 jobs:
   authorize:
     name: authorize

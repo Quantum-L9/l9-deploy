@@ -12,10 +12,6 @@ on:
     types: [l9.release.requested.v1]
 permissions:
   contents: read
-  actions: read
-  packages: read
-  attestations: read
-  id-token: write
 concurrency:
   group: deploy-${{ github.event.client_payload.target.environment }}-${{ github.event.client_payload.source.repository }}
   cancel-in-progress: false
@@ -98,6 +94,12 @@ jobs:
           retention-days: 90
   deploy:
     needs: [validate, authorize]
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+      attestations: read
+      id-token: write
     runs-on: [self-hosted, l9-deployment, hetzner-private]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
