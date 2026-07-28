@@ -6,6 +6,7 @@ tags: [L9_CONTRACT, backup]
 owner: platform
 status: active
 --- /L9_META ---"""
+
 from __future__ import annotations
 
 from ..contracts.models import DeploymentProfile
@@ -23,6 +24,5 @@ def backup_required(profile: DeploymentProfile) -> bool:
     if profile.migrations.enabled and profile.migrations.backup_required:
         return True
     return any(
-        volume.backup_policy == "before_deploy"
-        for volume in profile.storage.persistent_volumes
+        volume.backup_policy == "before_deploy" for volume in profile.storage.persistent_volumes
     )

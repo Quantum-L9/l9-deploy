@@ -12,6 +12,7 @@ status: active
 Validate repository-specific L9 alignment without applying runtime-node rules to the
 non-node infrastructure control plane.
 """
+
 from __future__ import annotations
 
 import ast
@@ -20,7 +21,6 @@ from pathlib import Path
 from typing import Final
 
 import yaml
-
 from _bootstrap import add_repository_src
 
 add_repository_src()
@@ -80,9 +80,7 @@ def python_findings() -> list[str]:
                         isinstance(exception, ast.Name)
                         and exception.id == "Not" + "ImplementedError"
                     ):
-                        findings.append(
-                            f"{relative}:{node.lineno}: unimplemented production path"
-                        )
+                        findings.append(f"{relative}:{node.lineno}: unimplemented production path")
                 if isinstance(node, ast.ExceptHandler):
                     if node.type is None:
                         findings.append(f"{relative}:{node.lineno}: bare except")
@@ -118,9 +116,7 @@ def transport_findings() -> list[str]:
 
 def trust_boundary_findings() -> list[str]:
     findings: list[str] = []
-    release = (ROOT / "integrations/l9-ci-core/container-release.yml").read_text(
-        encoding="utf-8"
-    )
+    release = (ROOT / "integrations/l9-ci-core/container-release.yml").read_text(encoding="utf-8")
     for required in (
         "ci-gate-binding.json",
         "finding-bundle.json",
@@ -146,7 +142,7 @@ def trust_boundary_findings() -> list[str]:
             findings.append(
                 f"{path.relative_to(ROOT)}: mutating workflow lacks independent approval"
             )
-        forbidden_approver = "--approved-by " + "\"${{ github.actor }}\""
+        forbidden_approver = "--approved-by " + '"${{ github.actor }}"'
         if forbidden_approver in text:
             findings.append(f"{path.relative_to(ROOT)}: triggering actor is used as approver")
     return findings

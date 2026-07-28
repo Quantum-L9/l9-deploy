@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import logging
@@ -40,7 +41,6 @@ from .locks import environment_lock
 from .migrations import execute_migration
 from .promotion import promote
 from .rollback import rollback_release
-
 
 LOGGER = logging.getLogger(__name__)
 

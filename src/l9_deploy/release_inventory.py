@@ -10,6 +10,7 @@ status: active
 
 Canonical release-file eligibility shared by generation, packaging, and validation.
 """
+
 from __future__ import annotations
 
 from pathlib import Path, PurePosixPath
@@ -50,9 +51,7 @@ def release_files(root: Path) -> list[Path]:
             path
             for path in root.rglob("*")
             if path.is_file()
-            and not is_forbidden_release_path(
-                PurePosixPath(path.relative_to(root).as_posix())
-            )
+            and not is_forbidden_release_path(PurePosixPath(path.relative_to(root).as_posix()))
         ),
         key=lambda path: path.relative_to(root).as_posix(),
     )

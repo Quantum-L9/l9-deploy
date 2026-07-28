@@ -11,6 +11,7 @@ status: active
 
 Idempotently inject the repository L9_META contract into supported tracked text files.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -23,8 +24,18 @@ import yaml
 
 EXCLUDED_PARTS: Final = {".git", ".venv", ".pytest_cache", "__pycache__", "dist", "build"}
 COMMENT_SUFFIXES: Final = {
-    ".yaml", ".yml", ".tf", ".hcl", ".toml", ".lock", ".sh", ".j2", ".cfg",
-    ".editorconfig", ".gitignore", ".service",
+    ".yaml",
+    ".yml",
+    ".tf",
+    ".hcl",
+    ".toml",
+    ".lock",
+    ".sh",
+    ".j2",
+    ".cfg",
+    ".editorconfig",
+    ".gitignore",
+    ".service",
 }
 COMMENT_NAMES: Final = {"Makefile", "CODEOWNERS", "l9-backup-verify", "l9-postgres-backup"}
 HTML_SUFFIXES: Final = {".md"}

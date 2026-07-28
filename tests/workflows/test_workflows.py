@@ -11,6 +11,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import re
@@ -61,6 +62,7 @@ def test_pull_request_jobs_never_use_self_hosted_runner() -> None:
             if isinstance(job, dict):
                 assert "self-hosted" not in str(job.get("runs-on"))
 
+
 def test_validation_workflow_enforces_coverage_floor() -> None:
     text = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
     assert "--cov=l9_deploy" in text
@@ -77,4 +79,3 @@ def test_release_workflow_uses_detached_outputs_and_receipt_binding() -> None:
     assert "PYTHONDONTWRITEBYTECODE" in text
     assert '"dist/' not in text
     assert "'dist/" not in text
-

@@ -11,6 +11,7 @@ status: active
 
 Create a digest-bound receipt from GitHub's workflow-run approval-history API response.
 """
+
 from __future__ import annotations
 
 import argparse

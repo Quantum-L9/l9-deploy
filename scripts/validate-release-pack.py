@@ -11,6 +11,7 @@ status: active
 
 Validate release metadata, checksums, inventory completeness, and archive byte parity.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -186,11 +187,7 @@ def _validate_archive(archive: Path, root: Path) -> dict[str, object]:
         if len(names) != len(set(names)):
             raise ValueError("archive contains duplicate member names")
 
-        roots = {
-            PurePosixPath(name).parts[0]
-            for name in names
-            if PurePosixPath(name).parts
-        }
+        roots = {PurePosixPath(name).parts[0] for name in names if PurePosixPath(name).parts}
         if roots != {CANONICAL_ROOT}:
             raise ValueError(f"archive must contain one canonical root, found {sorted(roots)}")
 

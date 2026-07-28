@@ -10,6 +10,7 @@ status: active
 
 Two-phase idempotency state for convergent deployment transactions.
 """
+
 from __future__ import annotations
 
 import fcntl
@@ -57,9 +58,7 @@ class IdempotencyStore:
         state: IdempotencyDocument,
         entries: dict[str, IdempotencyEntry],
     ) -> IdempotencyDocument:
-        return IdempotencyDocument.model_validate(
-            {"schema": state.schema_id, "entries": entries}
-        )
+        return IdempotencyDocument.model_validate({"schema": state.schema_id, "entries": entries})
 
     @staticmethod
     def _entry(
@@ -85,9 +84,7 @@ class IdempotencyStore:
             existing = state.entries.get(key)
             if existing is not None:
                 if existing.request_digest != request_digest:
-                    raise AuthorizationError(
-                        "idempotency key was reused with a different request"
-                    )
+                    raise AuthorizationError("idempotency key was reused with a different request")
                 if existing.status != "FAIL":
                     return existing
                 # A failed transaction may be retried with the same request digest.
@@ -101,9 +98,7 @@ class IdempotencyStore:
                     entries[key] = retry
                     self._write(self._with_entries(state, entries))
                 except ValueError as exc:
-                    raise AuthorizationError(
-                        "invalid idempotency key or request digest"
-                    ) from exc
+                    raise AuthorizationError("invalid idempotency key or request digest") from exc
                 return None
 
             try:
@@ -115,9 +110,7 @@ class IdempotencyStore:
                 entries[key] = entry
                 self._write(self._with_entries(state, entries))
             except ValueError as exc:
-                raise AuthorizationError(
-                    "invalid idempotency key or request digest"
-                ) from exc
+                raise AuthorizationError("invalid idempotency key or request digest") from exc
             return None
 
     def prepare_completion(self, key: str, receipt_digest: str) -> None:
@@ -169,9 +162,7 @@ class IdempotencyStore:
                 updated = self._entry(
                     request_digest=current.request_digest,
                     status=status,
-                    receipt_digest=(
-                        receipt_digest if status in {"PREPARED", "COMPLETE"} else None
-                    ),
+                    receipt_digest=(receipt_digest if status in {"PREPARED", "COMPLETE"} else None),
                     reason=reason if status == "FAIL" else None,
                 )
                 entries = dict(state.entries)

@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import argparse
@@ -21,9 +22,7 @@ from l9_deploy.errors import ContractError
 
 
 def _top_level_commands(parser: argparse.ArgumentParser) -> set[str]:
-    action = next(
-        item for item in parser._actions if isinstance(item, argparse._SubParsersAction)
-    )
+    action = next(item for item in parser._actions if isinstance(item, argparse._SubParsersAction))
     return set(action.choices)
 
 
@@ -48,9 +47,7 @@ def test_parser_exposes_the_complete_operator_surface() -> None:
         "rollback",
         "status",
     }
-    parsed = parser.parse_args(
-        ["status", "--project", "seo-bot", "--environment", "staging"]
-    )
+    parsed = parser.parse_args(["status", "--project", "seo-bot", "--environment", "staging"])
     assert parsed.handler is cli.cmd_status
     assert parsed.timeout == 300
 
@@ -104,35 +101,41 @@ def test_inventory_cli_validates_and_generates_private_output(
     repo_root: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     fleet = repo_root / "fleet" / "registry.yaml"
-    assert cli.main(
-        [
-            "inventory",
-            "validate",
-            "--root",
-            str(repo_root),
-            "--fleet",
-            str(fleet),
-            "--json",
-        ]
-    ) == 0
+    assert (
+        cli.main(
+            [
+                "inventory",
+                "validate",
+                "--root",
+                str(repo_root),
+                "--fleet",
+                str(fleet),
+                "--json",
+            ]
+        )
+        == 0
+    )
     validated = json.loads(capsys.readouterr().out)
     assert validated["status"] == "PASS"
     assert validated["servers"] >= 1
 
     output = tmp_path / "generated" / "hosts.yml"
-    assert cli.main(
-        [
-            "inventory",
-            "generate",
-            "--root",
-            str(repo_root),
-            "--fleet",
-            str(fleet),
-            "--output",
-            str(output),
-            "--json",
-        ]
-    ) == 0
+    assert (
+        cli.main(
+            [
+                "inventory",
+                "generate",
+                "--root",
+                str(repo_root),
+                "--fleet",
+                str(fleet),
+                "--output",
+                str(output),
+                "--json",
+            ]
+        )
+        == 0
+    )
     generated = json.loads(capsys.readouterr().out)
     assert generated["status"] == "PASS"
     assert output.is_file()
