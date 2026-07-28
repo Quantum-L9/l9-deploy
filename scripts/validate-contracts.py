@@ -20,11 +20,11 @@ from _bootstrap import add_repository_src
 
 add_repository_src()
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator  # noqa: E402
 
 from l9_deploy.contracts.catalog import WIRE_CONTRACTS  # noqa: E402
-from l9_deploy.contracts.models import FrozenModel  # noqa: E402
 from l9_deploy.contracts.loader import load_document  # noqa: E402
+from l9_deploy.contracts.models import FrozenModel  # noqa: E402
 from l9_deploy.contracts.validator import SchemaRegistry  # noqa: E402
 
 

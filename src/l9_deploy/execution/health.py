@@ -15,9 +15,9 @@ import socket
 import time
 import urllib.error
 import urllib.request
-from urllib.parse import urlsplit
 from collections.abc import Sequence
 from typing import Protocol
+from urllib.parse import urlsplit
 
 from pydantic import JsonValue
 
@@ -42,7 +42,7 @@ def run_probe(
                 if urlsplit(base_url).scheme not in {"http", "https"}:
                     raise ExecutionError("HTTP probe base_url must use http or https")
                 url = base_url.rstrip("/") + probe.path
-                request = urllib.request.Request(url, method="GET")
+                request = urllib.request.Request(url, method="GET")  # noqa: S310
                 with urllib.request.urlopen(  # noqa: S310
                     request, timeout=probe.timeout_seconds
                 ) as response:

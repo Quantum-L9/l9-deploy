@@ -17,6 +17,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
+from pydantic import JsonValue
+
 from ..canonical import sha256_digest
 from ..contracts.models import ReleaseState
 
@@ -36,7 +38,7 @@ def write_runtime_state(
     environment: str,
     current: ReleaseState,
     previous: ReleaseState | None,
-) -> dict[str, object]:
+) -> dict[str, JsonValue]:
     path = state_path(project_id, environment)
     state: dict[str, object] = {
         "schema": "l9.runtime-state/v1",
@@ -54,7 +56,7 @@ def promote(
     environment: str,
     release: ReleaseState,
     previous_release: ReleaseState | None = None,
-) -> dict[str, object]:
+) -> dict[str, JsonValue]:
     return write_runtime_state(
         executor,
         project_id,

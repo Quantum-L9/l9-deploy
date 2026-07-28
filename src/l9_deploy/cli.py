@@ -22,7 +22,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
-from .canonical import atomic_write_json, file_sha256, load_structured, sha256_digest
+from .canonical import atomic_write_json, file_sha256, sha256_digest
 from .contracts.loader import load_document
 from .contracts.models import DeploymentPlan, DeploymentProfile, ReleaseState, ServerProfile
 from .contracts.validator import SchemaRegistry
@@ -180,6 +180,16 @@ def _host_from_server(server: ServerProfile | dict[str, Any]) -> Host:
     return Host(typed.id, typed.private_ip, typed.ssh.user, typed.ssh.port)
 
 
+def _fleet_items(fleet: dict[str, object], key: str) -> list[dict[str, Any]]:
+    """Return the fleet document's list of items under ``key``.
+
+    The fleet document is validated against the fleet-inventory schema before
+    this helper is called, so ``key`` is guaranteed to resolve to a list of
+    objects; the cast reflects that contract for the type checker.
+    """
+    return cast(list[dict[str, Any]], fleet[key])
+
+
 def _target_executor(
     args: argparse.Namespace, fleet: dict[str, Any], project: dict[str, Any], environment: str
 ) -> Any:
@@ -203,7 +213,7 @@ def cmd_deploy(args: argparse.Namespace) -> dict[str, Any]:
         raise AuthorizationError("command environment does not match plan")
     fleet = load_fleet(Path(args.fleet), reg)
     project = next(
-        (item for item in fleet["projects"] if item["id"] == plan.project_id),
+        (item for item in _fleet_items(fleet, "projects") if item["id"] == plan.project_id),
         None,
     )
     if not isinstance(project, dict):
@@ -261,7 +271,9 @@ def _remote_state(executor: Any, project: str, environment: str) -> dict[str, An
 def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
     reg = registry(args)
     fleet = load_fleet(Path(args.fleet), reg)
-    project = next((item for item in fleet["projects"] if item["id"] == args.project), None)
+    project = next(
+        (item for item in _fleet_items(fleet, "projects") if item["id"] == args.project), None
+    )
     if not isinstance(project, dict):
         raise ContractError("project is not registered")
     request_id = args.request_id or "manual-rollback"
@@ -290,7 +302,7 @@ def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
         status="PASS",
         started_at=datetime.now(UTC).isoformat(),
         source_commit_sha=(previous or {}).get("source_commit_sha", "0" * 40),
-        image_ref=result["restored_image_ref"],
+        image_ref=cast(str, result["restored_image_ref"]),
         plan_digest=args.expected_plan_digest,
         previous_release=state.get("current"),
         steps=[result],
@@ -307,7 +319,9 @@ def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
 def cmd_status(args: argparse.Namespace) -> dict[str, Any]:
     reg = registry(args)
     fleet = load_fleet(Path(args.fleet), reg)
-    project = next((item for item in fleet["projects"] if item["id"] == args.project), None)
+    project = next(
+        (item for item in _fleet_items(fleet, "projects") if item["id"] == args.project), None
+    )
     if not isinstance(project, dict):
         raise ContractError("project is not registered")
     executor = _target_executor(args, fleet, project, args.environment)
@@ -351,12 +365,13 @@ def cmd_inventory_generate(args: argparse.Namespace) -> dict[str, Any]:
 
 def cmd_inventory_validate(args: argparse.Namespace) -> dict[str, Any]:
     fleet = load_fleet(Path(args.fleet), registry(args))
-    ids = [server["id"] for server in fleet["servers"]]
-    ips = [server["private_ip"] for server in fleet["servers"]]
+    ids = [server["id"] for server in _fleet_items(fleet, "servers")]
+    ips = [server["private_ip"] for server in _fleet_items(fleet, "servers")]
     if len(ids) != len(set(ids)) or len(ips) != len(set(ips)):
         raise ContractError("fleet server ids and private IPs must be unique")
     registered = set(ids)
-    for project in fleet["projects"]:
+    projects = _fleet_items(fleet, "projects")
+    for project in projects:
         for config in project["environments"].values():
             unknown = set(config["server_ids"]) - registered
             if unknown:
@@ -366,7 +381,7 @@ def cmd_inventory_validate(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "status": "PASS",
         "servers": len(ids),
-        "projects": len(fleet["projects"]),
+        "projects": len(projects),
         "digest": sha256_digest(fleet),
     }
 
@@ -374,7 +389,9 @@ def cmd_inventory_validate(args: argparse.Namespace) -> dict[str, Any]:
 def cmd_host_verify(args: argparse.Namespace) -> dict[str, Any]:
     reg = registry(args)
     fleet = load_fleet(Path(args.fleet), reg)
-    server = next((item for item in fleet["servers"] if item["id"] == args.server), None)
+    server = next(
+        (item for item in _fleet_items(fleet, "servers") if item["id"] == args.server), None
+    )
     if not isinstance(server, dict):
         raise ContractError("server is not registered")
     executor = (
@@ -461,14 +478,19 @@ def cmd_config_apply(args: argparse.Namespace) -> dict[str, Any]:
     return {"status": "PASS", "stdout": result.stdout}
 
 
-def _project_profile(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str, Any], Any]:
+def _project_profile(
+    args: argparse.Namespace,
+) -> tuple[dict[str, Any], DeploymentProfile, Any]:
     reg = registry(args)
     fleet = load_fleet(Path(args.fleet), reg)
-    project = next((item for item in fleet["projects"] if item["id"] == args.project), None)
+    project = next(
+        (item for item in _fleet_items(fleet, "projects") if item["id"] == args.project), None
+    )
     if not isinstance(project, dict):
         raise ContractError("project is not registered")
-    profile = object_document(repository_root(args) / project["profile_path"])
-    reg.validate(profile, "deployment-profile")
+    profile_document = object_document(repository_root(args) / project["profile_path"])
+    reg.validate(profile_document, "deployment-profile")
+    profile = DeploymentProfile.model_validate(profile_document)
     executor = _target_executor(args, fleet, project, args.environment)
     return project, profile, executor
 
@@ -476,23 +498,26 @@ def _project_profile(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str
 def cmd_backup_create(args: argparse.Namespace) -> dict[str, Any]:
     _, profile, executor = _project_profile(args)
     require_mutation_approval(args, request_id=args.request_id or "manual-backup")
-    return create_backup(
-        executor, profile, args.project, args.environment, args.request_id or "manual-backup"
+    return cast(
+        dict[str, Any],
+        create_backup(
+            executor, profile, args.project, args.environment, args.request_id or "manual-backup"
+        ),
     )
 
 
 def cmd_backup_verify(args: argparse.Namespace) -> dict[str, Any]:
     _, profile, executor = _project_profile(args)
-    config = profile.get("backup")
-    if not isinstance(config, dict):
+    config = profile.backup
+    if config is None:
         raise ContractError("profile has no backup contract")
     substitutions = {
         "project": args.project,
         "environment": args.environment,
         "request_id": args.request_id or "verify",
     }
-    command = [part.format_map(substitutions) for part in config["verify_command"]]
-    result = executor.run(command, timeout=config["timeout_seconds"], check=False)
+    command = [part.format_map(substitutions) for part in config.verify_command]
+    result = executor.run(command, timeout=config.timeout_seconds, check=False)
     return {
         "status": "PASS" if result.returncode == 0 else "FAIL",
         "stdout": result.stdout,
@@ -503,16 +528,16 @@ def cmd_backup_verify(args: argparse.Namespace) -> dict[str, Any]:
 def cmd_restore_test(args: argparse.Namespace) -> dict[str, Any]:
     _, profile, executor = _project_profile(args)
     require_mutation_approval(args, request_id=args.request_id or "manual-restore-test")
-    config = profile.get("backup")
-    if not isinstance(config, dict):
+    config = profile.backup
+    if config is None:
         raise ContractError("profile has no backup contract")
     substitutions = {
         "project": args.project,
         "environment": args.environment,
         "request_id": args.request_id or "restore-test",
     }
-    command = [part.format_map(substitutions) for part in config["restore_test_command"]]
-    result = executor.run(command, timeout=config["timeout_seconds"])
+    command = [part.format_map(substitutions) for part in config.restore_test_command]
+    result = executor.run(command, timeout=config.timeout_seconds)
     return {"status": "PASS", "stdout": result.stdout}
 
 

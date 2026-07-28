@@ -21,7 +21,6 @@ from pathlib import Path
 from typing import Final
 
 import yaml
-
 from _bootstrap import add_repository_src
 
 add_repository_src()

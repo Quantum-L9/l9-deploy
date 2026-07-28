@@ -165,6 +165,19 @@ def test_release_artifact_generation_does_not_create_bytecode_residue(
     snapshot = _snapshot_repository(tmp_path / "repo")
     environment = os.environ.copy()
     environment.pop("PYTHONDONTWRITEBYTECODE", None)
+    # pytest-cov auto-instruments any subprocess that inherits these vars (via a
+    # .pth hook triggered on interpreter start). This subprocess runs against a
+    # throwaway snapshot copy of the repo, so letting it inherit coverage state
+    # would record a second, always-0%-covered "l9_deploy" package rooted under
+    # the snapshot directory and corrupt the real coverage totals.
+    coverage_env_vars = (
+        "COV_CORE_SOURCE",
+        "COV_CORE_CONFIG",
+        "COV_CORE_DATAFILE",
+        "COVERAGE_PROCESS_START",
+    )
+    for key in coverage_env_vars:
+        environment.pop(key, None)
     result = subprocess.run(
         [
             sys.executable,

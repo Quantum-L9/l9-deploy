@@ -70,7 +70,10 @@ def test_production_python_contains_no_print_calls(repo_root: Path) -> None:
         for path in base.rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))
             for node in ast.walk(tree):
-                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-                    if node.func.id == "print":
-                        violations.append(f"{path.relative_to(repo_root)}:{node.lineno}")
+                if (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id == "print"
+                ):
+                    violations.append(f"{path.relative_to(repo_root)}:{node.lineno}")
     assert violations == []

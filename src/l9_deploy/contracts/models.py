@@ -27,7 +27,6 @@ from pydantic import (
     model_validator,
 )
 
-
 PROJECT_ID_PATTERN = r"^[a-z][a-z0-9-]{1,63}$"
 RELATIVE_PATH_PATTERN = r"^[A-Za-z0-9._/-]+$"
 ENVIRONMENT_PATTERN = r"^[a-z][a-z0-9-]{1,31}$"
