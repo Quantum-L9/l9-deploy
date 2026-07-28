@@ -23,15 +23,22 @@ from typing import Any, cast
 
 from .canonical import atomic_write_json, file_sha256, load_structured, sha256_digest
 from .contracts.loader import load_document
-from .contracts.models import DeploymentPlan, DeploymentProfile, ReleaseState, ServerProfile
+from .contracts.models import (
+    DeploymentPlan,
+    DeploymentProfile,
+    ReleaseState,
+    RuntimeState,
+    ServerProfile,
+)
 from .contracts.validator import SchemaRegistry
-from .errors import AuthorizationError, ContractError, L9DeployError
+from .errors import AuthorizationError, ContractError, ExecutionError, L9DeployError
 from .evidence.approval import verify_approval_receipt
 from .evidence.ledger import ReceiptLedger
 from .evidence.publisher import publish_json, publish_receipt
 from .evidence.receipts import create_receipt, verify_receipt_digest
 from .execution.backups import create_backup
 from .execution.engine import execute_plan
+from .execution.releases import validate_release_runtime_env_path
 from .execution.remote import Host, LocalExecutor, RemoteExecutor
 from .execution.rollback import rollback_release
 from .integrations import ansible as ansible_integration
@@ -153,12 +160,16 @@ def cmd_request_inspect(args: argparse.Namespace) -> dict[str, Any]:
     )
 
 
-def _load_previous_state(path: Path | None) -> dict[str, Any] | None:
+def _load_previous_state(
+    path: Path | None,
+    project_id: str,
+    environment: str,
+) -> dict[str, Any] | None:
     if path is None or not path.exists():
         return None
-    value = object_document(path)
-    current = value.get("current")
-    return current if isinstance(current, dict) else None
+    state = RuntimeState.model_validate(object_document(path))
+    validate_release_runtime_env_path(state.current, project_id, environment)
+    return state.current.model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
 def cmd_plan(args: argparse.Namespace) -> dict[str, Any]:
@@ -166,7 +177,9 @@ def cmd_plan(args: argparse.Namespace) -> dict[str, Any]:
     plan = build_plan(
         verified,
         previous_release=_load_previous_state(
-            Path(args.previous_state) if args.previous_state else None
+            Path(args.previous_state) if args.previous_state else None,
+            verified.project.id,
+            verified.document.target.environment,
         ),
     )
     document = plan.model_dump(mode="json", by_alias=True)
@@ -251,10 +264,14 @@ def cmd_promote(args: argparse.Namespace) -> dict[str, Any]:
 def _remote_state(executor: Any, project: str, environment: str) -> dict[str, Any]:
     path = f"/srv/l9/projects/{project}/{environment}/state.json"
     result = executor.run(["cat", path])
-    value = json.loads(result.stdout)
-    if not isinstance(value, dict):
-        raise ContractError("runtime state is invalid")
-    return value
+    try:
+        state = RuntimeState.model_validate_json(result.stdout)
+        validate_release_runtime_env_path(state.current, project, environment)
+        if state.previous is not None:
+            validate_release_runtime_env_path(state.previous, project, environment)
+    except (ExecutionError, ValueError) as exc:
+        raise ContractError("runtime state is invalid") from exc
+    return state.model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
 def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:

@@ -30,6 +30,7 @@ SCHEMA_FILES = {
     "deployment-request": "deployment-request.schema.json",
     "release-evidence-reference": "release-evidence-reference.schema.json",
     "deployment-plan": "deployment-plan.schema.json",
+    "runtime-state": "runtime-state.schema.json",
     "deployment-receipt": "deployment-receipt.schema.json",
     "rollback-receipt": "rollback-receipt.schema.json",
     "backup-receipt": "backup-receipt.schema.json",

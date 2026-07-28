@@ -17,7 +17,8 @@ from pathlib import Path
 from typing import Protocol
 
 from ..canonical import sha256_digest
-from ..contracts.models import ReleaseState
+from ..contracts.models import ReleaseState, RuntimeState
+from .releases import validate_release_runtime_env_path
 
 
 class Executor(Protocol):
@@ -37,14 +38,22 @@ def write_runtime_state(
     previous: ReleaseState | None,
 ) -> dict[str, object]:
     path = state_path(project_id, environment)
-    state: dict[str, object] = {
-        "schema": "l9.runtime-state/v1",
-        "current": current.model_dump(mode="json", by_alias=True),
-        "previous": previous.model_dump(mode="json", by_alias=True) if previous else None,
-        "promoted_at": datetime.now(UTC).isoformat(),
+    validate_release_runtime_env_path(current, project_id, environment)
+    if previous is not None:
+        validate_release_runtime_env_path(previous, project_id, environment)
+    state = RuntimeState(
+        schema="l9.runtime-state/v1",
+        current=current,
+        previous=previous,
+        promoted_at=datetime.now(UTC),
+    )
+    document = state.model_dump(mode="json", by_alias=True)
+    executor.write_text(path, json.dumps(document, indent=2, sort_keys=True) + "\n", mode=0o600)
+    return {
+        "status": "PASS",
+        "state_path": str(path),
+        "state_digest": sha256_digest(document),
     }
-    executor.write_text(path, json.dumps(state, indent=2, sort_keys=True) + "\n", mode=0o600)
-    return {"status": "PASS", "state_path": str(path), "state_digest": sha256_digest(state)}
 
 
 def promote(

@@ -25,6 +25,7 @@ from .models import (
     IdempotencyDocument,
     ReleaseEvidenceReference,
     RepositoryReleaseReceipt,
+    RuntimeState,
     ServerProfile,
 )
 
@@ -73,6 +74,12 @@ WIRE_CONTRACTS: tuple[WireContractDefinition, ...] = (
         schema_id="l9.deployment-plan/v1",
         schema_file="deployment-plan.schema.json",
         model=DeploymentPlan,
+    ),
+    WireContractDefinition(
+        name="runtime-state",
+        schema_id="l9.runtime-state/v1",
+        schema_file="runtime-state.schema.json",
+        model=RuntimeState,
     ),
     WireContractDefinition(
         name="approval-receipt",

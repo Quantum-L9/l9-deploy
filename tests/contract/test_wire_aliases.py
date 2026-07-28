@@ -31,6 +31,8 @@ from l9_deploy.contracts.models import (
     ReceiptStep,
     ReleaseEvidenceReference,
     RepositoryReleaseReceipt,
+    ReleaseState,
+    RuntimeState,
     ServerProfile,
 )
 from l9_deploy.evidence.receipts import create_deployment_receipt
@@ -104,6 +106,20 @@ def _wire_documents(
         ServerProfile: deepcopy(deployment_context["fleet"]["servers"][0]),
         FleetInventory: deepcopy(deployment_context["fleet"]),
         DeploymentPlan: plan.model_dump(mode="json", by_alias=True),
+        RuntimeState: RuntimeState(
+            schema="l9.runtime-state/v1",
+            current=ReleaseState(
+                request_id="request-001",
+                source_commit_sha="a" * 40,
+                image_ref="ghcr.io/quantum-l9/seo-bot@sha256:" + "b" * 64,
+                plan_digest="sha256:" + "c" * 64,
+                runtime_env_path=(
+                    "/srv/l9/projects/seo-bot/staging/releases/" + "c" * 64 + "/runtime.env"
+                ),
+            ),
+            previous=None,
+            promoted_at="2026-07-21T12:02:00Z",
+        ).model_dump(mode="json", by_alias=True),
         ApprovalReceipt: _approval_document(),
         IdempotencyDocument: {
             "schema": "l9.idempotency-store/v1",

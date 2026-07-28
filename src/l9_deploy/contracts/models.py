@@ -31,6 +31,10 @@ PROJECT_ID_PATTERN = r"^[a-z][a-z0-9-]{1,63}$"
 RELATIVE_PATH_PATTERN = r"^[A-Za-z0-9._/-]+$"
 ENVIRONMENT_PATTERN = r"^[a-z][a-z0-9-]{1,31}$"
 SHA256_PATTERN = r"^sha256:[a-f0-9]{64}$"
+RUNTIME_ENV_PATH_PATTERN = (
+    r"^/srv/l9/projects/[a-z][a-z0-9-]{1,63}/"
+    r"[a-z][a-z0-9-]{1,31}/releases/[a-f0-9]{64}/runtime\.env$"
+)
 
 Sha256Digest = Annotated[str, StringConstraints(pattern=SHA256_PATTERN)]
 IdempotencyKey = Annotated[str, StringConstraints(min_length=1, max_length=200)]
@@ -319,7 +323,15 @@ class ReleaseState(FrozenModel):
     request_id: str
     source_commit_sha: str = Field(pattern=r"^[a-f0-9]{40}$")
     image_ref: str
-    plan_digest: str = Field(pattern=r"^sha256:[a-f0-9]{64}$")
+    plan_digest: str = Field(pattern=SHA256_PATTERN)
+    runtime_env_path: str | None = Field(default=None, pattern=RUNTIME_ENV_PATH_PATTERN)
+
+
+class RuntimeState(FrozenModel):
+    schema_id: Literal["l9.runtime-state/v1"] = Field(alias="schema")
+    current: ReleaseState
+    previous: ReleaseState | None
+    promoted_at: datetime
 
 
 class PlanStep(FrozenModel):
