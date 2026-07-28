@@ -98,6 +98,12 @@ def main() -> int:
         if not isinstance(jobs, dict):
             errors.append(f"{path}: jobs must be an object")
             continue
+        workflow_permissions = doc.get("permissions", {}) or {}
+        if not isinstance(workflow_permissions, dict):
+            errors.append(f"{path}: workflow permissions must be an object")
+            workflow_permissions = {}
+        if workflow_permissions.get("id-token") == "write":
+            errors.append(f"{path}: id-token write must be scoped to the consuming job")
         text = path.read_text(encoding="utf-8")
         if path.name == "validate.yml":
             for required in (
@@ -138,6 +144,13 @@ def main() -> int:
                 continue
             job = {str(key): value for key, value in job_value.items()}
             runs_on = job.get("runs-on")
+            job_permissions = job.get("permissions", {}) or {}
+            if not isinstance(job_permissions, dict):
+                errors.append(f"{path}:{job_name}: permissions must be an object")
+                job_permissions = {}
+            id_token_write = job_permissions.get("id-token") == "write"
+            if job_name == "authorize" and id_token_write:
+                errors.append(f"{path}:{job_name}: approval jobs cannot request OIDC")
             if pull_request and "self-hosted" in str(runs_on):
                 errors.append(
                     f"{path}:{job_name}: pull_request workflow cannot use self-hosted runner"
@@ -146,6 +159,15 @@ def main() -> int:
             if not isinstance(steps, list):
                 errors.append(f"{path}:{job_name}: steps must be a list")
                 continue
+            consumes_oidc = any(
+                isinstance(step, dict)
+                and "scripts/infisical-oidc-env.sh" in str(step.get("run", ""))
+                for step in steps
+            )
+            if consumes_oidc and not id_token_write:
+                errors.append(f"{path}:{job_name}: Infisical OIDC consumer lacks id-token write")
+            if id_token_write and not consumes_oidc:
+                errors.append(f"{path}:{job_name}: id-token write granted without OIDC consumption")
             for step in steps:
                 if not isinstance(step, dict) or "uses" not in step:
                     continue
