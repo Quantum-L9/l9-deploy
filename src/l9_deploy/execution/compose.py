@@ -8,11 +8,11 @@ owner: platform
 status: active
 --- /L9_META ---
 """
-
 from __future__ import annotations
 
-from pathlib import Path
 from typing import cast
+
+from pathlib import Path
 
 import yaml
 from pydantic import JsonValue
@@ -21,7 +21,12 @@ from ..contracts.models import DeploymentProfile
 from ..errors import ContractError
 
 
-def render_compose(profile: DeploymentProfile, image_ref: str, environment: str) -> str:
+def render_compose(
+    profile: DeploymentProfile,
+    image_ref: str,
+    environment: str,
+    runtime_env_path: str,
+) -> str:
     runtime = profile.runtime
     project = profile.project.id
     service: dict[str, JsonValue] = {
@@ -36,15 +41,19 @@ def render_compose(profile: DeploymentProfile, image_ref: str, environment: str)
         service["read_only"] = True
     if runtime.environment:
         service["environment"] = cast(JsonValue, runtime.environment)
-    service["env_file"] = [f"/srv/l9/projects/{project}/{environment}/runtime.env"]
+    if not runtime_env_path.startswith(
+        f"/srv/l9/projects/{project}/{environment}/releases/"
+    ) or not runtime_env_path.endswith("/runtime.env"):
+        raise ContractError("Compose runtime environment must be release-owned")
+    service["env_file"] = ["${L9_RUNTIME_ENV_FILE:?L9_RUNTIME_ENV_FILE is required}"]
     if runtime.container_port:
         service["expose"] = [runtime.container_port]
     volumes: list[JsonValue] = []
     for item in runtime.volumes:
         suffix = ":ro" if item.read_only else ""
         volumes.append(f"{item.source}:{item.target}{suffix}")
-    for volume in profile.storage.persistent_volumes:
-        volumes.append(f"/srv/l9/data/{project}/{volume.name}:{volume.mount_path}")
+    for item in profile.storage.persistent_volumes:
+        volumes.append(f"/srv/l9/data/{project}/{item.name}:{item.mount_path}")
     if volumes:
         service["volumes"] = volumes
     document: dict[str, JsonValue] = {
