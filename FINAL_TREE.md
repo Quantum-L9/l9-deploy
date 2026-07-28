@@ -1,369 +1,380 @@
 <!-- L9_META
 l9_schema: 1
-origin: l9-deployment-platform
-layer: [repository]
-tags: [L9_META, deployment-platform, final-tree]
+origin: l9-deploy
+layer: repository
 owner: platform
-status: active
-/L9_META -->
-# Final Repository Tree
+status: generated
+--- /L9_META -->
+
+# Final Tree
+
+Generated from `f5d1d4269db4a9f3ecccf8fc5dcbb96fec0f9129`.
 
 ```text
-l9-deployment-platform/
-├── .editorconfig
-├── .github/CODEOWNERS
-├── .github/actions/collect-approval/action.yml
-├── .github/dependabot.yml
-├── .github/pull_request_template.md
-├── .github/workflows/backup-verify.yml
-├── .github/workflows/configure-hosts.yml
-├── .github/workflows/deploy-dispatch.yml
-├── .github/workflows/deploy-manual.yml
-├── .github/workflows/drift-detect.yml
-├── .github/workflows/fleet-conformance.yml
-├── .github/workflows/promote.yml
-├── .github/workflows/provision-apply.yml
-├── .github/workflows/provision-plan.yml
-├── .github/workflows/release.yml
-├── .github/workflows/rollback.yml
-├── .github/workflows/runner-maintenance.yml
-├── .github/workflows/validate.yml
-├── .gitignore
-├── .l9/architecture.yaml
-├── .l9/compatibility.yaml
-├── .l9/governance-provider.yaml
-├── .l9/integration-contracts/assurance.contract.yaml
-├── .l9/integration-contracts/ci-core.contract.yaml
-├── .l9/integration-contracts/ci-sdk.contract.yaml
-├── .l9/integration-contracts/consumer.contract.yaml
-├── .l9/integration-contracts/ghcr.contract.yaml
-├── .l9/integration-contracts/github-org.contract.yaml
-├── .l9/integration-contracts/hetzner.contract.yaml
-├── .l9/integration-contracts/infisical.contract.yaml
-├── .l9/integration-contracts/repo-template.contract.yaml
-├── .l9/metadata-exclusions.yaml
-├── .l9/ownership.yaml
-├── .l9/policies/l9-deployment-contracts.yml
-├── .l9/release-policy.yaml
-├── .l9/repo-spec.yaml
-├── .l9/tool-stack.yaml
-├── .l9/transport-classification.yaml
-├── .pre-commit-config.yaml
-├── .python-version
-├── ARCHITECTURE.md
-├── CHANGELOG.md
-├── CHANGE_SUMMARY.md
-├── CONTRIBUTING.md
-├── CONVERGENCE_REPORT.yaml
-├── DELTA_REPORT.md
-├── FINAL_TREE.md
-├── GAP_DEFECT_MATRIX.yaml
-├── MANIFEST.json
-├── MANIFEST.md
-├── Makefile
-├── README.md
-├── REGRESSION_GUARD.md
-├── REMEDIATION_REPORT.md
-├── RUNBOOK.md
-├── SECURITY.md
-├── SPECIFICATION.md
-├── TRACEABILITY_MAP.yaml
-├── UNKNOWN_REGISTER.md
-├── VALIDATION.md
-├── ansible/ansible.cfg
-├── ansible/inventories/generated/README.md
-├── ansible/inventories/group_vars/all.yml
-├── ansible/playbooks/bootstrap.yml
-├── ansible/playbooks/configure-backups.yml
-├── ansible/playbooks/configure-runner.yml
-├── ansible/playbooks/configure-runtime.yml
-├── ansible/playbooks/decommission.yml
-├── ansible/playbooks/harden.yml
-├── ansible/playbooks/verify.yml
-├── ansible/requirements.yml
-├── ansible/roles/backup_agent/files/l9-backup-verify
-├── ansible/roles/backup_agent/files/l9-postgres-backup
-├── ansible/roles/backup_agent/tasks/main.yml
-├── ansible/roles/base/defaults/main.yml
-├── ansible/roles/base/tasks/main.yml
-├── ansible/roles/caddy/tasks/main.yml
-├── ansible/roles/conformance/tasks/main.yml
-├── ansible/roles/docker/handlers/main.yml
-├── ansible/roles/docker/tasks/main.yml
-├── ansible/roles/github_runner/defaults/main.yml
-├── ansible/roles/github_runner/tasks/main.yml
-├── ansible/roles/host_firewall/handlers/main.yml
-├── ansible/roles/host_firewall/tasks/main.yml
-├── ansible/roles/host_firewall/templates/nftables.conf.j2
-├── ansible/roles/journald/handlers/main.yml
-├── ansible/roles/journald/tasks/main.yml
-├── ansible/roles/runner_tooling/tasks/main.yml
-├── ansible/roles/sshd/handlers/main.yml
-├── ansible/roles/sshd/tasks/main.yml
-├── ansible/roles/time_sync/tasks/main.yml
-├── ansible/roles/unattended_upgrades/tasks/main.yml
-├── ansible/roles/users/tasks/main.yml
-├── checksums.sha256
-├── deployment/policies/compose-policy.yaml
-├── deployment/policies/migration-policy.yaml
-├── deployment/policies/production.yaml
-├── deployment/policies/rollback-policy.yaml
-├── deployment/policies/staging.yaml
-├── deployment/probes/command.yaml
-├── deployment/probes/database.yaml
-├── deployment/probes/http.yaml
-├── deployment/probes/tcp.yaml
-├── deployment/profiles/container-service.yaml
-├── deployment/profiles/external-platform.yaml
-├── deployment/profiles/scheduled-job.yaml
-├── deployment/profiles/stateful-container.yaml
-├── deployment/profiles/worker-service.yaml
-├── deployment/templates/caddy-site.caddy.j2
-├── deployment/templates/compose.yaml.j2
-├── deployment/templates/env-file.j2
-├── deployment/templates/systemd-unit.service.j2
-├── docs/adr/0001-private-control-plane.md
-├── docs/adr/0002-digest-only-releases.md
-├── docs/adr/0003-dedicated-runner.md
-├── docs/adr/0004-opentofu-and-ansible.md
-├── docs/adr/0005-public-private-broker.md
-├── docs/adr/0006-fail-closed-rollback.md
-├── docs/adr/0007-wire-contract-field-aliases.md
-├── docs/architecture/control-plane-boundaries.md
-├── docs/architecture/evidence-model.md
-├── docs/architecture/network-topology.md
-├── docs/architecture/release-transaction.md
-├── docs/consumers/adoption.md
-├── docs/consumers/profile-authoring.md
-├── docs/operations/fleet-conformance.md
-├── docs/runbooks/bootstrap-management-runner.md
-├── docs/runbooks/deploy.md
-├── docs/runbooks/incident.md
-├── docs/runbooks/onboard-consumer.md
-├── docs/runbooks/provision-environment.md
-├── docs/runbooks/restore.md
-├── docs/runbooks/rollback.md
-├── docs/runbooks/rotate-runner.md
-├── docs/security/threat-model.md
-├── fleet/desired-state/README.md
-├── fleet/environments/management.yaml
-├── fleet/environments/production.yaml
-├── fleet/environments/staging.yaml
-├── fleet/projects/README.md
-├── fleet/registry.yaml
-├── infrastructure/opentofu/backend.example.hcl
-├── infrastructure/opentofu/environments/management/backend.tf
-├── infrastructure/opentofu/environments/management/main.tf
-├── infrastructure/opentofu/environments/management/outputs.tf
-├── infrastructure/opentofu/environments/management/variables.tf
-├── infrastructure/opentofu/environments/management/versions.tf
-├── infrastructure/opentofu/environments/production/backend.tf
-├── infrastructure/opentofu/environments/production/main.tf
-├── infrastructure/opentofu/environments/production/outputs.tf
-├── infrastructure/opentofu/environments/production/variables.tf
-├── infrastructure/opentofu/environments/production/versions.tf
-├── infrastructure/opentofu/environments/staging/backend.tf
-├── infrastructure/opentofu/environments/staging/main.tf
-├── infrastructure/opentofu/environments/staging/outputs.tf
-├── infrastructure/opentofu/environments/staging/variables.tf
-├── infrastructure/opentofu/environments/staging/versions.tf
-├── infrastructure/opentofu/modules/dns-record/main.tf
-├── infrastructure/opentofu/modules/dns-record/outputs.tf
-├── infrastructure/opentofu/modules/dns-record/variables.tf
-├── infrastructure/opentofu/modules/firewall/main.tf
-├── infrastructure/opentofu/modules/firewall/outputs.tf
-├── infrastructure/opentofu/modules/firewall/variables.tf
-├── infrastructure/opentofu/modules/load-balancer/main.tf
-├── infrastructure/opentofu/modules/load-balancer/outputs.tf
-├── infrastructure/opentofu/modules/load-balancer/variables.tf
-├── infrastructure/opentofu/modules/network/main.tf
-├── infrastructure/opentofu/modules/network/outputs.tf
-├── infrastructure/opentofu/modules/network/variables.tf
-├── infrastructure/opentofu/modules/placement-group/main.tf
-├── infrastructure/opentofu/modules/placement-group/outputs.tf
-├── infrastructure/opentofu/modules/placement-group/variables.tf
-├── infrastructure/opentofu/modules/server/main.tf
-├── infrastructure/opentofu/modules/server/outputs.tf
-├── infrastructure/opentofu/modules/server/variables.tf
-├── infrastructure/opentofu/modules/volume/main.tf
-├── infrastructure/opentofu/modules/volume/outputs.tf
-├── infrastructure/opentofu/modules/volume/variables.tf
-├── infrastructure/opentofu/providers.tf
-├── infrastructure/opentofu/versions.tf
-├── integrations/consumers/seo-bot.deployment.yaml
-├── integrations/github-org/README.md
-├── integrations/github-org/deployment-interface-registry.yml
-├── integrations/github-org/workflow-templates/l9-container-release.properties.json
-├── integrations/github-org/workflow-templates/l9-container-release.yml
-├── integrations/github-org/workflow-templates/l9-scheduled-job-release.properties.json
-├── integrations/github-org/workflow-templates/l9-scheduled-job-release.yml
-├── integrations/github-org/workflow-templates/l9-stateful-container-release.properties.json
-├── integrations/github-org/workflow-templates/l9-stateful-container-release.yml
-├── integrations/github-org/workflow-templates/l9-worker-release.properties.json
-├── integrations/github-org/workflow-templates/l9-worker-release.yml
-├── integrations/l9-assurance/README.md
-├── integrations/l9-ci-core/README.md
-├── integrations/l9-ci-core/container-release.yml
-├── integrations/l9-ci-sdk/README.md
-├── integrations/l9-repo-template/README.md
-├── pyproject.toml
-├── schemas/v1/approval-receipt.schema.json
-├── schemas/v1/backup-receipt.schema.json
-├── schemas/v1/ci-gate-binding.schema.json
-├── schemas/v1/deployment-plan.schema.json
-├── schemas/v1/deployment-profile.schema.json
-├── schemas/v1/deployment-receipt.schema.json
-├── schemas/v1/deployment-request.schema.json
-├── schemas/v1/evidence-record.schema.json
-├── schemas/v1/fleet-inventory.schema.json
-├── schemas/v1/health-probe.schema.json
-├── schemas/v1/host-conformance.schema.json
-├── schemas/v1/idempotency-store.schema.json
-├── schemas/v1/infrastructure-plan.schema.json
-├── schemas/v1/infrastructure-receipt.schema.json
-├── schemas/v1/migration-receipt.schema.json
-├── schemas/v1/release-artifact-binding.schema.json
-├── schemas/v1/release-evidence-reference.schema.json
-├── schemas/v1/repository-release-receipt.schema.json
-├── schemas/v1/rollback-receipt.schema.json
-├── schemas/v1/server-profile.schema.json
-├── scripts/_bootstrap.py
-├── scripts/bootstrap-runner.sh
-├── scripts/bootstrap-state.sh
-├── scripts/break-glass-access.sh
-├── scripts/build-release-archive.py
-├── scripts/collect-github-approval.py
-├── scripts/fast-contract-scan.py
-├── scripts/generate-inventory.py
-├── scripts/generate-release-artifacts.py
-├── scripts/infisical-oidc-env.sh
-├── scripts/inject-l9-meta.py
-├── scripts/install-opentofu.sh
-├── scripts/package-adoption-kit.py
-├── scripts/prepare-deployment.py
-├── scripts/promote-request.py
-├── scripts/rotate-runner.sh
-├── scripts/run-l9-contract-gates.sh
-├── scripts/validate-alignment.py
-├── scripts/validate-contracts.py
-├── scripts/validate-opentofu.sh
-├── scripts/validate-release-pack.py
-├── scripts/validate-workflows.py
-├── scripts/verify-attestation.sh
-├── scripts/verify-l9-meta.py
-├── src/l9_deploy/__init__.py
-├── src/l9_deploy/__main__.py
-├── src/l9_deploy/canonical.py
-├── src/l9_deploy/cli.py
-├── src/l9_deploy/contracts/__init__.py
-├── src/l9_deploy/contracts/alias_policy.py
-├── src/l9_deploy/contracts/catalog.py
-├── src/l9_deploy/contracts/compatibility.py
-├── src/l9_deploy/contracts/loader.py
-├── src/l9_deploy/contracts/models.py
-├── src/l9_deploy/contracts/validator.py
-├── src/l9_deploy/errors.py
-├── src/l9_deploy/evidence/__init__.py
-├── src/l9_deploy/evidence/approval.py
-├── src/l9_deploy/evidence/ci.py
-├── src/l9_deploy/evidence/digests.py
-├── src/l9_deploy/evidence/ledger.py
-├── src/l9_deploy/evidence/publisher.py
-├── src/l9_deploy/evidence/receipts.py
-├── src/l9_deploy/evidence/records.py
-├── src/l9_deploy/execution/__init__.py
-├── src/l9_deploy/execution/backups.py
-├── src/l9_deploy/execution/compose.py
-├── src/l9_deploy/execution/engine.py
-├── src/l9_deploy/execution/health.py
-├── src/l9_deploy/execution/images.py
-├── src/l9_deploy/execution/locks.py
-├── src/l9_deploy/execution/migrations.py
-├── src/l9_deploy/execution/promotion.py
-├── src/l9_deploy/execution/remote.py
-├── src/l9_deploy/execution/rollback.py
-├── src/l9_deploy/integrations/__init__.py
-├── src/l9_deploy/integrations/ansible.py
-├── src/l9_deploy/integrations/ghcr.py
-├── src/l9_deploy/integrations/github.py
-├── src/l9_deploy/integrations/hetzner.py
-├── src/l9_deploy/integrations/infisical.py
-├── src/l9_deploy/integrations/opentofu.py
-├── src/l9_deploy/inventory/__init__.py
-├── src/l9_deploy/inventory/generator.py
-├── src/l9_deploy/inventory/loader.py
-├── src/l9_deploy/inventory/resolver.py
-├── src/l9_deploy/logging.py
-├── src/l9_deploy/planning/__init__.py
-├── src/l9_deploy/planning/backups.py
-├── src/l9_deploy/planning/migrations.py
-├── src/l9_deploy/planning/planner.py
-├── src/l9_deploy/planning/rollback.py
-├── src/l9_deploy/planning/topology.py
-├── src/l9_deploy/redaction.py
-├── src/l9_deploy/release_inventory.py
-├── src/l9_deploy/requests/__init__.py
-├── src/l9_deploy/requests/allowlist.py
-├── src/l9_deploy/requests/idempotency.py
-├── src/l9_deploy/requests/parser.py
-├── src/l9_deploy/requests/verifier.py
-├── src/l9_deploy/subprocesses.py
-├── templates/consumer/common/README.md
-├── templates/consumer/container-service/.github/workflows/release.yml
-├── templates/consumer/container-service/.l9/deployment.yaml
-├── templates/consumer/scheduled-job/.github/workflows/release.yml
-├── templates/consumer/scheduled-job/.l9/deployment.yaml
-├── templates/consumer/stateful-container/.github/workflows/release.yml
-├── templates/consumer/stateful-container/.l9/deployment.yaml
-├── templates/consumer/worker-service/.github/workflows/release.yml
-├── templates/consumer/worker-service/.l9/deployment.yaml
-├── tests/compliance/test_coverage_policy.py
-├── tests/compliance/test_l9_alignment.py
-├── tests/compliance/test_pack_hardening.py
-├── tests/compliance/test_release_archive.py
-├── tests/conftest.py
-├── tests/contract/test_alias_policy.py
-├── tests/contract/test_schemas.py
-├── tests/contract/test_wire_aliases.py
-├── tests/infrastructure/test_structure.py
-├── tests/integration/test_adoption_templates.py
-├── tests/integration/test_execution_engine.py
-├── tests/integration/test_promotion_request.py
-├── tests/security/test_approval.py
-├── tests/security/test_redaction.py
-├── tests/unit/test_boundary_components.py
-├── tests/unit/test_canonical.py
-├── tests/unit/test_cli_surface.py
-├── tests/unit/test_compose_and_images.py
-├── tests/unit/test_contract_primitives.py
-├── tests/unit/test_idempotency_and_locks.py
-├── tests/unit/test_inventory_and_logging.py
-├── tests/unit/test_planning.py
-├── tests/unit/test_receipt_ledger.py
-├── tests/unit/test_requests.py
-├── tests/workflows/test_workflows.py
-├── uv.lock
-├── validation/evidence/final/alignment.txt
-├── validation/evidence/final/archive-validation-model.txt
-├── validation/evidence/final/baseline-summary.txt
-├── validation/evidence/final/cli-help.txt
-├── validation/evidence/final/contracts.txt
-├── validation/evidence/final/fast-contract-scan.txt
-├── validation/evidence/final/line-length.txt
-├── validation/evidence/final/metadata.txt
-├── validation/evidence/final/module-imports.txt
-├── validation/evidence/final/no-stub-placeholder.txt
-├── validation/evidence/final/post-fix-summary.txt
-├── validation/evidence/final/pytest.txt
-├── validation/evidence/final/python-compile.txt
-├── validation/evidence/final/release-behavior-tests.txt
-├── validation/evidence/final/shell-syntax.txt
-├── validation/evidence/final/structured-parse.txt
-├── validation/evidence/final/tool-availability.txt
-├── validation/evidence/final/uv-build.txt
-├── validation/evidence/final/uv-lock-check.txt
-├── validation/evidence/final/workflows.txt
-├── validation/validation_checks.jsonl
-├── validation/validation_findings.jsonl
-└── validation/validation_report.yaml
+.editorconfig
+.github/CODEOWNERS
+.github/actions/collect-approval/action.yml
+.github/dependabot.yml
+.github/pull_request_template.md
+.github/workflows/backup-verify.yml
+.github/workflows/configure-hosts.yml
+.github/workflows/deploy-dispatch.yml
+.github/workflows/deploy-manual.yml
+.github/workflows/drift-detect.yml
+.github/workflows/fleet-conformance.yml
+.github/workflows/promote.yml
+.github/workflows/provision-apply.yml
+.github/workflows/provision-plan.yml
+.github/workflows/release.yml
+.github/workflows/rollback.yml
+.github/workflows/runner-maintenance.yml
+.github/workflows/validate.yml
+.gitignore
+.l9/architecture.yaml
+.l9/compatibility.yaml
+.l9/governance-provider.yaml
+.l9/integration-contracts/assurance.contract.yaml
+.l9/integration-contracts/ci-core.contract.yaml
+.l9/integration-contracts/ci-sdk.contract.yaml
+.l9/integration-contracts/consumer.contract.yaml
+.l9/integration-contracts/ghcr.contract.yaml
+.l9/integration-contracts/github-org.contract.yaml
+.l9/integration-contracts/hetzner.contract.yaml
+.l9/integration-contracts/infisical.contract.yaml
+.l9/integration-contracts/repo-template.contract.yaml
+.l9/metadata-exclusions.yaml
+.l9/ownership.yaml
+.l9/policies/l9-deployment-contracts.yml
+.l9/release-policy.yaml
+.l9/repo-spec.yaml
+.l9/tool-stack.yaml
+.l9/transport-classification.yaml
+.pre-commit-config.yaml
+.python-version
+ARCHITECTURE.md
+CHANGELOG.md
+CHANGE_SUMMARY.md
+CONTRIBUTING.md
+CONVERGENCE_REPORT.yaml
+DELTA_REPORT.md
+GAP_DEFECT_MATRIX.yaml
+MANIFEST.json
+MANIFEST.md
+Makefile
+README.md
+REGRESSION_GUARD.md
+REMEDIATION_REPORT.md
+RUNBOOK.md
+SECURITY.md
+SPECIFICATION.md
+TRACEABILITY_MAP.yaml
+UNKNOWN_REGISTER.md
+VALIDATION.md
+ansible/ansible.cfg
+ansible/inventories/group_vars/all.yml
+ansible/playbooks/bootstrap.yml
+ansible/playbooks/configure-backups.yml
+ansible/playbooks/configure-runner.yml
+ansible/playbooks/configure-runtime.yml
+ansible/playbooks/decommission.yml
+ansible/playbooks/harden.yml
+ansible/playbooks/verify.yml
+ansible/requirements.yml
+ansible/roles/backup_agent/files/l9-backup-verify
+ansible/roles/backup_agent/files/l9-postgres-backup
+ansible/roles/backup_agent/tasks/main.yml
+ansible/roles/base/defaults/main.yml
+ansible/roles/base/tasks/main.yml
+ansible/roles/caddy/tasks/main.yml
+ansible/roles/conformance/tasks/main.yml
+ansible/roles/docker/handlers/main.yml
+ansible/roles/docker/tasks/main.yml
+ansible/roles/github_runner/defaults/main.yml
+ansible/roles/github_runner/tasks/main.yml
+ansible/roles/host_firewall/handlers/main.yml
+ansible/roles/host_firewall/tasks/main.yml
+ansible/roles/host_firewall/templates/nftables.conf.j2
+ansible/roles/journald/handlers/main.yml
+ansible/roles/journald/tasks/main.yml
+ansible/roles/runner_tooling/tasks/main.yml
+ansible/roles/sshd/handlers/main.yml
+ansible/roles/sshd/tasks/main.yml
+ansible/roles/time_sync/tasks/main.yml
+ansible/roles/unattended_upgrades/tasks/main.yml
+ansible/roles/users/tasks/main.yml
+deployment/policies/compose-policy.yaml
+deployment/policies/migration-policy.yaml
+deployment/policies/production.yaml
+deployment/policies/rollback-policy.yaml
+deployment/policies/staging.yaml
+deployment/probes/command.yaml
+deployment/probes/database.yaml
+deployment/probes/http.yaml
+deployment/probes/tcp.yaml
+deployment/profiles/container-service.yaml
+deployment/profiles/external-platform.yaml
+deployment/profiles/scheduled-job.yaml
+deployment/profiles/stateful-container.yaml
+deployment/profiles/worker-service.yaml
+deployment/templates/caddy-site.caddy.j2
+deployment/templates/compose.yaml.j2
+deployment/templates/env-file.j2
+deployment/templates/systemd-unit.service.j2
+docs/adr/0001-private-control-plane.md
+docs/adr/0002-digest-only-releases.md
+docs/adr/0003-dedicated-runner.md
+docs/adr/0004-opentofu-and-ansible.md
+docs/adr/0005-public-private-broker.md
+docs/adr/0006-fail-closed-rollback.md
+docs/adr/0007-wire-contract-field-aliases.md
+docs/agents/deployment-agent.md
+docs/architecture/control-plane-boundaries.md
+docs/architecture/evidence-model.md
+docs/architecture/network-topology.md
+docs/architecture/release-transaction.md
+docs/consumers/adoption.md
+docs/consumers/profile-authoring.md
+docs/operations/fleet-conformance.md
+docs/operations/repository-identity.md
+docs/operations/workflow-inventory.md
+docs/runbooks/bootstrap-management-runner.md
+docs/runbooks/deploy.md
+docs/runbooks/incident.md
+docs/runbooks/onboard-consumer.md
+docs/runbooks/provision-environment.md
+docs/runbooks/restore.md
+docs/runbooks/rollback.md
+docs/runbooks/rotate-runner.md
+docs/security/threat-model.md
+fleet/desired-state/README.md
+fleet/environments/management.yaml
+fleet/environments/production.yaml
+fleet/environments/staging.yaml
+fleet/projects/README.md
+fleet/registry.yaml
+infrastructure/opentofu/backend.example.hcl
+infrastructure/opentofu/environments/management/backend.tf
+infrastructure/opentofu/environments/management/main.tf
+infrastructure/opentofu/environments/management/outputs.tf
+infrastructure/opentofu/environments/management/variables.tf
+infrastructure/opentofu/environments/management/versions.tf
+infrastructure/opentofu/environments/production/backend.tf
+infrastructure/opentofu/environments/production/main.tf
+infrastructure/opentofu/environments/production/outputs.tf
+infrastructure/opentofu/environments/production/variables.tf
+infrastructure/opentofu/environments/production/versions.tf
+infrastructure/opentofu/environments/staging/backend.tf
+infrastructure/opentofu/environments/staging/main.tf
+infrastructure/opentofu/environments/staging/outputs.tf
+infrastructure/opentofu/environments/staging/variables.tf
+infrastructure/opentofu/environments/staging/versions.tf
+infrastructure/opentofu/modules/dns-record/main.tf
+infrastructure/opentofu/modules/dns-record/outputs.tf
+infrastructure/opentofu/modules/dns-record/variables.tf
+infrastructure/opentofu/modules/firewall/main.tf
+infrastructure/opentofu/modules/firewall/outputs.tf
+infrastructure/opentofu/modules/firewall/variables.tf
+infrastructure/opentofu/modules/load-balancer/main.tf
+infrastructure/opentofu/modules/load-balancer/outputs.tf
+infrastructure/opentofu/modules/load-balancer/variables.tf
+infrastructure/opentofu/modules/network/main.tf
+infrastructure/opentofu/modules/network/outputs.tf
+infrastructure/opentofu/modules/network/variables.tf
+infrastructure/opentofu/modules/placement-group/main.tf
+infrastructure/opentofu/modules/placement-group/outputs.tf
+infrastructure/opentofu/modules/placement-group/variables.tf
+infrastructure/opentofu/modules/server/main.tf
+infrastructure/opentofu/modules/server/outputs.tf
+infrastructure/opentofu/modules/server/variables.tf
+infrastructure/opentofu/modules/volume/main.tf
+infrastructure/opentofu/modules/volume/outputs.tf
+infrastructure/opentofu/modules/volume/variables.tf
+infrastructure/opentofu/providers.tf
+infrastructure/opentofu/versions.tf
+integrations/consumers/seo-bot.deployment.yaml
+integrations/github-org/README.md
+integrations/github-org/deployment-interface-registry.yml
+integrations/github-org/workflow-templates/l9-container-release.properties.json
+integrations/github-org/workflow-templates/l9-container-release.yml
+integrations/github-org/workflow-templates/l9-scheduled-job-release.properties.json
+integrations/github-org/workflow-templates/l9-scheduled-job-release.yml
+integrations/github-org/workflow-templates/l9-stateful-container-release.properties.json
+integrations/github-org/workflow-templates/l9-stateful-container-release.yml
+integrations/github-org/workflow-templates/l9-worker-release.properties.json
+integrations/github-org/workflow-templates/l9-worker-release.yml
+integrations/l9-assurance/README.md
+integrations/l9-ci-core/README.md
+integrations/l9-ci-core/container-release.yml
+integrations/l9-ci-sdk/README.md
+integrations/l9-repo-template/README.md
+pyproject.toml
+schemas/v1/approval-receipt.schema.json
+schemas/v1/backup-receipt.schema.json
+schemas/v1/ci-gate-binding.schema.json
+schemas/v1/deployment-plan.schema.json
+schemas/v1/deployment-profile.schema.json
+schemas/v1/deployment-receipt.schema.json
+schemas/v1/deployment-request.schema.json
+schemas/v1/evidence-record.schema.json
+schemas/v1/fleet-inventory.schema.json
+schemas/v1/health-probe.schema.json
+schemas/v1/host-conformance.schema.json
+schemas/v1/idempotency-store.schema.json
+schemas/v1/infrastructure-plan.schema.json
+schemas/v1/infrastructure-receipt.schema.json
+schemas/v1/migration-receipt.schema.json
+schemas/v1/release-artifact-binding.schema.json
+schemas/v1/release-evidence-reference.schema.json
+schemas/v1/repository-release-receipt.schema.json
+schemas/v1/rollback-receipt.schema.json
+schemas/v1/runtime-state.schema.json
+schemas/v1/server-profile.schema.json
+scripts/_bootstrap.py
+scripts/bootstrap-runner.sh
+scripts/bootstrap-state.sh
+scripts/break-glass-access.sh
+scripts/build-release-archive.py
+scripts/collect-github-approval.py
+scripts/fast-contract-scan.py
+scripts/generate-inventory.py
+scripts/generate-release-artifacts.py
+scripts/infisical-oidc-env.sh
+scripts/inject-l9-meta.py
+scripts/install-opentofu.sh
+scripts/package-adoption-kit.py
+scripts/prepare-deployment.py
+scripts/promote-request.py
+scripts/rotate-runner.sh
+scripts/run-l9-contract-gates.sh
+scripts/validate-alignment.py
+scripts/validate-contracts.py
+scripts/validate-opentofu.sh
+scripts/validate-release-pack.py
+scripts/validate-workflows.py
+scripts/verify-attestation.sh
+scripts/verify-l9-meta.py
+src/l9_deploy/__init__.py
+src/l9_deploy/__main__.py
+src/l9_deploy/canonical.py
+src/l9_deploy/cli.py
+src/l9_deploy/contracts/__init__.py
+src/l9_deploy/contracts/alias_policy.py
+src/l9_deploy/contracts/catalog.py
+src/l9_deploy/contracts/compatibility.py
+src/l9_deploy/contracts/loader.py
+src/l9_deploy/contracts/models.py
+src/l9_deploy/contracts/validator.py
+src/l9_deploy/errors.py
+src/l9_deploy/evidence/__init__.py
+src/l9_deploy/evidence/approval.py
+src/l9_deploy/evidence/ci.py
+src/l9_deploy/evidence/digests.py
+src/l9_deploy/evidence/ledger.py
+src/l9_deploy/evidence/publisher.py
+src/l9_deploy/evidence/receipts.py
+src/l9_deploy/evidence/records.py
+src/l9_deploy/execution/__init__.py
+src/l9_deploy/execution/backups.py
+src/l9_deploy/execution/compose.py
+src/l9_deploy/execution/engine.py
+src/l9_deploy/execution/health.py
+src/l9_deploy/execution/images.py
+src/l9_deploy/execution/locks.py
+src/l9_deploy/execution/migrations.py
+src/l9_deploy/execution/promotion.py
+src/l9_deploy/execution/releases.py
+src/l9_deploy/execution/remote.py
+src/l9_deploy/execution/rollback.py
+src/l9_deploy/integrations/__init__.py
+src/l9_deploy/integrations/ansible.py
+src/l9_deploy/integrations/ghcr.py
+src/l9_deploy/integrations/github.py
+src/l9_deploy/integrations/hetzner.py
+src/l9_deploy/integrations/infisical.py
+src/l9_deploy/integrations/opentofu.py
+src/l9_deploy/inventory/__init__.py
+src/l9_deploy/inventory/generator.py
+src/l9_deploy/inventory/loader.py
+src/l9_deploy/inventory/resolver.py
+src/l9_deploy/logging.py
+src/l9_deploy/planning/__init__.py
+src/l9_deploy/planning/backups.py
+src/l9_deploy/planning/migrations.py
+src/l9_deploy/planning/planner.py
+src/l9_deploy/planning/rollback.py
+src/l9_deploy/planning/topology.py
+src/l9_deploy/redaction.py
+src/l9_deploy/release_inventory.py
+src/l9_deploy/requests/__init__.py
+src/l9_deploy/requests/allowlist.py
+src/l9_deploy/requests/idempotency.py
+src/l9_deploy/requests/parser.py
+src/l9_deploy/requests/verifier.py
+src/l9_deploy/subprocesses.py
+templates/consumer/common/README.md
+templates/consumer/container-service/.github/workflows/release.yml
+templates/consumer/container-service/.l9/deployment.yaml
+templates/consumer/scheduled-job/.github/workflows/release.yml
+templates/consumer/scheduled-job/.l9/deployment.yaml
+templates/consumer/stateful-container/.github/workflows/release.yml
+templates/consumer/stateful-container/.l9/deployment.yaml
+templates/consumer/worker-service/.github/workflows/release.yml
+templates/consumer/worker-service/.l9/deployment.yaml
+tests/compliance/test_coverage_policy.py
+tests/compliance/test_l9_alignment.py
+tests/compliance/test_pack_hardening.py
+tests/compliance/test_release_archive.py
+tests/conftest.py
+tests/contract/test_alias_policy.py
+tests/contract/test_schemas.py
+tests/contract/test_wire_aliases.py
+tests/infrastructure/test_structure.py
+tests/integration/test_adoption_templates.py
+tests/integration/test_execution_engine.py
+tests/integration/test_promotion_request.py
+tests/security/test_approval.py
+tests/security/test_infisical_oidc_env_script.py
+tests/security/test_redaction.py
+tests/unit/test_boundary_components.py
+tests/unit/test_canonical.py
+tests/unit/test_cli_surface.py
+tests/unit/test_compose_and_images.py
+tests/unit/test_contract_primitives.py
+tests/unit/test_idempotency_and_locks.py
+tests/unit/test_inventory_and_logging.py
+tests/unit/test_planning.py
+tests/unit/test_receipt_ledger.py
+tests/unit/test_release_runtime_state.py
+tests/unit/test_requests.py
+tests/workflows/test_workflows.py
+uv.lock
+validation/evidence/final/alignment.txt
+validation/evidence/final/archive-validation-model.txt
+validation/evidence/final/baseline-summary.txt
+validation/evidence/final/cli-help.txt
+validation/evidence/final/contracts.txt
+validation/evidence/final/fast-contract-scan.txt
+validation/evidence/final/line-length.txt
+validation/evidence/final/metadata.txt
+validation/evidence/final/module-imports.txt
+validation/evidence/final/no-stub-placeholder.txt
+validation/evidence/final/post-fix-summary.txt
+validation/evidence/final/pytest.txt
+validation/evidence/final/python-compile.txt
+validation/evidence/final/release-behavior-tests.txt
+validation/evidence/final/shell-syntax.txt
+validation/evidence/final/structured-parse.txt
+validation/evidence/final/tool-availability.txt
+validation/evidence/final/uv-build.txt
+validation/evidence/final/uv-lock-check.txt
+validation/evidence/final/workflows.txt
+validation/evidence/phase5-environment.txt
+validation/evidence/phase5-meta.txt
+validation/evidence/phase5-pytest.txt
+validation/evidence/phase5-release-archive.txt
+validation/evidence/phase5-release-receipt.json
+validation/evidence/phase5-root-digests.sha256
+validation/validation_checks.jsonl
+validation/validation_findings.jsonl
+validation/validation_report.yaml
 ```

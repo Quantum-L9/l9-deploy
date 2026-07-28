@@ -1,0 +1,26 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "archive_files": 367,
+  "archive_name": "l9-deploy-release.zip",
+  "archive_sha256": "sha256:5b5a1f03a6e58876cdb5cfea66fe7ca180d4c99b297393bb348fd59c88463ad1",
+  "archive_size_bytes": 424204,
+  "built_at": "2026-07-28T06:05:31Z",
+  "receipt_digest": "sha256:d36630415cf5467d08c2efde1060416808b188654b5d6f72288d31d55ef5e6f9",
+  "repository": "Quantum-L9/l9-deployment-platform",
+  "schema": "l9.repository-release-receipt/v1",
+  "source_date_epoch": 1785218731,
+  "source_manifest_sha256": "sha256:cc34116e5c75f8c8f279ba16c404fe073d871e8ee501412cbc8a174378c90941",
+  "version": "0.1.5"
+}

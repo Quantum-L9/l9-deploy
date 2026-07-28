@@ -1,0 +1,9 @@
+{
+  "archive": "/home/ubuntu/work/release-out/l9-deploy-release.zip",
+  "files": 367,
+  "receipt": "/home/ubuntu/work/release-out/release-receipt.json",
+  "receipt_digest": "sha256:d36630415cf5467d08c2efde1060416808b188654b5d6f72288d31d55ef5e6f9",
+  "sha256": "5b5a1f03a6e58876cdb5cfea66fe7ca180d4c99b297393bb348fd59c88463ad1",
+  "source_date_epoch": 1785218731,
+  "status": "PASS"
+}
