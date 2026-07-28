@@ -39,6 +39,13 @@ from .images import inspect_repo_digest, pull_image, require_digest_ref
 from .locks import environment_lock
 from .migrations import execute_migration
 from .promotion import promote
+from .releases import (
+    bind_release_runtime_env,
+    cleanup_release_directories,
+    materialize_release_runtime_env,
+    remove_release_directory,
+    validate_release_runtime_env_path,
+)
 from .rollback import rollback_release
 
 
@@ -114,27 +121,62 @@ def execute_plan(
     started = datetime.now(UTC).isoformat()
     step_results: list[ReceiptStep] = []
     previous = typed_plan.previous_release
-    candidate = ReleaseState(
-        request_id=typed_plan.request_id,
-        source_commit_sha=typed_plan.source_commit_sha,
-        image_ref=typed_plan.image_ref,
-        plan_digest=typed_plan.plan_digest,
+    candidate = bind_release_runtime_env(
+        ReleaseState(
+            request_id=typed_plan.request_id,
+            source_commit_sha=typed_plan.source_commit_sha,
+            image_ref=typed_plan.image_ref,
+            plan_digest=typed_plan.plan_digest,
+        ),
+        typed_plan.project_id,
+        typed_plan.environment,
     )
+    candidate_runtime_env = validate_release_runtime_env_path(
+        candidate, typed_plan.project_id, typed_plan.environment
+    )
+    if candidate_runtime_env is None:
+        raise ExecutionError("candidate runtime configuration identity is unavailable")
+    rollback_probe = next(
+        (
+            HealthProbe.model_validate(step.details)
+            for step in typed_plan.steps
+            if step.kind == "health"
+        ),
+        None,
+    )
+    if previous is not None and previous.plan_digest == candidate.plan_digest:
+        raise ExecutionError(
+            "candidate release identity collides with the active release directory"
+        )
+    if typed_profile.release.automatic_rollback and previous is not None:
+        if rollback_probe is None:
+            raise ExecutionError("automatic rollback requires a health probe")
+        if validate_release_runtime_env_path(
+            previous, typed_plan.project_id, typed_plan.environment
+        ) is None:
+            raise ExecutionError(
+                "previous release lacks runtime configuration identity; deployment is blocked"
+            )
     promoted = False
     try:
         with environment_lock(lock_root, typed_plan.environment):
             require_digest_ref(typed_plan.image_ref)
-            remote_env = Path(
-                f"/srv/l9/projects/{typed_plan.project_id}/{typed_plan.environment}/runtime.env"
-            )
+            if previous is not None:
+                previous_runtime_env = validate_release_runtime_env_path(
+                    previous, typed_plan.project_id, typed_plan.environment
+                )
+                if previous_runtime_env is not None:
+                    executor.run(["test", "-f", str(previous_runtime_env)])
             if runtime_env_file is not None:
-                executor.write_text(
-                    remote_env,
+                candidate = materialize_release_runtime_env(
+                    executor,
+                    candidate,
+                    typed_plan.project_id,
+                    typed_plan.environment,
                     runtime_env_file.read_text(encoding="utf-8"),
-                    mode=0o600,
                 )
             else:
-                executor.run(["test", "-f", str(remote_env)])
+                executor.run(["test", "-f", str(candidate_runtime_env)])
             for step in typed_plan.steps:
                 details: dict[str, JsonValue]
                 kind = step.kind
@@ -154,26 +196,41 @@ def execute_plan(
                     details = {"image_ref": typed_plan.image_ref}
                 elif kind == "render":
                     compose = render_compose(
-                        typed_profile, typed_plan.image_ref, typed_plan.environment
+                        typed_profile,
+                        typed_plan.image_ref,
+                        typed_plan.environment,
+                        str(candidate_runtime_env),
                     )
                     path = compose_path(typed_plan.project_id, typed_plan.environment)
                     executor.write_text(path, compose, mode=0o640)
                     details = {"path": str(path)}
                 elif kind == "migration":
-                    env_file = (
-                        f"/srv/l9/projects/{typed_plan.project_id}/"
-                        f"{typed_plan.environment}/runtime.env"
-                    )
                     details = execute_migration(
-                        executor, typed_profile, typed_plan.image_ref, env_file
+                        executor,
+                        typed_profile,
+                        typed_plan.image_ref,
+                        str(candidate_runtime_env),
                     )
                 elif kind == "deploy":
                     path = compose_path(typed_plan.project_id, typed_plan.environment)
                     executor.run(["docker", "network", "inspect", "l9-runtime"], check=False)
                     executor.run(["docker", "network", "create", "l9-runtime"], check=False)
                     executor.run(
-                        ["docker", "compose", "-f", str(path), "up", "-d", "--remove-orphans"],
-                        env={"L9_IMAGE_REF": typed_plan.image_ref},
+                        [
+                            "docker",
+                            "compose",
+                            "--env-file",
+                            str(candidate_runtime_env),
+                            "-f",
+                            str(path),
+                            "up",
+                            "-d",
+                            "--remove-orphans",
+                        ],
+                        env={
+                            "L9_IMAGE_REF": typed_plan.image_ref,
+                            "L9_RUNTIME_ENV_FILE": str(candidate_runtime_env),
+                        },
                         timeout=step.timeout_seconds,
                     )
                     details = {}
@@ -197,7 +254,15 @@ def execute_plan(
                     promoted = True
                 elif kind == "cleanup":
                     executor.run(["docker", "image", "prune", "-f"], check=False)
-                    details = {}
+                    details = TypeAdapter(dict[str, JsonValue]).validate_python(
+                        cleanup_release_directories(
+                            executor,
+                            candidate,
+                            previous,
+                            typed_plan.project_id,
+                            typed_plan.environment,
+                        )
+                    )
                 else:
                     raise ExecutionError(f"unsupported plan step: {kind}")
                 step_results.append(
@@ -234,7 +299,11 @@ def execute_plan(
         return receipt_document
     except Exception as exc:
         rollback_result: dict[str, JsonValue] | None = None
-        if typed_profile.release.automatic_rollback and previous is not None:
+        if (
+            typed_profile.release.automatic_rollback
+            and previous is not None
+            and rollback_probe is not None
+        ):
             try:
                 rollback_result = TypeAdapter(dict[str, JsonValue]).validate_python(
                     rollback_release(
@@ -243,10 +312,24 @@ def execute_plan(
                         typed_plan.environment,
                         previous,
                         failed_release=candidate if promoted else None,
+                        health_probe=rollback_probe,
+                        base_url=base_url,
+                        publish_state=promoted,
                     )
                 )
             except Exception as rollback_exc:
                 rollback_result = {"status": "FAIL", "error": str(rollback_exc)}
+        if not promoted:
+            try:
+                remove_release_directory(
+                    executor, candidate, typed_plan.project_id, typed_plan.environment
+                )
+            except Exception as cleanup_exc:
+                if rollback_result is None:
+                    rollback_result = {
+                        "status": "FAIL",
+                        "error": f"candidate cleanup failed: {cleanup_exc}",
+                    }
         idempotency_store.fail(typed_plan.request_id, str(exc))
         failed = create_deployment_receipt(
             request_id=typed_plan.request_id,

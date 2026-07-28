@@ -19,8 +19,11 @@ import pytest
 
 from l9_deploy.canonical import file_sha256, sha256_digest
 from l9_deploy.contracts.models import ReleaseState
+from l9_deploy.errors import ExecutionError
 from l9_deploy.evidence.ledger import ReceiptLedger
 from l9_deploy.execution.engine import execute_plan
+from l9_deploy.execution.promotion import write_runtime_state
+from l9_deploy.execution.releases import bind_release_runtime_env
 from l9_deploy.planning.planner import build_plan
 from l9_deploy.requests.idempotency import IdempotencyStore
 from l9_deploy.requests.verifier import verify_request
@@ -35,6 +38,7 @@ class FakeExecutor:
 
     def __post_init__(self) -> None:
         self.commands: list[tuple[list[str], dict[str, Any]]] = []
+        self.health_calls = 0
 
     def run(self, command, **kwargs):  # type: ignore[no-untyped-def]
         command_list = list(command)
@@ -44,8 +48,11 @@ class FakeExecutor:
         if command_list and command_list[0] == "test":
             return CommandResult(tuple(command_list), 0, "", "")
         if command_list == ["true"]:
-            if self.fail_health:
+            self.health_calls += 1
+            if self.fail_health and self.health_calls == 1:
                 raise RuntimeError("health failed")
+            return CommandResult(tuple(command_list), 0, "", "")
+        if command_list and command_list[0] == "find":
             return CommandResult(tuple(command_list), 0, "", "")
         return CommandResult(tuple(command_list), 0, "ok\n", "")
 
@@ -178,9 +185,19 @@ def test_execute_plan_writes_immutable_receipt_and_runtime_state(
     compose_commands = [
         item
         for item in executor.commands
-        if item[0][:3] == ["docker", "compose", "-f"]
+        if item[0][:2] == ["docker", "compose"]
     ]
     assert compose_commands[0][1]["env"]["L9_IMAGE_REF"] == plan.image_ref
+    candidate_env = state["current"]["runtime_env_path"]
+    assert candidate_env in compose_commands[0][0]
+    assert compose_commands[0][1]["env"]["L9_RUNTIME_ENV_FILE"] == candidate_env
+    migration_commands = [
+        command
+        for command, _ in executor.commands
+        if command[:2] == ["docker", "run"]
+    ]
+    assert candidate_env in migration_commands[0]
+    assert "/srv/l9/projects/seo-bot/staging/runtime.env" not in str(executor.commands)
 
 
 def test_idempotent_replay_does_not_execute_again(
@@ -216,11 +233,15 @@ def test_idempotent_replay_does_not_execute_again(
 def test_health_failure_rolls_back_container_and_state(
     deployment_context, schema_registry, tmp_path: Path
 ) -> None:  # type: ignore[no-untyped-def]
-    previous = ReleaseState(
-        request_id="previous-request",
-        source_commit_sha="c" * 40,
-        image_ref="ghcr.io/quantum-l9/seo-bot@sha256:" + "d" * 64,
-        plan_digest="sha256:" + "f" * 64,
+    previous = bind_release_runtime_env(
+        ReleaseState(
+            request_id="previous-request",
+            source_commit_sha="c" * 40,
+            image_ref="ghcr.io/quantum-l9/seo-bot@sha256:" + "d" * 64,
+            plan_digest="sha256:" + "f" * 64,
+        ),
+        "seo-bot",
+        "staging",
     )
     plan = build_plan(
         verified(deployment_context, schema_registry),
@@ -228,6 +249,9 @@ def test_health_failure_rolls_back_container_and_state(
         created_at="2026-07-21T12:00:01Z",
     )
     executor = FakeExecutor(tmp_path / "remote", plan.image_ref, fail_health=True)
+    write_runtime_state(executor, "seo-bot", "staging", previous, None)
+    state_path = tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json"
+    state_before = state_path.read_bytes()
     with pytest.raises(RuntimeError, match="health failed"):
         execute(
             plan=plan,
@@ -235,20 +259,33 @@ def test_health_failure_rolls_back_container_and_state(
             executor=executor,
             tmp_path=tmp_path,
         )
-    state_path = tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json"
-    state = json.loads(state_path.read_text(encoding="utf-8"))
-    assert state["current"]["image_ref"] == previous.image_ref
+    assert state_path.read_bytes() == state_before
+    rollback_commands = [
+        command for command, _ in executor.commands if command[:2] == ["docker", "compose"]
+    ]
+    assert str(previous.runtime_env_path) in rollback_commands[-1]
+    candidate_directory = str(
+        Path(
+            "/srv/l9/projects/seo-bot/staging/releases/"
+            + plan.plan_digest.removeprefix("sha256:")
+        )
+    )
+    assert (["rm", "-rf", "--", candidate_directory], {}) in executor.commands
     assert ReceiptLedger(tmp_path / "receipts/ledger").verify()["entries"] == 1
 
 
 def test_receipt_publication_failure_restores_state(
     deployment_context, schema_registry, tmp_path: Path, monkeypatch
 ) -> None:  # type: ignore[no-untyped-def]
-    previous = ReleaseState(
-        request_id="previous-request",
-        source_commit_sha="c" * 40,
-        image_ref="ghcr.io/quantum-l9/seo-bot@sha256:" + "d" * 64,
-        plan_digest="sha256:" + "f" * 64,
+    previous = bind_release_runtime_env(
+        ReleaseState(
+            request_id="previous-request",
+            source_commit_sha="c" * 40,
+            image_ref="ghcr.io/quantum-l9/seo-bot@sha256:" + "d" * 64,
+            plan_digest="sha256:" + "f" * 64,
+        ),
+        "seo-bot",
+        "staging",
     )
     plan = build_plan(
         verified(deployment_context, schema_registry),
@@ -278,6 +315,63 @@ def test_receipt_publication_failure_restores_state(
         (tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json").read_text(encoding="utf-8")
     )
     assert state["current"]["image_ref"] == previous.image_ref
+
+
+def test_candidate_release_identity_cannot_collide_with_active_release(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    verified_request = verified(deployment_context, schema_registry)
+    initial_plan = build_plan(verified_request, created_at="2026-07-21T12:00:01Z")
+    previous = bind_release_runtime_env(
+        ReleaseState(
+            request_id="previous-request",
+            source_commit_sha="c" * 40,
+            image_ref="ghcr.io/quantum-l9/seo-bot@sha256:" + "d" * 64,
+            plan_digest=initial_plan.plan_digest,
+        ),
+        "seo-bot",
+        "staging",
+    )
+    plan = initial_plan.model_copy(update={"previous_release": previous})
+    executor = FakeExecutor(tmp_path / "remote", plan.image_ref)
+
+    with pytest.raises(ExecutionError, match="collides with the active release"):
+        execute(
+            plan=plan,
+            deployment_context=deployment_context,
+            executor=executor,
+            tmp_path=tmp_path,
+        )
+
+    assert executor.commands == []
+
+
+def test_legacy_previous_release_without_configuration_identity_fails_before_mutation(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    previous = ReleaseState(
+        request_id="previous-request",
+        source_commit_sha="c" * 40,
+        image_ref="ghcr.io/quantum-l9/seo-bot@sha256:" + "d" * 64,
+        plan_digest="sha256:" + "f" * 64,
+    )
+    plan = build_plan(
+        verified(deployment_context, schema_registry),
+        previous_release=previous,
+        created_at="2026-07-21T12:00:01Z",
+    )
+    executor = FakeExecutor(tmp_path / "remote", plan.image_ref)
+
+    with pytest.raises(ExecutionError, match="lacks runtime configuration identity"):
+        execute(
+            plan=plan,
+            deployment_context=deployment_context,
+            executor=executor,
+            tmp_path=tmp_path,
+        )
+
+    assert executor.commands == []
+    assert not (tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json").exists()
 
 
 def test_idempotency_finalization_failure_is_recoverable_without_rollback(
