@@ -162,8 +162,8 @@ Freeze the source release only after code, tests, docs, and validation evidence 
 export SOURCE_DATE_EPOCH="$(git log -1 --pretty=%ct)"
 make release-prepare
 make release-archive \
-  ARCHIVE=../l9-deployment-platform.zip \
-  RECEIPT=../l9-deployment-platform.receipt.json
+  ARCHIVE=../l9-deploy.zip \
+  RECEIPT=../l9-deploy.receipt.json
 ```
 
 `release-prepare` removes generated residue, regenerates `MANIFEST.json`, `MANIFEST.md`,
@@ -197,3 +197,34 @@ with ad hoc `infisical export > file` commands.
 Commands must be supplied as argument arrays, never shell-concatenated strings. Explicit secret
 environment values are redacted from captured output. Timeouts terminate the entire process group
 and drain its pipes before returning an operational-limit failure.
+
+## 12. Candidate release transaction
+
+1. Verify the approved plan digest and immutable image digest.
+2. Confirm the candidate release identity does not equal the active release identity.
+3. Confirm the previous state includes a configuration identity and its env file exists.
+4. Prepare the candidate release directory.
+5. Materialize secrets to a temporary file, validate names and values, set mode `0600`, and atomically
+   rename it to the candidate `runtime.env`.
+6. Run migration and Docker Compose using that exact env path.
+7. Verify health.
+8. Promote image and runtime configuration identity together.
+9. Remove only validated stale releases while retaining active and rollback targets.
+
+A pre-promotion failure must leave the active state document byte-identical. Remove the failed
+candidate directory and preserve the active and previous releases for investigation.
+
+## 13. Configuration-consistent rollback
+
+Rollback must use the previous release directory and its `runtime.env`; restoring only an image is
+insufficient. Before mutation, verify the previous configuration identity and env file. Restore the
+previous image with that env, verify health, then republish the previous state pointer. If health
+fails, stop and preserve both release directories and receipts. Database recovery is a separate
+runbook and must never be inferred from container rollback.
+
+## 14. Agent operation
+
+Automation operating in this repository must follow `docs/agents/deployment-agent.md`. Agents may
+prepare plans, validate evidence, and modify reviewed source on an authorized change branch. They may
+not self-approve, mint production authority, bypass protected environments, expose secret material,
+or directly mutate production outside the governed workflow.

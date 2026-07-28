@@ -106,3 +106,24 @@ The detached repository release receipt binds repository identity, version, exac
 archive SHA-256, byte size, member count, source manifest SHA-256, and reproducible timestamp. A
 receipt digest mismatch, archive rename, source manifest drift, member mismatch, mode drift, or
 non-uniform timestamp is a release-blocking integrity failure.
+
+## Job-scoped OIDC policy
+
+The repository claim used by GitHub OIDC policy is `Quantum-L9/l9-deploy`. Workflow-level
+`id-token: write` is forbidden. The only jobs permitted to request it are:
+
+- `deploy-dispatch.yml` / `deploy`
+- `drift-detect.yml` / `plan`
+- `provision-plan.yml` / `plan`
+- `provision-apply.yml` / `apply`
+
+Every permitted job must actually exchange the token through the approved Infisical path. Approval
+and validation jobs must not request identity tokens. External Infisical claim restrictions remain a
+Phase 6 validation dependency and must be tested with positive and negative exchanges.
+
+## Runtime secret retention
+
+Release-owned `runtime.env` files contain secret material and are mode `0600`. They are never logged,
+attached as workflow artifacts, copied into receipts, or treated as generated evidence. Cleanup may
+remove only validated stale digest-addressed release directories and must retain the active and
+rollback releases. Operators must not edit historical env files in place.

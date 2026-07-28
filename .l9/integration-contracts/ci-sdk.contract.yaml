@@ -11,6 +11,6 @@
 # --- /L9_META ---
 schema: l9.integration-contract/v1
 producer: Quantum-L9/l9-ci-sdk
-consumer: Quantum-L9/l9-deployment-platform
+consumer: Quantum-L9/l9-deploy
 provides: [canonical CI evidence, compatibility metadata]
 consumer_rules: [verify digest, verify compatibility, never reconstruct findings, never parse provider-native reports]

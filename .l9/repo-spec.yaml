@@ -11,14 +11,14 @@
 # --- /L9_META ---
 schema: l9.repo-spec/v1
 metadata:
-  repository: Quantum-L9/l9-deployment-platform
-  repository_url: https://github.com/Quantum-L9/l9-deployment-platform
+  repository: Quantum-L9/l9-deploy
+  repository_url: https://github.com/Quantum-L9/l9-deploy
   spec_version: 1.0.0
   status: implementation_complete_external_validation_pending
   visibility: private
-  date: '2026-07-21'
+  date: '2026-07-26'
 identity:
-  name: l9-deployment-platform
+  name: l9-deploy
   constellation_role: infrastructure_and_deployment_control_plane
   architectural_plane: deployment_and_infrastructure
   primary_cloud: hetzner
@@ -135,7 +135,7 @@ integrations:
 security:
   repository_visibility: private
   runner_repository_allowlist:
-  - Quantum-L9/l9-deployment-platform
+  - Quantum-L9/l9-deploy
   workflow_secret_authentication: GitHub OIDC to Infisical
   public_ingress_default: deny
   application_public_ports:
@@ -151,7 +151,7 @@ security:
   - redaction before persistence
   - state encryption and locking
   - host firewall on private interfaces
-  runner_scope: repository-scoped to Quantum-L9/l9-deployment-platform
+  runner_scope: repository-scoped to Quantum-L9/l9-deploy
 phases:
 - id: P0
   name: contract lock

@@ -10,7 +10,7 @@
 # status: active
 # --- /L9_META ---
 schema: l9.integration-contract/v1
-producer: Quantum-L9/l9-deployment-platform
+producer: Quantum-L9/l9-deploy
 consumer: Quantum-L9/.github
 provides: [deployment interface registry, workflow templates, adoption documentation]
 prohibits: [credentials, fleet inventory, private topology, deployment implementation]

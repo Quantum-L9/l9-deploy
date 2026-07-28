@@ -11,7 +11,7 @@
 # --- /L9_META ---
 schema: l9.integration-contract/v1
 producer: consumer repository
-consumer: Quantum-L9/l9-deployment-platform
+consumer: Quantum-L9/l9-deploy
 transport: repository_dispatch
 event_type: l9.release.requested.v1
 requires: [exact source commit, exact OCI digest, profile digest, evidence digest, PASS gate, environment, idempotency key]

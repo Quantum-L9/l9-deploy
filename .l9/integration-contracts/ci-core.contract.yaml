@@ -11,6 +11,6 @@
 # --- /L9_META ---
 schema: l9.integration-contract/v1
 producer: Quantum-L9/l9-ci-core
-consumer: Quantum-L9/l9-deployment-platform
+consumer: Quantum-L9/l9-deploy
 provides: [image digest, source revision, release evidence digest, provenance reference, SBOM reference, gate status]
 prohibits: [SSH, OpenTofu apply, Ansible apply, deployment receipt generation]
