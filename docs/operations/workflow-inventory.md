@@ -43,3 +43,13 @@ Phase 3 keeps only deployment wiring and its existing operational prerequisites 
 - Deployment secret materialization remains downstream of both validation and protected approval.
 - Scanner and linter expansion is outside Phase 3.
 - No workflow is classified obsolete at this phase.
+
+## Enforced OIDC allowlist
+
+The validator rejects workflow-scoped OIDC, OIDC on approval jobs, token permission without an
+approved Infisical consumer, and an Infisical consumer without job-scoped token permission. The exact
+allowlist is `deploy-dispatch.yml/deploy`, `drift-detect.yml/plan`,
+`provision-plan.yml/plan`, and `provision-apply.yml/apply`.
+
+The canonical GitHub repository claim is `Quantum-L9/l9-deploy`. External claim-policy behavior is
+validated only in the protected staging lifecycle.

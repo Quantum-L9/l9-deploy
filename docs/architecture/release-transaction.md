@@ -20,3 +20,15 @@ Mutating steps are idempotency-bound by request digest. A failed candidate is st
 verified image is restored, health is checked again, and a rollback receipt is emitted. Production
 approval binds the operator, environment, and plan digest. A receipt is valid only when its schema and
 canonical digest validate.
+
+## Configuration identity
+
+A release is identified by both immutable image digest and release-owned runtime configuration.
+Candidate preparation creates `releases/<plan-digest>/runtime.env` atomically with mode `0600`.
+Migration and Compose receive that same path. Promotion publishes image and configuration identity as
+one state transition. A pre-promotion failure leaves active state unchanged and deletes only the
+candidate release.
+
+Rollback preflights the previous configuration identity and env-file existence, restores the previous
+image using that env, verifies health, and only then restores the state pointer. Database restoration
+is not part of this transaction.

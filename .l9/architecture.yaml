@@ -10,7 +10,7 @@
 # status: active
 # --- /L9_META ---
 schema: l9.architecture/v1
-repository: Quantum-L9/l9-deployment-platform
+repository: Quantum-L9/l9-deploy
 planes:
   infrastructure:
     owner: infrastructure/opentofu

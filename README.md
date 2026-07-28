@@ -19,7 +19,7 @@ Private, evidence-bearing provisioning and deployment control plane for Quantum-
 
 ## Purpose
 
-`l9-deployment-platform` provisions Hetzner infrastructure, configures hosts, deploys
+`l9-deploy` provisions Hetzner infrastructure, configures hosts, deploys
 approved OCI image digests, verifies health, records immutable receipts, and restores the
 previous verified release when a transaction fails.
 
@@ -89,8 +89,8 @@ bash -n scripts/*.sh
 make release-prepare
 SOURCE_DATE_EPOCH="$(git log -1 --pretty=%ct)" \
   make release-archive \
-  ARCHIVE=../l9-deployment-platform.zip \
-  RECEIPT=../l9-deployment-platform.receipt.json
+  ARCHIVE=../l9-deploy.zip \
+  RECEIPT=../l9-deploy.receipt.json
 ```
 
 `release-artifacts` regenerates the manifest, responsibility map, final tree, and checksum
@@ -146,3 +146,24 @@ reports, or a partially written ZIP from contaminating the artifact being attest
 - Never hide blocked validation behind a PASS label.
 
 See `RUNBOOK.md`, `SECURITY.md`, `ARCHITECTURE.md`, and `VALIDATION.md`.
+
+## Canonical repository identity
+
+The canonical repository identity is `Quantum-L9/l9-deploy` and the canonical short name is
+`l9-deploy`. Historical `origin: l9-deployment-platform` values in L9 metadata are provenance labels,
+not active repository coordinates. They are retained only where changing them would rewrite artifact
+history. Live repository URLs, OIDC claims, runner scopes, integration producers/consumers, archive
+names, and operator instructions must use `Quantum-L9/l9-deploy`.
+
+See `docs/operations/repository-identity.md` and `docs/agents/deployment-agent.md`.
+
+## Release-owned runtime configuration
+
+Each candidate release owns a protected `runtime.env` inside its digest-addressed release directory.
+Secret preparation writes a validated temporary file and atomically publishes it with mode `0600`.
+Migration and Docker Compose consume the same candidate env path. Promotion records image and
+configuration identity together; rollback restores the previous release directory, env file, image,
+and health before republishing state. The mutable top-level `runtime.env` is not a release authority.
+
+OIDC is job-scoped. Only jobs that exchange GitHub identity for Infisical credentials may request
+`id-token: write`; validation and approval jobs may not mint tokens.
