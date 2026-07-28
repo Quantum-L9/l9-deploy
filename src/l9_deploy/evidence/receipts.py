@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 from copy import deepcopy
@@ -58,9 +59,7 @@ def create_deployment_receipt(
         "image_ref": image_ref,
         "plan_digest": plan_digest,
         "previous_release": (
-            previous_release.model_dump(mode="json", by_alias=True)
-            if previous_release
-            else None
+            previous_release.model_dump(mode="json", by_alias=True) if previous_release else None
         ),
         "steps": redact(step_documents),
         "artifacts": redact(artifact_documents),

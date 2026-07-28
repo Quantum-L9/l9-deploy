@@ -6,6 +6,7 @@ tags: [L9_TEST, request-verification]
 owner: platform
 status: active
 --- /L9_META ---"""
+
 from __future__ import annotations
 
 import copy
@@ -43,18 +44,14 @@ def test_repository_dispatch_parser_rejects_unknown_action() -> None:
         parse_repository_dispatch({"action": "surprise", "client_payload": {}})
 
 
-def test_request_verifier_accepts_registered_digest(
-    deployment_context, schema_registry
-) -> None:  # type: ignore[no-untyped-def]
+def test_request_verifier_accepts_registered_digest(deployment_context, schema_registry) -> None:  # type: ignore[no-untyped-def]
     result = verified(deployment_context, schema_registry)
     assert result.project.id == "seo-bot"
     assert result.environment.server_ids == ("seo-staging-01",)
     assert deployment_context["bundle_validator"].calls
 
 
-def test_request_verifier_rejects_profile_drift(
-    deployment_context, schema_registry
-) -> None:  # type: ignore[no-untyped-def]
+def test_request_verifier_rejects_profile_drift(deployment_context, schema_registry) -> None:  # type: ignore[no-untyped-def]
     request = copy.deepcopy(deployment_context["request"])
     request["profile"]["digest"] = "sha256:" + "0" * 64
     with pytest.raises(AuthorizationError, match="profile digest mismatch"):
@@ -84,9 +81,7 @@ def test_request_verifier_rejects_mutable_or_mismatched_image(
         )
 
 
-def test_request_verifier_rejects_bad_source_ref(
-    deployment_context, schema_registry
-) -> None:  # type: ignore[no-untyped-def]
+def test_request_verifier_rejects_bad_source_ref(deployment_context, schema_registry) -> None:  # type: ignore[no-untyped-def]
     request = copy.deepcopy(deployment_context["request"])
     request["source"]["ref"] = "refs/heads/feature/not-approved"
     with pytest.raises(AuthorizationError, match="source ref mismatch"):

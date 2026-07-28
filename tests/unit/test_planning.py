@@ -6,6 +6,7 @@ tags: [L9_TEST, planning]
 owner: platform
 status: active
 --- /L9_META ---"""
+
 from __future__ import annotations
 
 from l9_deploy.planning.planner import build_plan
@@ -23,9 +24,7 @@ def get_verified(deployment_context, schema_registry):  # type: ignore[no-untype
     )
 
 
-def test_plan_is_deterministic_for_fixed_timestamp(
-    deployment_context, schema_registry
-) -> None:  # type: ignore[no-untyped-def]
+def test_plan_is_deterministic_for_fixed_timestamp(deployment_context, schema_registry) -> None:  # type: ignore[no-untyped-def]
     verified = get_verified(deployment_context, schema_registry)
     timestamp = "2026-07-21T12:01:00Z"
     first = build_plan(verified, created_at=timestamp)

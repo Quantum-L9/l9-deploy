@@ -11,6 +11,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -70,7 +71,6 @@ def atomic_write_text(path: Path, text: str, mode: int = 0o600) -> None:
 def atomic_write_json(path: Path, value: Any, mode: int = 0o600) -> None:
     atomic_write_text(
         path,
-        json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
-        + "\n",
+        json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n",
         mode,
     )

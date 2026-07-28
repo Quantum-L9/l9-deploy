@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
@@ -68,10 +69,12 @@ def test_github_event_loader_and_dispatch(tmp_path: Path) -> None:
 def test_infisical_environment_is_private_cleaned_and_injection_safe(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    payload = json.dumps([
-        {"secretKey": "API_KEY", "secretValue": "abc=123"},
-        {"secretKey": "PORT", "secretValue": "443"},
-    ])
+    payload = json.dumps(
+        [
+            {"secretKey": "API_KEY", "secretValue": "abc=123"},
+            {"secretKey": "PORT", "secretValue": "443"},
+        ]
+    )
     monkeypatch.setattr(infisical, "run_command", lambda *a, **k: _result([], payload))
     with infisical.rendered_environment("project", "production") as path:
         assert path.read_text(encoding="utf-8") == "API_KEY=abc=123\nPORT=443\n"
@@ -231,7 +234,7 @@ def test_health_command_probe_and_http_scheme_restriction() -> None:
         attempts=1,
     )
     assert run_probe(probe, executor=Executor()) == {"attempt": 1, "type": "command"}
-    assert calls == [(('true',), {"timeout": 2})]
+    assert calls == [(("true",), {"timeout": 2})]
 
     http = HealthProbe(
         type="http",

@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import importlib.util
@@ -93,9 +94,7 @@ def test_release_archive_is_deterministic_and_matches_source(tmp_path: Path) -> 
         "files": first_result["files"],
         "content_match": True,
     }
-    receipt_result = validator._validate_release_receipt(
-        receipt_path, first, snapshot
-    )
+    receipt_result = validator._validate_release_receipt(receipt_path, first, snapshot)
     assert receipt_result["status"] == "PASS"
     assert receipt_result["archive_sha256"] == first_receipt.archive_sha256
 
@@ -122,6 +121,7 @@ def test_release_archive_validation_rejects_missing_and_modified_files(
     _rewrite_archive(source, modified, mutate=members[0])
     with pytest.raises(ValueError, match="archive content mismatch"):
         validator._validate_archive(modified, snapshot)
+
 
 def test_release_receipt_rejects_archive_digest_tampering(tmp_path: Path) -> None:
     builder = _load_script("l9_build_release_receipt_test", "build-release-archive.py")
@@ -157,7 +157,6 @@ def test_release_inventory_rejects_coverage_residue(tmp_path: Path) -> None:
     assert is_forbidden_release_path(PurePosixPath("artifacts/coverage.xml"))
     with pytest.raises(ValueError, match="forbidden release residue"):
         validator._validate_root(snapshot)
-
 
 
 def test_release_artifact_generation_does_not_create_bytecode_residue(

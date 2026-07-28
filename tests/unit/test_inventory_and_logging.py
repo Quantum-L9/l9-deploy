@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
@@ -37,9 +38,12 @@ def test_inventory_generation_is_deterministic_private_and_role_grouped(
     assert first == second
     assert first_bytes == output.read_bytes()
     assert output.stat().st_mode & 0o777 == 0o640
-    assert first["all"]["children"]["management"]["hosts"]["l9-deploy-01"][  # type: ignore[index]
-        "ansible_host"
-    ] == "10.90.1.10"
+    assert (
+        first["all"]["children"]["management"]["hosts"]["l9-deploy-01"][  # type: ignore[index]
+            "ansible_host"
+        ]
+        == "10.90.1.10"
+    )
     children = first["all"]["children"]
     application_hosts = children["application"]["hosts"]
     assert application_hosts["seo-staging-01"]["l9_environment"] == "staging"

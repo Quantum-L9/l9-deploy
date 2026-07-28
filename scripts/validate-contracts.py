@@ -12,6 +12,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 import sys
 from pathlib import Path
 
@@ -55,9 +56,7 @@ def validate_wire_model_parity(registry: SchemaRegistry) -> None:
 
         generated_properties = generated.get("properties")
         committed_properties = committed.get("properties")
-        if not isinstance(generated_properties, dict) or not isinstance(
-            committed_properties, dict
-        ):
+        if not isinstance(generated_properties, dict) or not isinstance(committed_properties, dict):
             raise ValueError(f"contract properties are malformed: {definition.name}")
 
         if "schema_id" in generated_properties or "schema" not in generated_properties:

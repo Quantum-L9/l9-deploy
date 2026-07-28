@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import ast
@@ -38,7 +39,7 @@ def test_no_self_issued_approval_path_remains(repo_root: Path) -> None:
         if path.is_file() and "__pycache__" not in path.parts
     )
     assert "create-approval-receipt.py" not in combined
-    assert "--approved-by \"${{ github.actor }}\"" not in combined
+    assert '--approved-by "${{ github.actor }}"' not in combined
     assert "collect-github-approval.py" in combined
 
 

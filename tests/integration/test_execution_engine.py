@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
@@ -176,9 +177,7 @@ def test_execute_plan_writes_immutable_receipt_and_runtime_state(
     state = json.loads(state_path.read_text(encoding="utf-8"))
     assert state["current"]["image_ref"] == plan.image_ref
     compose_commands = [
-        item
-        for item in executor.commands
-        if item[0][:3] == ["docker", "compose", "-f"]
+        item for item in executor.commands if item[0][:3] == ["docker", "compose", "-f"]
     ]
     assert compose_commands[0][1]["env"]["L9_IMAGE_REF"] == plan.image_ref
 
@@ -257,6 +256,7 @@ def test_receipt_publication_failure_restores_state(
     )
     calls = {"count": 0}
     from l9_deploy.execution import engine as engine_module
+
     real_publish = engine_module.publish_receipt
 
     def fail_first(*args, **kwargs):  # type: ignore[no-untyped-def]

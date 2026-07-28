@@ -10,6 +10,7 @@ status: active
 
 Frozen Pydantic v2 contracts for deployment control-plane boundaries.
 """
+
 from __future__ import annotations
 
 from datetime import datetime

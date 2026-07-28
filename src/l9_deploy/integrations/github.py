@@ -11,6 +11,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
@@ -40,6 +41,4 @@ def require_private_control_repository(expected: str = "Quantum-L9/l9-deployment
     actual = os.environ.get("GITHUB_REPOSITORY")
     if actual != expected:
         observed = actual or "<unset>"
-        raise AuthorizationError(
-            f"deployment workflow may run only in {expected}; got {observed}"
-        )
+        raise AuthorizationError(f"deployment workflow may run only in {expected}; got {observed}")
