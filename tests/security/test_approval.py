@@ -19,8 +19,8 @@ from pydantic import ValidationError
 
 from l9_deploy.canonical import file_sha256, sha256_digest
 from l9_deploy.contracts.models import ApprovalReceipt
-from l9_deploy.evidence.approval import verify_approval_receipt
 from l9_deploy.errors import AuthorizationError
+from l9_deploy.evidence.approval import verify_approval_receipt
 
 
 def approval_documents(tmp_path: Path) -> tuple[dict[str, object], Path]:

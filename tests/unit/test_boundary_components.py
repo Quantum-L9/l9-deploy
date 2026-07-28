@@ -13,11 +13,9 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
 
 import pytest
 
@@ -91,18 +89,22 @@ def test_infisical_environment_is_private_cleaned_and_injection_safe(
         monkeypatch.setattr(
             infisical,
             "run_command",
-            lambda *a, payload=json.dumps(invalid), **k: _result([], payload),
+            lambda *a, payload=json.dumps(invalid), **k: _result([], payload),  # noqa: B008
         )
-        with pytest.raises(ExecutionError):
-            with infisical.rendered_environment("project", "production"):
-                pytest.fail("unsafe secret material was yielded")
+        with (
+            pytest.raises(ExecutionError),
+            infisical.rendered_environment("project", "production"),
+        ):
+            pytest.fail("unsafe secret material was yielded")
 
 
 def test_infisical_rejects_invalid_json(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(infisical, "run_command", lambda *a, **k: _result([], "not-json"))
-    with pytest.raises(ExecutionError, match="invalid JSON"):
-        with infisical.rendered_environment("project", "production"):
-            pytest.fail("invalid export was yielded")
+    with (
+        pytest.raises(ExecutionError, match="invalid JSON"),
+        infisical.rendered_environment("project", "production"),
+    ):
+        pytest.fail("invalid export was yielded")
 
 
 def test_evidence_record_is_redacted_schema_valid_and_digest_bound() -> None:

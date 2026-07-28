@@ -15,6 +15,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol
 
+from pydantic import JsonValue
+
 from ..contracts.models import ReleaseState
 from ..errors import ExecutionError
 from .promotion import write_runtime_state
@@ -31,7 +33,7 @@ def rollback_release(
     environment: str,
     previous_release: ReleaseState | None,
     failed_release: ReleaseState | None = None,
-) -> dict[str, object]:
+) -> dict[str, JsonValue]:
     if previous_release is None:
         raise ExecutionError("previous release is unavailable; automatic rollback is blocked")
     image_ref = previous_release.image_ref

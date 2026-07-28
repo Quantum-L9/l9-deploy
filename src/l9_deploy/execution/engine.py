@@ -42,7 +42,6 @@ from .migrations import execute_migration
 from .promotion import promote
 from .rollback import rollback_release
 
-
 LOGGER = logging.getLogger(__name__)
 
 

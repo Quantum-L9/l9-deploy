@@ -53,8 +53,10 @@ def _environment_names(record: dict[str, object]) -> set[str]:
 
 def _reviewer(record: dict[str, object]) -> str | None:
     user = record.get("user")
-    if isinstance(user, dict) and isinstance(user.get("login"), str):
-        return user["login"]
+    if isinstance(user, dict):
+        login = user.get("login")
+        if isinstance(login, str):
+            return login
     return None
 
 
