@@ -20,6 +20,7 @@ import pytest
 
 from l9_deploy.canonical import file_sha256, sha256_digest
 from l9_deploy.contracts.models import ReleaseState
+from l9_deploy.errors import ExecutionError
 from l9_deploy.evidence.ledger import ReceiptLedger
 from l9_deploy.execution.engine import execute_plan
 from l9_deploy.planning.planner import build_plan
@@ -180,6 +181,64 @@ def test_execute_plan_writes_immutable_receipt_and_runtime_state(
         item for item in executor.commands if item[0][:3] == ["docker", "compose", "-f"]
     ]
     assert compose_commands[0][1]["env"]["L9_IMAGE_REF"] == plan.image_ref
+
+
+BACKUP_VERIFY_COMMAND = [
+    "/usr/local/sbin/l9-backup-verify",
+    "/srv/l9/backups/seo-bot/production/latest.sql.gz",
+]
+
+
+def test_execute_plan_runs_declared_backup_verify_command(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    plan = build_plan(
+        verified(deployment_context, schema_registry), created_at="2026-07-21T12:00:01Z"
+    )
+    executor = FakeExecutor(tmp_path / "remote", plan.image_ref)
+    receipt = execute(
+        plan=plan,
+        deployment_context=deployment_context,
+        executor=executor,
+        tmp_path=tmp_path,
+    )
+
+    assert receipt["status"] == "PASS"
+    executed = [item[0] for item in executor.commands]
+    assert BACKUP_VERIFY_COMMAND in executed
+    backup_step = next(step for step in receipt["steps"] if step["kind"] == "backup")
+    assert backup_step["details"]["verification"]["status"] == "PASS"
+
+
+def test_backup_verification_failure_aborts_before_mutation(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    @dataclass
+    class VerifyFailingExecutor(FakeExecutor):
+        def run(self, command, **kwargs):  # type: ignore[no-untyped-def]
+            command_list = list(command)
+            if command_list == BACKUP_VERIFY_COMMAND:
+                self.commands.append((command_list, dict(kwargs)))
+                return CommandResult(tuple(command_list), 1, "", "verification failed")
+            return super().run(command, **kwargs)
+
+    plan = build_plan(
+        verified(deployment_context, schema_registry), created_at="2026-07-21T12:00:01Z"
+    )
+    executor = VerifyFailingExecutor(tmp_path / "remote", plan.image_ref)
+    with pytest.raises(ExecutionError, match="backup verification failed"):
+        execute(
+            plan=plan,
+            deployment_context=deployment_context,
+            executor=executor,
+            tmp_path=tmp_path,
+        )
+
+    executed = [item[0] for item in executor.commands]
+    # Deploy aborts before any container mutation (pull/render/compose up).
+    assert not any(item[:2] == ["docker", "compose"] for item in executed)
+    # A FAIL receipt is still recorded in the ledger.
+    assert ReceiptLedger(tmp_path / "receipts/ledger").verify()["entries"] == 1
 
 
 def test_idempotent_replay_does_not_execute_again(
