@@ -1,0 +1,59 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+- name: Require an active-memory Redis ACL password at runtime
+  ansible.builtin.assert:
+    that:
+      - l9_redis_acl_password is defined
+      - l9_redis_acl_password | length > 0
+    fail_msg: >-
+      l9_redis_acl_password must be supplied at runtime (rendered from Infisical);
+      the active-memory Redis user must not use nopass in staging/production.
+    quiet: true
+  no_log: true
+- name: Install Redis server
+  ansible.builtin.apt: {name: redis-server, state: present, update_cache: true}
+- name: Verify Redis meets the minimum version required by the active-memory contract
+  ansible.builtin.command: redis-server --version
+  register: l9_redis_version_out
+  changed_when: false
+- name: Assert Redis >= {{ l9_redis_min_version }}
+  ansible.builtin.assert:
+    that:
+      - (l9_redis_version_out.stdout | regex_search('v=([0-9]+\\.[0-9]+)', '\\1') | first) is version(l9_redis_min_version, '>=')
+    fail_msg: "Redis {{ l9_redis_version_out.stdout }} is older than the required {{ l9_redis_min_version }}."
+    quiet: true
+- name: Ensure Redis data directory exists
+  ansible.builtin.file:
+    path: "{{ l9_redis_data_dir }}"
+    state: directory
+    owner: redis
+    group: redis
+    mode: "0750"
+- name: Render the least-privilege ACL file
+  ansible.builtin.template:
+    src: users.acl.j2
+    dest: "{{ l9_redis_data_dir }}/users.acl"
+    owner: redis
+    group: redis
+    mode: "0640"
+  no_log: true
+  notify: Restart redis
+- name: Render the Redis configuration
+  ansible.builtin.template:
+    src: redis.conf.j2
+    dest: /etc/redis/redis.conf
+    owner: redis
+    group: redis
+    mode: "0640"
+  notify: Restart redis
+- name: Enable and start Redis
+  ansible.builtin.service: {name: redis-server, state: started, enabled: true}

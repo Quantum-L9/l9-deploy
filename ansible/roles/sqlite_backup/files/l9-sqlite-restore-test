@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+# Restores the latest SQLite snapshot into an isolated temp DB and checks integrity.
+# Usage: l9-sqlite-restore-test <project> <environment>
+set -euo pipefail
+project=${1:?project required}
+environment=${2:?environment required}
+src="/srv/l9/backups/${project}/${environment}/latest.sqlite.gz"
+test -s "$src"
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+gzip -dc "$src" > "$tmp"
+test "$(sqlite3 "$tmp" 'PRAGMA integrity_check;')" = "ok"
+sqlite3 "$tmp" 'SELECT count(*) FROM sqlite_master;' >/dev/null
+echo "restore-test PASS"

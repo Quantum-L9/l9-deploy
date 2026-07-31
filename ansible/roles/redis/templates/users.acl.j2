@@ -1,0 +1,18 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+# Rendered Redis ACL. The default account is disabled (no anonymous access); the
+# active-memory user is scoped to the deployment key/channel prefixes with the
+# contract's command allowlist and every prohibited command denied. For exact
+# per-deployment_hash scoping, override l9_redis_acl_rules with the output of
+# l9-graphiti-memory/tools/assurance/render_active_memory_redis_acl.py.
+user default off nopass ~* &* -@all
+user {{ l9_redis_acl_username }} on >{{ l9_redis_acl_password }} resetkeys resetchannels ~{{ l9_redis_key_prefix }}:v1:* &{{ l9_redis_channel_prefix }}.v1.* -@all {{ l9_redis_acl_allowed_categories | join(' ') }} {{ l9_redis_acl_prohibited | join(' ') }}

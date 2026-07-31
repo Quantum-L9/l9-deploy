@@ -1,0 +1,31 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+# Managed by Ansible (role: redis). Private, authenticated, ACL-scoped.
+bind {{ l9_redis_bind_addresses }}
+protected-mode yes
+port {{ l9_redis_port }}
+tcp-backlog 511
+timeout 0
+supervised systemd
+dir {{ l9_redis_data_dir }}
+# Persistence: AOF so the projection survives restarts (still rebuildable from SQLite).
+appendonly {{ l9_redis_appendonly }}
+appendfsync everysec
+# Bounded memory with an eviction policy the contract permits.
+maxmemory {{ l9_redis_maxmemory }}
+maxmemory-policy {{ l9_redis_maxmemory_policy }}
+# Authentication + least-privilege ACL. No anonymous access.
+aclfile {{ l9_redis_data_dir }}/users.acl
+# Harden dangerous administrative commands at the config layer as defense in depth
+# (the ACL already denies them for the application user).
+enable-debug-command no
+enable-module-command no
