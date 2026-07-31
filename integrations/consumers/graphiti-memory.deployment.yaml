@@ -31,13 +31,15 @@ artifact:
   require_sbom_attestation: true
 runtime:
   architecture: linux/amd64
-  container_port: 8080
+  # l9-memory-server serves --transport http on port 8200 by default (server.py).
+  container_port: 8200
   user: non_root
   read_only_root_filesystem: false
   stop_grace_seconds: 30
 health:
-  startup: {type: http, path: /health, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 24}
-  post_deploy: {type: http, path: /health, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 12}
+  # The server exposes /healthz (200 when health is complete, else 503).
+  startup: {type: http, path: /healthz, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 24}
+  post_deploy: {type: http, path: /healthz, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 12}
 release:
   strategy: rolling-single-host
   retain_successful_releases: 5
