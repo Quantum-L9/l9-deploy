@@ -31,8 +31,8 @@ from l9_deploy.contracts.models import (
     IdempotencyDocument,
     ReceiptStep,
     ReleaseEvidenceReference,
-    RepositoryReleaseReceipt,
     ReleaseState,
+    RepositoryReleaseReceipt,
     RuntimeState,
     ServerProfile,
 )

@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
@@ -28,7 +29,7 @@ def _fake_tooling(tmp_path: Path) -> Path:
     curl = binary_dir / "curl"
     curl.write_text(
         "#!/usr/bin/env bash\n"
-        "if [[ \"$*\" == *oidc-auth/login* ]]; then\n"
+        'if [[ "$*" == *oidc-auth/login* ]]; then\n'
         "  printf '%s' '{\"accessToken\":\"access-token-canary\"}'\n"
         "else\n"
         "  printf '%s' '{\"value\":\"oidc-token-canary\"}'\n"
@@ -88,9 +89,7 @@ def test_valid_export_is_sorted_private_and_published_atomically(tmp_path: Path)
     )
 
     assert result.returncode == 0, result.stderr
-    assert destination.read_text(encoding="utf-8") == (
-        "FIRST=one-canary\nSECOND=two-canary\n"
-    )
+    assert destination.read_text(encoding="utf-8") == ("FIRST=one-canary\nSECOND=two-canary\n")
     assert stat.S_IMODE(destination.stat().st_mode) == 0o600
     assert "one-canary" not in result.stdout + result.stderr
     assert "two-canary" not in result.stdout + result.stderr
