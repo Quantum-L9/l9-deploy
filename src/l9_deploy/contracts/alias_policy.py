@@ -14,6 +14,7 @@ L9 NAME-001 continues to prohibit Pydantic aliases generally. The only permitted
 alias is a top-level contract identity declared as ``schema_id`` in the canonical
 contract model module and serialized as the established wire key ``schema``.
 """
+
 from __future__ import annotations
 
 import ast
@@ -64,10 +65,7 @@ def is_allowed_schema_identity_alias(node: ast.AnnAssign, relative_path: str) ->
     call = _field_call(node.value)
     if call is None or _keyword_string(call, "alias") != WIRE_FIELD_NAME:
         return False
-    if any(
-        keyword.arg in {"validation_alias", "serialization_alias"}
-        for keyword in call.keywords
-    ):
+    if any(keyword.arg in {"validation_alias", "serialization_alias"} for keyword in call.keywords):
         return False
     schema_id = _literal_schema_id(node.annotation)
     return schema_id is not None and SCHEMA_ID_PATTERN.fullmatch(schema_id) is not None

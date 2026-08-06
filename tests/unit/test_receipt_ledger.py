@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
@@ -16,9 +17,9 @@ from pathlib import Path
 import pytest
 
 from l9_deploy.contracts.models import ReceiptStep
+from l9_deploy.errors import ContractError
 from l9_deploy.evidence.ledger import ReceiptLedger
 from l9_deploy.evidence.receipts import create_deployment_receipt
-from l9_deploy.errors import ContractError
 
 
 def receipt_document() -> dict[str, object]:

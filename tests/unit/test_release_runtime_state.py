@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import base64
@@ -21,7 +22,6 @@ from l9_deploy import cli
 from l9_deploy.contracts.models import ReleaseState, RuntimeState
 from l9_deploy.errors import ExecutionError
 from l9_deploy.execution.promotion import write_runtime_state
-from l9_deploy.execution.remote import Host, RemoteExecutor
 from l9_deploy.execution.releases import (
     active_runtime_env_path,
     bind_release_runtime_env,
@@ -30,6 +30,7 @@ from l9_deploy.execution.releases import (
     release_runtime_env_path,
     retained_release_directories,
 )
+from l9_deploy.execution.remote import Host, RemoteExecutor
 
 
 def _release(plan_digest: str = "sha256:" + "a" * 64) -> ReleaseState:
@@ -58,11 +59,7 @@ def test_release_runtime_env_path_is_deterministic_and_isolated() -> None:
     release = _release()
     path = release_runtime_env_path("seo-bot", "staging", release.plan_digest)
 
-    assert path == Path(
-        "/srv/l9/projects/seo-bot/staging/releases/"
-        + "a" * 64
-        + "/runtime.env"
-    )
+    assert path == Path("/srv/l9/projects/seo-bot/staging/releases/" + "a" * 64 + "/runtime.env")
     assert path != active_runtime_env_path("seo-bot", "staging")
 
 
@@ -151,9 +148,7 @@ def test_materialize_release_runtime_env_creates_private_release_directory() -> 
 
     assert bound.runtime_env_path is not None
     path = Path(bound.runtime_env_path)
-    assert executor.runs == [
-        (["install", "-d", "-m", "0700", str(path.parent)], {})
-    ]
+    assert executor.runs == [(["install", "-d", "-m", "0700", str(path.parent)], {})]
     assert executor.writes == [(path, "TOKEN=secret-canary\n", 0o600)]
     assert path != active_runtime_env_path("seo-bot", "staging")
 
@@ -182,16 +177,16 @@ def test_remote_writer_streams_secret_content_outside_process_arguments(
 
     monkeypatch.setattr("l9_deploy.execution.remote.run_command", fake_run_command)
     executor = RemoteExecutor(Host("server", "10.0.0.10", "deploy"))
-    secret = "TOKEN=secret-canary\n"
+    env_body = "TOKEN=secret-canary\n"
 
-    executor.write_text(Path("/srv/l9/projects/seo-bot/staging/runtime.env"), secret)
+    executor.write_text(Path("/srv/l9/projects/seo-bot/staging/runtime.env"), env_body)
 
     command = captured["command"]
     assert isinstance(command, list)
     command_text = " ".join(command)
-    assert captured["input_text"] == secret
-    assert secret.strip() not in command_text
-    assert base64.b64encode(secret.encode()).decode() not in command_text
+    assert captured["input_text"] == env_body
+    assert env_body.strip() not in command_text
+    assert base64.b64encode(env_body.encode()).decode() not in command_text
     assert "mktemp" in command_text
     assert "chmod 600" in command_text
     assert "mv -f" in command_text
@@ -249,9 +244,7 @@ def test_cleanup_removes_only_unretained_release_directories() -> None:
         return _RunResult("")
 
     executor.run = run  # type: ignore[method-assign]
-    result = cleanup_release_directories(
-        executor, current, previous, "seo-bot", "staging"
-    )
+    result = cleanup_release_directories(executor, current, previous, "seo-bot", "staging")
 
     assert result["removed_release_directories"] == [stale]
     assert (["rm", "-rf", "--", stale], {}) in executor.runs

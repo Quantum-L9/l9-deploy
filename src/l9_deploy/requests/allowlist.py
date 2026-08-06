@@ -6,15 +6,14 @@ tags: [L9_CONTRACT, allowlist]
 owner: platform
 status: active
 --- /L9_META ---"""
+
 from __future__ import annotations
 
 from ..contracts.models import FleetInventory, FleetProject, ProjectEnvironment
 from ..errors import AuthorizationError
 
 
-def find_project(
-    fleet: FleetInventory | dict[str, object], repository: str
-) -> FleetProject:
+def find_project(fleet: FleetInventory | dict[str, object], repository: str) -> FleetProject:
     typed = fleet if isinstance(fleet, FleetInventory) else FleetInventory.model_validate(fleet)
     for project in typed.projects:
         if project.repository == repository:

@@ -10,6 +10,7 @@ status: active
 
 Frozen Pydantic v2 contracts for deployment control-plane boundaries.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -25,7 +26,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-
 
 PROJECT_ID_PATTERN = r"^[a-z][a-z0-9-]{1,63}$"
 RELATIVE_PATH_PATTERN = r"^[A-Za-z0-9._/-]+$"

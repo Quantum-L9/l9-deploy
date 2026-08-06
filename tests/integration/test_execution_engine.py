@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
@@ -135,6 +136,7 @@ def execute(
     executor,
     tmp_path: Path,
     store: IdempotencyStore | None = None,
+    sleep=None,
 ):  # type: ignore[no-untyped-def]
     approval_path, history_path = approval(
         tmp_path,
@@ -159,6 +161,7 @@ def execute(
         idempotency_store=store or IdempotencyStore(tmp_path / "idempotency.json"),
         request_digest="sha256:" + "e" * 64,
         runtime_env_file=runtime_env,
+        sleep=sleep if sleep is not None else (lambda _seconds: None),
     )
 
 
@@ -182,22 +185,41 @@ def test_execute_plan_writes_immutable_receipt_and_runtime_state(
     state_path = tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json"
     state = json.loads(state_path.read_text(encoding="utf-8"))
     assert state["current"]["image_ref"] == plan.image_ref
-    compose_commands = [
-        item
-        for item in executor.commands
-        if item[0][:2] == ["docker", "compose"]
-    ]
+    compose_commands = [item for item in executor.commands if item[0][:2] == ["docker", "compose"]]
     assert compose_commands[0][1]["env"]["L9_IMAGE_REF"] == plan.image_ref
     candidate_env = state["current"]["runtime_env_path"]
     assert candidate_env in compose_commands[0][0]
     assert compose_commands[0][1]["env"]["L9_RUNTIME_ENV_FILE"] == candidate_env
     migration_commands = [
-        command
-        for command, _ in executor.commands
-        if command[:2] == ["docker", "run"]
+        command for command, _ in executor.commands if command[:2] == ["docker", "run"]
     ]
     assert candidate_env in migration_commands[0]
     assert "/srv/l9/projects/seo-bot/staging/runtime.env" not in str(executor.commands)
+
+
+def test_post_deploy_stabilization_window_is_honored_before_health(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    plan = build_plan(
+        verified(deployment_context, schema_registry), created_at="2026-07-21T12:00:01Z"
+    )
+    executor = FakeExecutor(tmp_path / "remote", plan.image_ref)
+    waited: list[float] = []
+    receipt = execute(
+        plan=plan,
+        deployment_context=deployment_context,
+        executor=executor,
+        tmp_path=tmp_path,
+        sleep=waited.append,
+    )
+
+    expected = deployment_context["profile"]["release"]["stabilization_seconds"]
+    assert expected > 0
+    # The configured stabilization window is now consumed exactly once, before health.
+    assert waited == [expected]
+    health_steps = [step for step in receipt["steps"] if step["kind"] == "health"]
+    assert health_steps
+    assert health_steps[0]["details"]["stabilization_seconds"] == expected
 
 
 def test_idempotent_replay_does_not_execute_again(
@@ -266,8 +288,7 @@ def test_health_failure_rolls_back_container_and_state(
     assert str(previous.runtime_env_path) in rollback_commands[-1]
     candidate_directory = str(
         Path(
-            "/srv/l9/projects/seo-bot/staging/releases/"
-            + plan.plan_digest.removeprefix("sha256:")
+            "/srv/l9/projects/seo-bot/staging/releases/" + plan.plan_digest.removeprefix("sha256:")
         )
     )
     assert (["rm", "-rf", "--", candidate_directory], {}) in executor.commands
@@ -294,6 +315,7 @@ def test_receipt_publication_failure_restores_state(
     )
     calls = {"count": 0}
     from l9_deploy.execution import engine as engine_module
+
     real_publish = engine_module.publish_receipt
 
     def fail_first(*args, **kwargs):  # type: ignore[no-untyped-def]

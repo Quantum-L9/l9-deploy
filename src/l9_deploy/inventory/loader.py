@@ -6,6 +6,7 @@ tags: [L9_CONTRACT, fleet]
 owner: platform
 status: active
 --- /L9_META ---"""
+
 from __future__ import annotations
 
 from pathlib import Path

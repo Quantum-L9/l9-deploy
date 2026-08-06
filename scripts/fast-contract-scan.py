@@ -12,6 +12,7 @@ status: active
 Fast local projection of critical L9 deployment-platform rules.
 Canonical CI evidence is produced by Semgrep and normalized by l9-ci-sdk.
 """
+
 from __future__ import annotations
 
 import ast
@@ -92,9 +93,7 @@ class Visitor(ast.NodeVisitor):
 
     @staticmethod
     def _is_protocol_base(base: ast.expr) -> bool:
-        return (
-            isinstance(base, ast.Name) and base.id == "Protocol"
-        ) or (
+        return (isinstance(base, ast.Name) and base.id == "Protocol") or (
             isinstance(base, ast.Attribute)
             and isinstance(base.value, ast.Name)
             and base.value.id == "typing"

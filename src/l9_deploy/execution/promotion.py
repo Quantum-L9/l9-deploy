@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
@@ -15,6 +16,8 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
+
+from pydantic import JsonValue
 
 from ..canonical import sha256_digest
 from ..contracts.models import ReleaseState, RuntimeState
@@ -36,7 +39,7 @@ def write_runtime_state(
     environment: str,
     current: ReleaseState,
     previous: ReleaseState | None,
-) -> dict[str, object]:
+) -> dict[str, JsonValue]:
     path = state_path(project_id, environment)
     validate_release_runtime_env_path(current, project_id, environment)
     if previous is not None:
@@ -62,7 +65,7 @@ def promote(
     environment: str,
     release: ReleaseState,
     previous_release: ReleaseState | None = None,
-) -> dict[str, object]:
+) -> dict[str, JsonValue]:
     return write_runtime_state(
         executor,
         project_id,
