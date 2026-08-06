@@ -30,7 +30,7 @@ jobs:
           uv pip install
           "setuptools>=70,<81"
           semgrep==1.100.0
-          "l9-ci @ git+https://github.com/Quantum-L9/l9-ci-sdk.git@f546f122d33601ea5a4b2592e3482c5c39eddd82"
+          git+https://github.com/Quantum-L9/l9-ci-sdk.git@5843cfb61f330432559110ecd3f5312d4731a366
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy src/l9_deploy
