@@ -1,0 +1,3 @@
+release-pack-check skipped in-repo: validate-release-pack treats .git as forbidden residue.
+Regenerated FINAL_TREE.md / MANIFEST.json / MANIFEST.md / checksums.sha256 via `make release-artifacts` on main@196ce8a.
+Archive+receipt require a clean export tree (make release-archive from a non-git staging dir).
