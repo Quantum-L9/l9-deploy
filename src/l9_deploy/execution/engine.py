@@ -12,7 +12,8 @@ status: active
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+import time
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
@@ -66,6 +67,7 @@ def execute_plan(
     request_digest: str,
     base_url: str | None = None,
     runtime_env_file: Path | None = None,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> dict[str, object]:
     registry = SchemaRegistry(Path(__file__).resolve().parents[3] / "schemas" / "v1")
     typed_plan = plan if isinstance(plan, DeploymentPlan) else DeploymentPlan.model_validate(plan)
@@ -193,12 +195,23 @@ def execute_plan(
                     )
                     details = {}
                 elif kind == "health":
+                    stabilization_seconds = typed_profile.release.stabilization_seconds
+                    if stabilization_seconds > 0:
+                        LOGGER.info(
+                            "waiting for post-deploy stabilization window",
+                            extra={
+                                "request_id": typed_plan.request_id,
+                                "stabilization_seconds": stabilization_seconds,
+                            },
+                        )
+                        sleep(stabilization_seconds)
                     probe = HealthProbe.model_validate(step.details)
                     details = run_probe(
                         probe,
                         executor=executor,
                         base_url=base_url,
                     )
+                    details = {**details, "stabilization_seconds": stabilization_seconds}
                 elif kind == "promote":
                     details = TypeAdapter(dict[str, JsonValue]).validate_python(
                         promote(

@@ -22,7 +22,15 @@ from typing import Final
 
 import yaml
 
-EXCLUDED_PARTS: Final = {".git", ".venv", ".pytest_cache", "__pycache__", "dist", "build"}
+EXCLUDED_PARTS: Final = {
+    ".git",
+    ".venv",
+    ".pytest_cache",
+    "__pycache__",
+    "artifacts",
+    "dist",
+    "build",
+}
 COMMENT_SUFFIXES: Final = {
     ".yaml",
     ".yml",

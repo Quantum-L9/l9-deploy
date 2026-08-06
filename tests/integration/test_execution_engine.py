@@ -130,6 +130,7 @@ def execute(
     executor,
     tmp_path: Path,
     store: IdempotencyStore | None = None,
+    sleep=None,
 ):  # type: ignore[no-untyped-def]
     approval_path, history_path = approval(
         tmp_path,
@@ -154,6 +155,7 @@ def execute(
         idempotency_store=store or IdempotencyStore(tmp_path / "idempotency.json"),
         request_digest="sha256:" + "e" * 64,
         runtime_env_file=runtime_env,
+        sleep=sleep if sleep is not None else (lambda _seconds: None),
     )
 
 
@@ -239,6 +241,31 @@ def test_backup_verification_failure_aborts_before_mutation(
     assert not any(item[:2] == ["docker", "compose"] for item in executed)
     # A FAIL receipt is still recorded in the ledger.
     assert ReceiptLedger(tmp_path / "receipts/ledger").verify()["entries"] == 1
+
+
+def test_post_deploy_stabilization_window_is_honored_before_health(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    plan = build_plan(
+        verified(deployment_context, schema_registry), created_at="2026-07-21T12:00:01Z"
+    )
+    executor = FakeExecutor(tmp_path / "remote", plan.image_ref)
+    waited: list[float] = []
+    receipt = execute(
+        plan=plan,
+        deployment_context=deployment_context,
+        executor=executor,
+        tmp_path=tmp_path,
+        sleep=waited.append,
+    )
+
+    expected = deployment_context["profile"]["release"]["stabilization_seconds"]
+    assert expected > 0
+    # The configured stabilization window is now consumed exactly once, before health.
+    assert waited == [expected]
+    health_steps = [step for step in receipt["steps"] if step["kind"] == "health"]
+    assert health_steps
+    assert health_steps[0]["details"]["stabilization_seconds"] == expected
 
 
 def test_idempotent_replay_does_not_execute_again(
