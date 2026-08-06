@@ -16,9 +16,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  id-token: write
 jobs:
   plan:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

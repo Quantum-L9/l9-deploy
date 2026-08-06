@@ -19,9 +19,11 @@ on:
         options: [management, staging, production]
 permissions:
   contents: read
-  id-token: write
 jobs:
   plan:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
