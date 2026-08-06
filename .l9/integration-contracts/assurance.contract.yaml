@@ -11,6 +11,6 @@
 # --- /L9_META ---
 schema: l9.integration-contract/v1
 producer: Quantum-L9/l9-assurance
-consumer: Quantum-L9/l9-deployment-platform
+consumer: Quantum-L9/l9-deploy
 provides: [versioned security and assurance testkits]
 consumer_rules: [pin supported versions, use documented interfaces, mark unavailable interfaces UNKNOWN]

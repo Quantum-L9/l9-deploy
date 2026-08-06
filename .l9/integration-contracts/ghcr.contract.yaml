@@ -10,7 +10,7 @@
 # status: active
 # --- /L9_META ---
 schema: l9.integration-contract/v1
-producer: Quantum-L9/l9-deployment-platform
+producer: Quantum-L9/l9-deploy
 consumer: ghcr.io
 access: read-only
 requires: [exact digest, expected repository, provenance verification, SBOM verification when policy requires]

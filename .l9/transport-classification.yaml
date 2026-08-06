@@ -7,7 +7,7 @@
 # status: active
 # --- /L9_META ---
 schema: l9.transport-classification/v1
-repository: Quantum-L9/l9-deployment-platform
+repository: Quantum-L9/l9-deploy
 classification: infrastructure_control_plane
 constellation_node: false
 transport_packet:

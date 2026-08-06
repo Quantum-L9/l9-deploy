@@ -13,7 +13,7 @@ status: active
 
 ## System role
 
-`l9-deployment-platform` is the authoritative provisioning and deployment control plane for
+`l9-deploy` is the authoritative provisioning and deployment control plane for
 Quantum-L9 hosted services. It is not a constellation runtime node, CI evidence producer,
 secret authority, or application repository.
 
@@ -53,7 +53,7 @@ CI evidence before binding it to an image.
 Owns the public organization interface registry and thin starter workflows. It does not
 contain deployment execution logic or production credentials.
 
-### `l9-deployment-platform`
+### `l9-deploy`
 
 Owns request verification, deterministic plans, authorization verification, OpenTofu,
 Ansible, private runner execution, deployment transactions, rollback, and receipts.
@@ -193,3 +193,33 @@ The receipt is deliberately detached to avoid recursive hashing. Its digest cove
 field except `receipt_digest`, while `archive_sha256` covers the ZIP bytes and
 `source_manifest_sha256` covers the frozen source inventory. The release workflow may publish only
 when all three identities agree.
+
+## Release-owned configuration transaction
+
+```text
+approved immutable plan
+  -> create digest-addressed candidate release directory
+  -> materialize validated runtime.env.tmp
+  -> chmod 0600 and atomic rename to runtime.env
+  -> run migration with candidate runtime.env
+  -> run Docker Compose with candidate runtime.env
+  -> verify health
+  -> atomically promote image + runtime configuration identity
+  -> retain previous release as rollback target
+```
+
+The release directory is the unit of runtime identity. Candidate and active release identities may
+not collide. Missing previous configuration identity or a missing previous env file fails before
+remote mutation. A failure before promotion leaves active state byte-identical and removes only the
+failed candidate directory.
+
+Rollback is configuration-consistent: it selects the previous release directory, uses that
+release's `runtime.env`, restores the previous image, verifies health, and only then republishes the
+previous state pointer. Database recovery remains a separate policy decision.
+
+## Workflow identity boundary
+
+Workflow-level OIDC is prohibited. Token permission belongs only to the exact secret-consuming job.
+Approval, request-validation, and evidence-validation jobs operate without `id-token: write`. The
+workflow validator enforces both directions: an Infisical consumer requires job-scoped OIDC, and a
+job with OIDC must contain the approved Infisical consumer.
