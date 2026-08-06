@@ -71,7 +71,7 @@ jobs:
       - name: Install pinned canonical SDK
         run: |
           git clone --filter=blob:none https://github.com/Quantum-L9/l9-ci-sdk.git .l9-ci-sdk
-          git -C .l9-ci-sdk checkout 6368ba17a98231d461a13b71e149e114ad766834
+          git -C .l9-ci-sdk checkout 5843cfb61f330432559110ecd3f5312d4731a366
           python3 -m pip install --disable-pip-version-check ./.l9-ci-sdk
       - id: canonical
         name: Verify canonical CI evidence
