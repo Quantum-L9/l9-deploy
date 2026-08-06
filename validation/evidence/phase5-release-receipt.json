@@ -1,0 +1,13 @@
+{
+  "archive_files": 393,
+  "archive_name": "l9-deploy-release.zip",
+  "archive_sha256": "sha256:7b91146d6f9e8da670d8c6d375eca4945084de50fb98a1fc9839229d4380feb8",
+  "archive_size_bytes": 457521,
+  "built_at": "2026-08-06T08:03:18Z",
+  "receipt_digest": "sha256:10a5f429f16fa2aabf1dc6debee83b7de38a93c6cbe3b3d2ddd739dd9744e743",
+  "repository": "Quantum-L9/l9-deployment-platform",
+  "schema": "l9.repository-release-receipt/v1",
+  "source_date_epoch": 1786003398,
+  "source_manifest_sha256": "sha256:8d5cbdb9843f55591d52fe52df7af6a8c96c3861ac7d22f2889f2d595fec7e80",
+  "version": "0.1.5"
+}

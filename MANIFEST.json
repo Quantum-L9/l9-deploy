@@ -15,9 +15,9 @@
   "schema": "l9.repository-manifest/v1",
   "repository": "Quantum-L9/l9-deployment-platform",
   "version": "0.1.5",
-  "generated_at": "2026-07-22T00:00:00Z",
-  "file_count": 353,
-  "total_size_bytes": 788738,
+  "generated_at": "2026-08-06T08:03:18Z",
+  "file_count": 390,
+  "total_size_bytes": 910810,
   "self_exclusions": [
     "MANIFEST.json",
     "MANIFEST.md",
@@ -40,13 +40,13 @@
       "path": ".github/actions/collect-approval/action.yml",
       "size_bytes": 2028,
       "sha256": "e2e23ce7478c72033e1a33d0d55613c095ed36243a8b088971d63a2ff8114a7d",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/dependabot.yml",
       "size_bytes": 479,
       "sha256": "735f2414437271c24e3a49441419d4cad28fcc41a9bf5d2eb52be9733389cb5c",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/pull_request_template.md",
@@ -58,79 +58,79 @@
       "path": ".github/workflows/backup-verify.yml",
       "size_bytes": 1201,
       "sha256": "b6325d74c648141c5f21a0a6194a63b432f2b7673a738be1ba13654b55c5fba7",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/configure-hosts.yml",
-      "size_bytes": 3141,
-      "sha256": "02d7bbb7d8013cad19b9cd43962f4f9ce4debe5672672f8fa1f60d70c9065813",
-      "media_type": "application/yaml"
+      "size_bytes": 3123,
+      "sha256": "9e06882e4ff8febe2fb126d89c8847c5b31338206877351801d4547327e0d703",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/deploy-dispatch.yml",
-      "size_bytes": 6637,
-      "sha256": "afacfc086f4428d0c4bdaa77df7a957f4d1630adf39c941a7bacc31261dda6d9",
-      "media_type": "application/yaml"
+      "size_bytes": 6691,
+      "sha256": "551549fd551f2c28bf5300448d0385b238670988174e277050188d0d32fdc438",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/deploy-manual.yml",
       "size_bytes": 1383,
       "sha256": "88bc0e8c96789088d39322e9ed084e4753f6fb0eb1137bbf22b219f6b573e086",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/drift-detect.yml",
-      "size_bytes": 2524,
-      "sha256": "390d4630903726794bd95f49001b03a9b318468432e346b8d75a48036f32eda6",
-      "media_type": "application/yaml"
+      "size_bytes": 2566,
+      "sha256": "7303aafe2735d1573f5cbec7fef41f77f9eae92161aa38bcb44c211dc019ea0b",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/fleet-conformance.yml",
       "size_bytes": 1096,
       "sha256": "8f8008f586fd01d4fd986ec19d57f53ccbb85f55b05eabb6d1cd93f2501510dc",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/promote.yml",
       "size_bytes": 2380,
       "sha256": "37c911a02c779312058827f8ddca13deacc994667e06085e520c35c0b960f329",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/provision-apply.yml",
-      "size_bytes": 3886,
-      "sha256": "c7e82ef7214142abd9269e7c1649380623aec14f927fceb7eac3762eb3e7b6cb",
-      "media_type": "application/yaml"
+      "size_bytes": 3948,
+      "sha256": "7de3239a3470719f4f465835e68c02e13eedd0c32dca837f86e9b89880f262d0",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/provision-plan.yml",
-      "size_bytes": 2602,
-      "sha256": "d0433b29cf5eb26d4980f531e030a17cdd859c91238336caaecddd76aa18144e",
-      "media_type": "application/yaml"
+      "size_bytes": 2644,
+      "sha256": "78d6d1436d21b6618407279e3c40251533399e9b899b578357fa471f6ef48908",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/release.yml",
       "size_bytes": 2339,
       "sha256": "75543d09228ec66c0f16d8ebda825a5f9383faf8476bac734207e39bd483c473",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/rollback.yml",
       "size_bytes": 2958,
       "sha256": "5a215beb1f480e1845422a5b096f2a9bc9bc6489da4ac789226ac4a057781ca8",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/runner-maintenance.yml",
-      "size_bytes": 3189,
-      "sha256": "b2aa8539cbcef1b5a0b5af739583434d0a4e803990e75263b6939d813ad19555",
-      "media_type": "application/yaml"
+      "size_bytes": 3171,
+      "sha256": "45c4f724443dec30e162df7804a6d2b7032343da4d02123a2f9076b489121de5",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".github/workflows/validate.yml",
-      "size_bytes": 1921,
-      "sha256": "bc6a80b04ba7e618a5669a1b5a47e266b0051d77a56d7c0f4d6e65c4eb2eab95",
-      "media_type": "application/yaml"
+      "size_bytes": 1952,
+      "sha256": "1ef8a449065bceae0d4f6ac8ba5ff563a7738f95c5680b7e4b742256d9c8ee66",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".gitignore",
@@ -140,123 +140,123 @@
     },
     {
       "path": ".l9/architecture.yaml",
-      "size_bytes": 677,
-      "sha256": "494c16a5b02c1c6b9e7369c54e1bbba02fcdea27c6728d7a07129c2570cf7d60",
-      "media_type": "application/yaml"
+      "size_bytes": 664,
+      "sha256": "705e8c84e2fd29a285b8e8972e1f5decc0a973e1263631d0f90eb86423222266",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/compatibility.yaml",
       "size_bytes": 890,
       "sha256": "cfa1a3c5a11559f8a4544180cb640a78704783d2501bf977df21b35309c8185a",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/governance-provider.yaml",
       "size_bytes": 757,
       "sha256": "98b0728d0eca1e2dcc5162e56e3f1df22efdcec86278ee7e52a3773fc84cacaf",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/integration-contracts/assurance.contract.yaml",
-      "size_bytes": 460,
-      "sha256": "a48da0d7658e1f5b11d3130d9cef3400f0d550c5184e005f835b078bfe7fd553",
-      "media_type": "application/yaml"
+      "size_bytes": 447,
+      "sha256": "5a017cc766e8d8934766277996eab5b3ed589a900bf0b6f86178156fb10d88cd",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/integration-contracts/ci-core.contract.yaml",
-      "size_bytes": 496,
-      "sha256": "295a7dde52c304aaaf9f8e5e4bae84bb2c815c38d7184753804c298811680264",
-      "media_type": "application/yaml"
+      "size_bytes": 483,
+      "sha256": "d78643300b7376b5850086de1ae1c1ea965f503b776f6d0c5602425063148316",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/integration-contracts/ci-sdk.contract.yaml",
-      "size_bytes": 475,
-      "sha256": "b4a64a533fc2a72ecc29e511241e46a9559ee6b31d25b9468c9f0d49c75923cf",
-      "media_type": "application/yaml"
+      "size_bytes": 462,
+      "sha256": "beb6e09f8856b860a0fc2183b510f8c0f9c973bd1fa7cff474bdcc859a2a6e05",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/integration-contracts/consumer.contract.yaml",
-      "size_bytes": 581,
-      "sha256": "6e01dec6663fd99efc5ada01b9834655611328692f45f87e69a4eb18d0c24bfd",
-      "media_type": "application/yaml"
+      "size_bytes": 568,
+      "sha256": "50a00a4671074a414da9a195d80cba0b0782ee412204e9e90d61353c170208d9",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/integration-contracts/ghcr.contract.yaml",
-      "size_bytes": 414,
-      "sha256": "9a0b6a45e1b136fe0d9046d2c8d48006d7a28a3d24f7b6fd409c59ef1bbf005f",
-      "media_type": "application/yaml"
+      "size_bytes": 401,
+      "sha256": "fa1713852d84cf1b1c20d5f7c6b6e3f15d6f5660e0ff99d659ecef4f1fd674df",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/integration-contracts/github-org.contract.yaml",
-      "size_bytes": 469,
-      "sha256": "ae1a6c749a990af5ae544db90555397c152d51b6042edba988931a871c7d9333",
-      "media_type": "application/yaml"
+      "size_bytes": 456,
+      "sha256": "ba43272f5cee03a45065287c2795e845f4c8a8471b72f8ae24cee204a2d1a8b2",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/integration-contracts/hetzner.contract.yaml",
-      "size_bytes": 441,
-      "sha256": "c80443f7dabeaf976a594d74c364fa2f95810c5baa3596f708c8c41dde97d0d1",
-      "media_type": "application/yaml"
+      "size_bytes": 428,
+      "sha256": "efdae9773d9665785ec359cd51f70e18ba0ca230172d6aef8fd824c994e2f72d",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/integration-contracts/infisical.contract.yaml",
       "size_bytes": 402,
       "sha256": "50564bfabe7ef6cbf999304d6d7714261fe4e457da153c9f51baf92c8fa75094",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/integration-contracts/repo-template.contract.yaml",
-      "size_bytes": 471,
-      "sha256": "735b67550f00b6c18318b3bfcb526e05a5f0b83f26185762306d66022095f2ff",
-      "media_type": "application/yaml"
+      "size_bytes": 458,
+      "sha256": "b3c5e22471a31f7070eb8ca28502cdf8d5379554d2cd722cc45a1df07217c5bb",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/metadata-exclusions.yaml",
       "size_bytes": 1342,
       "sha256": "17155d67c6b8ff59c51de6ddc4e4496876e36a6ba927d5ad58ba8bcd225c07aa",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/ownership.yaml",
       "size_bytes": 721,
       "sha256": "2546f0b2febe2e948d439b6465e315e118629ccde28e4ec08212362db37570c4",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/policies/l9-deployment-contracts.yml",
       "size_bytes": 2269,
       "sha256": "e9801e314228a9e771472a6af2ed0bef30504593b5aa0b8b79e9e2e3120b2e2e",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/release-policy.yaml",
       "size_bytes": 448,
       "sha256": "c616ba614f8794e1c012ba9ef37b07c0c1d9b6b7eb2bdf908463a4c46505b918",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/repo-spec.yaml",
-      "size_bytes": 5973,
-      "sha256": "720860e7d7ca10467922dcceec62332db93decac72073804a31634f9a22c3e3b",
-      "media_type": "application/yaml"
+      "size_bytes": 5908,
+      "sha256": "935d320f4fd50279e8581161822d5206cbf6a18816efb682d8cefa14d70f1082",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/tool-stack.yaml",
       "size_bytes": 409,
       "sha256": "33efce1f905c31d37fbd0cf214766b4cf5e8f8a5eb3407d72b72ae39e8a1ce49",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".l9/transport-classification.yaml",
-      "size_bytes": 1057,
-      "sha256": "00f638d34e3d8d7db0b9326f56d480eff6d0e312c6ac8624b9c4bd012e0e6864",
-      "media_type": "application/yaml"
+      "size_bytes": 1044,
+      "sha256": "7d0a4e3d685c7186f79e30f54a32d5bbefe9cb7569f715d61f55cf3f16b665c7",
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".pre-commit-config.yaml",
       "size_bytes": 1099,
       "sha256": "29326f094af5f45dacd6040015c8ea8da7e3e694f254bcc1803b8609ba9073da",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": ".python-version",
@@ -266,8 +266,8 @@
     },
     {
       "path": "ARCHITECTURE.md",
-      "size_bytes": 7459,
-      "sha256": "cc4a2db8de684b227886899bea219d8177050f315185a1247588d5635464dfcb",
+      "size_bytes": 8875,
+      "sha256": "82c07447413f514eacd3f2b1ee3970e497cc170e55ad48f9b4201cad2a9445f1",
       "media_type": "text/markdown"
     },
     {
@@ -292,7 +292,7 @@
       "path": "CONVERGENCE_REPORT.yaml",
       "size_bytes": 1283,
       "sha256": "4595a29ef5ecf825e3e550ef765863578e2c78254ab6f99791ad5d51447f18ad",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "DELTA_REPORT.md",
@@ -302,15 +302,15 @@
     },
     {
       "path": "FINAL_TREE.md",
-      "size_bytes": 17398,
-      "sha256": "0c24ebaee06c67041f65ceb8946f76d714d806b86244216e83fc545b40826073",
+      "size_bytes": 19515,
+      "sha256": "bf4921a2f8cdd4f85d1f2c95e935841a0970da6945bed6a26ad86853443b4f7b",
       "media_type": "text/markdown"
     },
     {
       "path": "GAP_DEFECT_MATRIX.yaml",
       "size_bytes": 6285,
       "sha256": "646785cc6d95308273a2b30d53b922f1a9f0a457d0415c09b78f3b96a1644a82",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "Makefile",
@@ -320,8 +320,8 @@
     },
     {
       "path": "README.md",
-      "size_bytes": 6578,
-      "sha256": "f96088b5d88ed78b2cd793481171ea0a6b3e91fd7690cac8cb72374120117f0e",
+      "size_bytes": 7825,
+      "sha256": "e34358c5b7b65b94a1f27c022216de506affbe962359f305847a3ac210169b11",
       "media_type": "text/markdown"
     },
     {
@@ -338,14 +338,14 @@
     },
     {
       "path": "RUNBOOK.md",
-      "size_bytes": 7807,
-      "sha256": "007eb158e5654549cb837c3e0b80f09a88f1b7132ed7d6da5987eee5be6ad662",
+      "size_bytes": 9541,
+      "sha256": "8f81c97c0e62f43c46fa579c8a2f9e87a685c9c77726b07e93afa7dca00eaa9c",
       "media_type": "text/markdown"
     },
     {
       "path": "SECURITY.md",
-      "size_bytes": 4795,
-      "sha256": "03d38d11110e756f9ea66b84ed9cc07742850a3b83ae08bb2adfec64c13a2711",
+      "size_bytes": 5810,
+      "sha256": "5ae5d1132a6ed11316aefd8e4bbe87f777f75d9ab3ae0b70f87a89f1688cf1e7",
       "media_type": "text/markdown"
     },
     {
@@ -358,7 +358,7 @@
       "path": "TRACEABILITY_MAP.yaml",
       "size_bytes": 5436,
       "sha256": "64c06ecdc6af2042e9cd42cf37e14c0a9178697d8cf7284d2850c1b57bb4691e",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "UNKNOWN_REGISTER.md",
@@ -379,64 +379,64 @@
       "media_type": "application/octet-stream"
     },
     {
-      "path": "ansible/inventories/generated/README.md",
-      "size_bytes": 542,
-      "sha256": "bb78f38411d36f6eac934f34ca8e9d971be973691a9e4851bad6203af89fe350",
-      "media_type": "text/markdown"
-    },
-    {
       "path": "ansible/inventories/group_vars/all.yml",
       "size_bytes": 577,
       "sha256": "4b886e398302b6037f40c03a4ddacaf188e17080d2360e13e442ee73e21d98f5",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/playbooks/bootstrap.yml",
       "size_bytes": 301,
       "sha256": "5ebe0c669779af4febbade9ec8b5136d9a9c3c06bbd3d55d00c84ba64cddebbe",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/playbooks/configure-backups.yml",
       "size_bytes": 290,
       "sha256": "cedb7209cd9f3c0320ed9a5563517bd8ee07762b3648dbd13dea5e9e7fbc2819",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/playbooks/configure-memory.yml",
+      "size_bytes": 314,
+      "sha256": "37a51f32bdd135e0f378bcae75193e051daf46dad4caabf606806bfca5c9eb0f",
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/playbooks/configure-runner.yml",
       "size_bytes": 331,
       "sha256": "8260624a08deba33747c4e188e8820d14541ab2165d1ab985b26af5491c95b5b",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/playbooks/configure-runtime.yml",
       "size_bytes": 307,
       "sha256": "e9360d6132a05a7efa57e86b1743541e72a58c8b39dcc4de2ae92352f3bcc927",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/playbooks/decommission.yml",
       "size_bytes": 900,
       "sha256": "5aff4062f025ee5d3e2123b89e1b40c57099907b423feff25b67eef2dabcec21",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/playbooks/harden.yml",
       "size_bytes": 284,
       "sha256": "b50aeab8a0e6df95be835d56111c0bf7a61685101738d45cf3ce899d63274080",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/playbooks/verify.yml",
       "size_bytes": 271,
       "sha256": "d0775ab9078cf2428b9ef91c7b802580830dc942951f6d33fea638599be95657",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/requirements.yml",
       "size_bytes": 373,
       "sha256": "bb81f7cd5300cd8dcb8571c5a2a3cb7d05c855505fa27fc9a2d93df1ba9c1d1d",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/backup_agent/files/l9-backup-verify",
@@ -454,67 +454,67 @@
       "path": "ansible/roles/backup_agent/tasks/main.yml",
       "size_bytes": 679,
       "sha256": "05233a52cbd929b69d3f51379ec09b88e755a79d89b5e3f8fa582c27fc45ccfd",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/base/defaults/main.yml",
       "size_bytes": 288,
       "sha256": "ea4e554a060c5602e033b7372a3bf5141e94614469e3c6d172640d54c3e3ea3a",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/base/tasks/main.yml",
       "size_bytes": 701,
       "sha256": "83164fa8f920e07b8c587f52ae4dec5cb9df7ea552eec41b5b959e60ad802d70",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/caddy/tasks/main.yml",
       "size_bytes": 1125,
       "sha256": "a8dc56126d85de54c2b63dd38f334749dc0e1ced39cb5c95fad57893a2535b6e",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/conformance/tasks/main.yml",
       "size_bytes": 864,
       "sha256": "30b88b136411ac18827b16aa583c61ae5221fa0bb8d3db1c6e25933922cf5260",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/docker/handlers/main.yml",
       "size_bytes": 286,
       "sha256": "ec663aeb586263631beead2eb9736e798b96ad3e4b75b2f904111906f2226725",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/docker/tasks/main.yml",
       "size_bytes": 1296,
       "sha256": "62c418bb95d657f3e7b42f249679c07c1333c0b969f6673a3e407a2634deaa9b",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/github_runner/defaults/main.yml",
       "size_bytes": 427,
       "sha256": "b73c4067700cb2352b43751f42dd5c859defe36b018ff5a8214877e55a74c2f2",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/github_runner/tasks/main.yml",
       "size_bytes": 2133,
       "sha256": "b5d951c55278b94203255ca5731252e5be572512d48a41eb9ac0e8609e289974",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/host_firewall/handlers/main.yml",
       "size_bytes": 286,
       "sha256": "af0cfd68a0fe9bdf4c5d24b887b2fdff64d47e7f49b04830d36f43d0c31e652a",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/host_firewall/tasks/main.yml",
       "size_bytes": 542,
       "sha256": "a3a8c5466c6cf299db876ea6c98f10e8dd9972dd0540e876f65367f80e23a7ef",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/host_firewall/templates/nftables.conf.j2",
@@ -526,133 +526,187 @@
       "path": "ansible/roles/journald/handlers/main.yml",
       "size_bytes": 283,
       "sha256": "dcba791e03aae9db3406eea8ed77623baff11857b79a59030abbc533dd0cedf8",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/journald/tasks/main.yml",
       "size_bytes": 477,
       "sha256": "882856a106c6fc60e0aa75542752d96b323fb4f36bda4b207139622a1df581ed",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/roles/redis/defaults/main.yml",
+      "size_bytes": 1891,
+      "sha256": "2bea57a43164ec7878a172eef4bf0e2dac7e141de39247c0b81cfe050e888317",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/roles/redis/handlers/main.yml",
+      "size_bytes": 291,
+      "sha256": "c23f01a12a85a4972c2e9a9eaf1b703849a80cd5e813abfd0cde9cdffdb7ff51",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/roles/redis/tasks/main.yml",
+      "size_bytes": 1936,
+      "sha256": "2387d867c512148b735b44e5e7e458476556ec412754b186e0ebe3ea924cf8ae",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/roles/redis/templates/redis.conf.j2",
+      "size_bytes": 998,
+      "sha256": "ebcc930176aedcaa0f7ce4b210bf5e45262da93f30b4e55688dd45d90331dd0a",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/roles/redis/templates/users.acl.j2",
+      "size_bytes": 867,
+      "sha256": "8a71c5497ab4e304a1eb14f747375fd9787e64dcf9185861f906538570d7b0df",
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/runner_tooling/tasks/main.yml",
       "size_bytes": 2309,
       "sha256": "c8d8a4fcc1cf5f1e528458cc4de986376c0379f20856fa9bc0f70f8ed943ef27",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/roles/sqlite_backup/files/l9-sqlite-backup",
+      "size_bytes": 862,
+      "sha256": "5a7edb8b5cdc9872853540705a9646c1bc45c9c7e0912ad2233e726c08fe8c46",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/roles/sqlite_backup/files/l9-sqlite-restore-test",
+      "size_bytes": 728,
+      "sha256": "b05f87d2215ff90fbb60884165c0518486bb70d86ba8fc240daf12e4c7983484",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/roles/sqlite_backup/files/l9-sqlite-verify",
+      "size_bytes": 595,
+      "sha256": "5435d9f145a1f94714d2aa90261e30e8c890d31779aed72970ceb6dc9d396d15",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "ansible/roles/sqlite_backup/tasks/main.yml",
+      "size_bytes": 982,
+      "sha256": "1a4eba300a3101834f6103bfd5544270ce4245a93b9a6fb544ea983129135881",
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/sshd/handlers/main.yml",
       "size_bytes": 265,
       "sha256": "e38c98a873c0644ebe4c53fc6dce17307792014a864dfc8d859ea62c9cc8c1f3",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/sshd/tasks/main.yml",
       "size_bytes": 755,
       "sha256": "fb19d0ea8cf1b5cd2ca349967793127fc62aa709dd3fc1bb7d295efb2217ec9a",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/time_sync/tasks/main.yml",
       "size_bytes": 360,
       "sha256": "913c57335ab909fd531cf124d11cc92fcaf1b52e9953d245ab5167e3505eb981",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/unattended_upgrades/tasks/main.yml",
       "size_bytes": 573,
       "sha256": "0f8e1e3df625f5f1cc337488ed4dc581e6c1b7dd3f0dce49d18e4e93d1288540",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "ansible/roles/users/tasks/main.yml",
       "size_bytes": 708,
       "sha256": "81ca7fd8ccbc533d63182688e64e6b9a785cf677be89eb05954622f15761b85c",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/policies/compose-policy.yaml",
       "size_bytes": 413,
       "sha256": "88fce6e698d7ac529045c6d41ca4db82bd06e116617aab41811156cf8d47fa1a",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/policies/migration-policy.yaml",
       "size_bytes": 486,
       "sha256": "01cc91304e9d8d00e4c5e896903690989185740b07225ed0565a5c006a0c1db9",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/policies/production.yaml",
       "size_bytes": 419,
       "sha256": "8f990db3b629c5896e777139b204f861483eb42dac70c0ec3d840552f867fca0",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/policies/rollback-policy.yaml",
       "size_bytes": 502,
       "sha256": "3d2e6d913ee1fdbd340c15615406628ee37b9016d27797b7bd4a0841fa10857b",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/policies/staging.yaml",
       "size_bytes": 417,
       "sha256": "5de0da2c8d0d0616f73c19bb3b084684f7154cfda8bf6fa9b6dc2bf175413b3c",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/probes/command.yaml",
       "size_bytes": 308,
       "sha256": "df91293e8a8e06cccdc059c5ef7d53c4e36f3d21c456641250269dabd9ed05e4",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/probes/database.yaml",
       "size_bytes": 305,
       "sha256": "e7a5927bdf059c49d7d17c6678bce8e4df7e96ec8e6d2a656fa4b2df9578e95b",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/probes/http.yaml",
       "size_bytes": 314,
       "sha256": "1702a2f361f2a12d7532b5280741110dbece5db4e0e3f5b41c9ec4225c394029",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/probes/tcp.yaml",
       "size_bytes": 303,
       "sha256": "0e51888b93b2483a09ac3a074d420ffa34ee5a2a3c7d8bcec5dfcfeb708190ef",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/profiles/container-service.yaml",
       "size_bytes": 491,
       "sha256": "69fb9f8ccb35aeb68d1980c97110bd39a962e1903b30038f3fedc353b19bf34b",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/profiles/external-platform.yaml",
       "size_bytes": 413,
       "sha256": "3010b57d5a049fbe339c291cc4d8be30991d041dab593a53da9db7e60034f166",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/profiles/scheduled-job.yaml",
       "size_bytes": 415,
       "sha256": "304778c999a2d7bc2e854c8220290f8f506dbc42023b3138471445d34b80cff9",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/profiles/stateful-container.yaml",
       "size_bytes": 538,
       "sha256": "d1a43264cc0d5c4492ac6f425d8e1e284a5cb091ee4f98302f4e80d83de56bac",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/profiles/worker-service.yaml",
       "size_bytes": 455,
       "sha256": "617c0ef11e727157de302b4a8d6c589e9c29b27d3442434888beaf1319ce4206",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "deployment/templates/caddy-site.caddy.j2",
@@ -721,6 +775,12 @@
       "media_type": "text/markdown"
     },
     {
+      "path": "docs/agents/deployment-agent.md",
+      "size_bytes": 5095,
+      "sha256": "4e1c3146f0fde3c8d2dda111495f41a45fce623171fc149b6679f7e7cf578f8e",
+      "media_type": "text/markdown"
+    },
+    {
       "path": "docs/architecture/control-plane-boundaries.md",
       "size_bytes": 1124,
       "sha256": "2a94e64468f18414b8102f6fe0baed7bf51485339e8db29a00cf3a2634bd1762",
@@ -740,8 +800,8 @@
     },
     {
       "path": "docs/architecture/release-transaction.md",
-      "size_bytes": 895,
-      "sha256": "f0a2d96296975638356aa8f7cce3f6665c8464ca3ef0545b6dcc94ff9b57ce3c",
+      "size_bytes": 1571,
+      "sha256": "c1569979b41c0340068cb1137f50aef52eb03ccba6d596bbf4ac97c81b639feb",
       "media_type": "text/markdown"
     },
     {
@@ -760,6 +820,18 @@
       "path": "docs/operations/fleet-conformance.md",
       "size_bytes": 562,
       "sha256": "98460754876dad253e8c3da4d1bbb09d8b3a338e33497ca2354062cb26f4cb19",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "docs/operations/repository-identity.md",
+      "size_bytes": 2291,
+      "sha256": "11ae25e517c743188485daf04febe1f2d3390dc41a6c4e3b74623b43f01fa566",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "docs/operations/workflow-inventory.md",
+      "size_bytes": 3917,
+      "sha256": "42deb4e34fa9ba36f25a7be226f6ebb1116b62eaef750c8b9554a9d5f30510d0",
       "media_type": "text/markdown"
     },
     {
@@ -800,8 +872,8 @@
     },
     {
       "path": "docs/runbooks/rollback.md",
-      "size_bytes": 554,
-      "sha256": "e3dd7c7d5c2775a2c5c3b11e4a32c9b82ebefd477f5f850e500c0ec5073b6bce",
+      "size_bytes": 1695,
+      "sha256": "613a53b80f7df80598f086b69912b2f0d71169ba99e26c40a616ba78f71e36c4",
       "media_type": "text/markdown"
     },
     {
@@ -826,19 +898,19 @@
       "path": "fleet/environments/management.yaml",
       "size_bytes": 303,
       "sha256": "27c210b6b2f1b5bb1cfa1b547af94c21d1944864289f9cf94b785b7ecc8fe958",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "fleet/environments/production.yaml",
       "size_bytes": 326,
       "sha256": "41765249bcdd73c6ba23fb819b1947bca39c206cc14c20e119520ba0b1367b25",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "fleet/environments/staging.yaml",
       "size_bytes": 324,
       "sha256": "8b36796c28196210130ca27cadef37c5825c7bbb712755b2046bc76dfe0684e1",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "fleet/projects/README.md",
@@ -848,9 +920,9 @@
     },
     {
       "path": "fleet/registry.yaml",
-      "size_bytes": 1025,
-      "sha256": "1a90b7a22260475285e1980d7221cc3c7da8b9dfbdc0509f1d8593a80a367586",
-      "media_type": "application/yaml"
+      "size_bytes": 3509,
+      "sha256": "0941983d558a5f5d104b2c5b6159b150b4d211d9d2689e2802f78367c01b6638",
+      "media_type": "application/octet-stream"
     },
     {
       "path": "infrastructure/opentofu/backend.example.hcl",
@@ -884,8 +956,8 @@
     },
     {
       "path": "infrastructure/opentofu/environments/management/versions.tf",
-      "size_bytes": 188,
-      "sha256": "e409eaf70409a83a4443cc8e61ca9a98f214d3cfb9a6c8233f0b8a67dcee65f9",
+      "size_bytes": 355,
+      "sha256": "29bd759c367aa54dbc7ad622e02e9c6cbbbd430c66401ed3dcd65a0d7d16daff",
       "media_type": "application/octet-stream"
     },
     {
@@ -914,8 +986,8 @@
     },
     {
       "path": "infrastructure/opentofu/environments/production/versions.tf",
-      "size_bytes": 188,
-      "sha256": "e409eaf70409a83a4443cc8e61ca9a98f214d3cfb9a6c8233f0b8a67dcee65f9",
+      "size_bytes": 355,
+      "sha256": "29bd759c367aa54dbc7ad622e02e9c6cbbbd430c66401ed3dcd65a0d7d16daff",
       "media_type": "application/octet-stream"
     },
     {
@@ -944,8 +1016,8 @@
     },
     {
       "path": "infrastructure/opentofu/environments/staging/versions.tf",
-      "size_bytes": 188,
-      "sha256": "e409eaf70409a83a4443cc8e61ca9a98f214d3cfb9a6c8233f0b8a67dcee65f9",
+      "size_bytes": 355,
+      "sha256": "29bd759c367aa54dbc7ad622e02e9c6cbbbd430c66401ed3dcd65a0d7d16daff",
       "media_type": "application/octet-stream"
     },
     {
@@ -1087,10 +1159,16 @@
       "media_type": "application/octet-stream"
     },
     {
+      "path": "integrations/consumers/graphiti-memory.deployment.yaml",
+      "size_bytes": 2926,
+      "sha256": "b1909859365bee5e8c1c1887f1dd38c1f590c8bf3ca43494daccac8f88c02ace",
+      "media_type": "application/octet-stream"
+    },
+    {
       "path": "integrations/consumers/seo-bot.deployment.yaml",
       "size_bytes": 2178,
       "sha256": "42b5776614db9a4e34a5025eaac2123467e8065a24c31ff5cfe09312392216bd",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "integrations/github-org/README.md",
@@ -1102,7 +1180,7 @@
       "path": "integrations/github-org/deployment-interface-registry.yml",
       "size_bytes": 967,
       "sha256": "f02cc1ac39716d63e3523b6e057e4d4cf5b1d548f37784a1505326587c03dee6",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "integrations/github-org/workflow-templates/l9-container-release.properties.json",
@@ -1114,7 +1192,7 @@
       "path": "integrations/github-org/workflow-templates/l9-container-release.yml",
       "size_bytes": 804,
       "sha256": "256153ee27df626ab3a3bff20df4db2e27d9921a2179ad9a1ff31cabbcf18656",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "integrations/github-org/workflow-templates/l9-scheduled-job-release.properties.json",
@@ -1126,7 +1204,7 @@
       "path": "integrations/github-org/workflow-templates/l9-scheduled-job-release.yml",
       "size_bytes": 804,
       "sha256": "256153ee27df626ab3a3bff20df4db2e27d9921a2179ad9a1ff31cabbcf18656",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "integrations/github-org/workflow-templates/l9-stateful-container-release.properties.json",
@@ -1138,7 +1216,7 @@
       "path": "integrations/github-org/workflow-templates/l9-stateful-container-release.yml",
       "size_bytes": 804,
       "sha256": "256153ee27df626ab3a3bff20df4db2e27d9921a2179ad9a1ff31cabbcf18656",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "integrations/github-org/workflow-templates/l9-worker-release.properties.json",
@@ -1150,7 +1228,7 @@
       "path": "integrations/github-org/workflow-templates/l9-worker-release.yml",
       "size_bytes": 804,
       "sha256": "256153ee27df626ab3a3bff20df4db2e27d9921a2179ad9a1ff31cabbcf18656",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "integrations/l9-assurance/README.md",
@@ -1167,8 +1245,8 @@
     {
       "path": "integrations/l9-ci-core/container-release.yml",
       "size_bytes": 11547,
-      "sha256": "8391f612cbacddcf2da3453524929a78a0c9c8a190b830ece69269cb1a637861",
-      "media_type": "application/yaml"
+      "sha256": "a8ccbd989be471bb1792ca6255e97404c83d2c273e37cebe21c09dffda23de26",
+      "media_type": "application/octet-stream"
     },
     {
       "path": "integrations/l9-ci-sdk/README.md",
@@ -1183,10 +1261,88 @@
       "media_type": "text/markdown"
     },
     {
+      "path": "memory-bank/activeContext.md",
+      "size_bytes": 260,
+      "sha256": "ff4eb88fd898cd824c6bbe6550897b76e162ac3c33f3cf505767f5283115e974",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "memory-bank/progress.md",
+      "size_bytes": 196,
+      "sha256": "56c34f21fef51e2c50fa478798b4d29ed28c561f979f98f0e6ba50d9df42362f",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "memory-bank/tasks.md",
+      "size_bytes": 187,
+      "sha256": "8aca501737a24e2f7f75e8d6a132d1e6d77d0a42ab94efca31e2435a9114d0ed",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "memory-bank/tech-debt.md",
+      "size_bytes": 203,
+      "sha256": "cd770a5b6c6f71563b7d22c33f129c879a5093717828a0ee9ae92780f7131c4c",
+      "media_type": "text/markdown"
+    },
+    {
       "path": "pyproject.toml",
       "size_bytes": 1529,
       "sha256": "07a40726ae6d72f262fc6b273e05fd2a5df426c4f53902adb8893bd554473c6e",
-      "media_type": "application/toml"
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "release-work/handoffs/l9-provisioning-handoff/PREFLIGHT_CHECKLIST.md",
+      "size_bytes": 2945,
+      "sha256": "9f996793eb4293d31481efa43bf78e7e6480d3126f818d038e6dd32e7a4e4844",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "release-work/handoffs/l9-provisioning-handoff/README.md",
+      "size_bytes": 2880,
+      "sha256": "be8a8ed0299dcf224d34e119d459220520db4ba7a62b25088496b31cbec12047",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "release-work/handoffs/l9-provisioning-handoff/RUNBOOK.md",
+      "size_bytes": 7310,
+      "sha256": "953211c6c7c23398285f614e6fc5d12d1656692562217c7d65391e06fd130562",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "release-work/handoffs/l9-provisioning-handoff/config-changes/CONFIG_CHANGES.md",
+      "size_bytes": 1563,
+      "sha256": "761829986510df6c4b91211cc5853895adf61caf2077eda33e1788f4c7f7e21f",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "release-work/handoffs/l9-provisioning-handoff/graphiti-image/Dockerfile",
+      "size_bytes": 1601,
+      "sha256": "4fded1358d398022c087dfbafc5bd1ff20589ccba66c7c7e154db73f87aa53e0",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "release-work/handoffs/l9-provisioning-handoff/graphiti-image/README.md",
+      "size_bytes": 1574,
+      "sha256": "24c1446b53b6d7bc362d90b69411f627251177eef76506911c099b7c58101c7d",
+      "media_type": "text/markdown"
+    },
+    {
+      "path": "release-work/handoffs/l9-provisioning-handoff/graphiti-image/publish-image.yml",
+      "size_bytes": 1716,
+      "sha256": "b779ee9463c6fd34e5a929ca73f096f47e760d18930282037ae43814d3382ffa",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "release-work/handoffs/l9-provisioning-handoff/secrets/.env.example",
+      "size_bytes": 821,
+      "sha256": "7f0bc1f8096a1e45d4c64604db7091d6bbf1380c8afe63362c6af34e761e22b6",
+      "media_type": "application/octet-stream"
+    },
+    {
+      "path": "release-work/handoffs/l9-provisioning-handoff/secrets/REQUIRED_SECRETS.md",
+      "size_bytes": 2239,
+      "sha256": "54f9dcbcb7372005893fe204d6570b2b6239881043f0c69f655ac11ec340a5c8",
+      "media_type": "text/markdown"
     },
     {
       "path": "schemas/v1/approval-receipt.schema.json",
@@ -1303,6 +1459,12 @@
       "media_type": "application/json"
     },
     {
+      "path": "schemas/v1/runtime-state.schema.json",
+      "size_bytes": 2142,
+      "sha256": "7402db61b679af8e69e31d1aeb4c7c67cb8a910241497b73560adb90e5f4b4e9",
+      "media_type": "application/json"
+    },
+    {
       "path": "schemas/v1/server-profile.schema.json",
       "size_bytes": 2226,
       "sha256": "7e367e95778f961d70743ddee4becac38ee74a4c48b3fb251895af2641d273bf",
@@ -1310,170 +1472,170 @@
     },
     {
       "path": "scripts/_bootstrap.py",
-      "size_bytes": 1450,
-      "sha256": "583808586d20742fa427a968df358a1ca6143195afbdf727c5587347df9c62ed",
+      "size_bytes": 1451,
+      "sha256": "a6456e5251bc7ef6978b8e3b25db9cd7ee1ff9abd1a9cdc540b5e91432a9eafc",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/bootstrap-runner.sh",
       "size_bytes": 620,
       "sha256": "00489a4cd6a69cbf10a2ba604a27188b274d3549525ced09a3afa75c6fdb88b1",
-      "media_type": "text/x-sh"
+      "media_type": "application/x-sh"
     },
     {
       "path": "scripts/bootstrap-state.sh",
       "size_bytes": 1116,
       "sha256": "2a6943c7e9bab8fc533d3e4b785879afd41f1de92b691b7526dae327cc45d413",
-      "media_type": "text/x-sh"
+      "media_type": "application/x-sh"
     },
     {
       "path": "scripts/break-glass-access.sh",
       "size_bytes": 642,
       "sha256": "d4f37ea6e5a10e82c8ab9bc2987912730276711926a3befd34b8ec6a1a1b142b",
-      "media_type": "text/x-sh"
+      "media_type": "application/x-sh"
     },
     {
       "path": "scripts/build-release-archive.py",
-      "size_bytes": 6706,
-      "sha256": "72ff5fe77c191940a2c39c8ced294e1dc3851c217111d335f7ab480bc107910a",
+      "size_bytes": 6707,
+      "sha256": "e4cff1e9a3c577cf13321e9919db5ef8262db942ac6caa6fce15fc83459d0190",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/collect-github-approval.py",
-      "size_bytes": 4472,
-      "sha256": "40ee5108ae22ec92ed4f237588d7472a3bb923d60de1b05d902794b0a6323eae",
+      "size_bytes": 4473,
+      "sha256": "fdeb2e1782390120953796e1b0e076a750af04ddfe9e91959863fc29aa3a0de9",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/fast-contract-scan.py",
-      "size_bytes": 6812,
-      "sha256": "f94ea52495cc8e4e1f78e81495750fd226b208a557f95456f85084c079f111e6",
+      "size_bytes": 6791,
+      "sha256": "d8278277612f2b915c24db280e41a7a0b5b51234dd9fcc363f9c4b93241d3643",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/generate-inventory.py",
-      "size_bytes": 1238,
-      "sha256": "de260e8effa60acaa59ca7a9c702f4e4f6027188cb049d34662d50a97aacc60e",
+      "size_bytes": 1239,
+      "sha256": "aa857eb8c5fd52d4db41d2cfe7c011ced547e228277cb718407d55a17dd1ccc4",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/generate-release-artifacts.py",
-      "size_bytes": 7924,
-      "sha256": "9192635ff37c69355a9f44c0f7b1bfa88c4f9ad953f1a3a04b6613728810fc47",
+      "size_bytes": 7839,
+      "sha256": "19a73558554e04040879e67dfac72e772888790ffe1befaa62f3d004185ec16c",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/infisical-oidc-env.sh",
-      "size_bytes": 2160,
-      "sha256": "cbbe70b9c52a30e9bf056d7972e4a0fad50e731093bfe9fb6d0d699e842da0d6",
-      "media_type": "text/x-sh"
+      "size_bytes": 4019,
+      "sha256": "94995f5d3b467fa39b8e2a6c670b55b39465ede154df5999fe4f1a9dcf5f7c6d",
+      "media_type": "application/x-sh"
     },
     {
       "path": "scripts/inject-l9-meta.py",
-      "size_bytes": 4697,
-      "sha256": "a23d1c87850be8b71ddd1c593a011177485987bfcb3518117d559ec4061edd18",
+      "size_bytes": 4782,
+      "sha256": "1ab9df1dcf53b0d6c45a52f26c9e5d19be1040c2ba9aed5185b8c3d9ff8c5532",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/install-opentofu.sh",
       "size_bytes": 670,
       "sha256": "00def39fd1531058d04e813456e23b32073649e4a0d01a5e9c478aa6015f9c1f",
-      "media_type": "text/x-sh"
+      "media_type": "application/x-sh"
     },
     {
       "path": "scripts/package-adoption-kit.py",
-      "size_bytes": 1216,
-      "sha256": "3d579e391dedfa3b3089b35873825b41a2572a72a9f6b7729dcd00af3b872624",
+      "size_bytes": 1217,
+      "sha256": "00384e6f7b795e9112b578f7689c06eef5826cf5e1e913e5ca20f057338b0d57",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/prepare-deployment.py",
-      "size_bytes": 3356,
-      "sha256": "71be224d810a5f1c92738ab9b0d756fe3b7f8bd42092fa07468547217f74e9bd",
+      "size_bytes": 3357,
+      "sha256": "49e589243444154f0d4ecdca5586a8ac018a7e64d11b85cbf5d61722e0c5bb0d",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/promote-request.py",
-      "size_bytes": 2548,
-      "sha256": "73e041e1b1b24ebc31eadbf364e83c2f9ddcf2c748f5314caa50fd43af6abb45",
+      "size_bytes": 2549,
+      "sha256": "6140c646654c0c2e5bdabf0b1fbecdb3dcd62ae10c0ed52d3c112cbbc5481b7f",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/rotate-runner.sh",
       "size_bytes": 628,
       "sha256": "35afd2970c46ae0c36c7e09398a9580a9de597d2f6157b9e4fa41187ef170b7c",
-      "media_type": "text/x-sh"
+      "media_type": "application/x-sh"
     },
     {
       "path": "scripts/run-l9-contract-gates.sh",
-      "size_bytes": 979,
-      "sha256": "143b3edbc6585932114b16ecf50312f4929ad54c145644439483343c2282923b",
-      "media_type": "text/x-sh"
+      "size_bytes": 1046,
+      "sha256": "f2e6432ac6dfd0b6e40066f774cf18b73ef46afcdc2204e279f859541e0547aa",
+      "media_type": "application/x-sh"
     },
     {
       "path": "scripts/validate-alignment.py",
-      "size_bytes": 7474,
-      "sha256": "d88729f376d9adae501aebbac3307c391b0fa9226b90f59d1948428f18a16d65",
+      "size_bytes": 7404,
+      "sha256": "703209e5c8d3d7024f82e0700674ccbc7e82e2164a93d3dcdc0fec0c33cb4e14",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/validate-contracts.py",
-      "size_bytes": 4730,
-      "sha256": "3c6209437d0dfea89ee70bd48efe89698f53969bedc06c9c546d7d321d40daf2",
+      "size_bytes": 4723,
+      "sha256": "d4d4a1eabe2f8fe96d5695b27aa4c130a33ed7e55da9b5b2765be00eb74609aa",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/validate-opentofu.sh",
       "size_bytes": 871,
       "sha256": "862b6bfd5aa370f438c81cef6861edf8ae840ca90f19d4c4e7a47c7c5f4bd2e6",
-      "media_type": "text/x-sh"
+      "media_type": "application/x-sh"
     },
     {
       "path": "scripts/validate-release-pack.py",
-      "size_bytes": 12178,
-      "sha256": "7e26c9e993fafe329ef61266d23306c13071e66bad83a1f2bac38c8fd4aaa9b0",
+      "size_bytes": 12133,
+      "sha256": "a690918a4c440cbd75e5567b68cedcb4caa96bd6fdaba2bfae92d27f88f60531",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/validate-workflows.py",
-      "size_bytes": 6733,
-      "sha256": "c18adf601bc450b889411f8d40b33b2a2a71381940118747625df30b2f19405a",
+      "size_bytes": 8077,
+      "sha256": "429537253d104f0bf476641a1fe28798c6e415bb277fb61e7d4fefb50cd0e3d8",
       "media_type": "text/x-python"
     },
     {
       "path": "scripts/verify-attestation.sh",
       "size_bytes": 642,
       "sha256": "3efe7fadf713378ae6febfa375804c866d7ef91baa6d7c8f192527ccce5cfb63",
-      "media_type": "text/x-sh"
+      "media_type": "application/x-sh"
     },
     {
       "path": "scripts/verify-l9-meta.py",
-      "size_bytes": 788,
-      "sha256": "6cfb505a1b6bae9bfafe8b2a237baf2c7fbc0bb2275d0aa4cdf28ec55520a3cf",
+      "size_bytes": 789,
+      "sha256": "2531af52e952edb0147d233dfcdd249efb571135b03d73eccb9b84704d46b6ac",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/__init__.py",
-      "size_bytes": 196,
-      "sha256": "d9f3de438e3697db90fd5733a73a06e9c684444ac610699b12676179e15399b6",
+      "size_bytes": 197,
+      "sha256": "b147f3a2fcac2ac67402d79fce72bea15693227519a0f61b5a1bd05324401d9a",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/__main__.py",
       "size_bytes": 254,
-      "sha256": "a0bc5fa92ee5c45f59eb5bbed4210cbd109dbf45c46fb374557d71c808f7dd26",
+      "sha256": "1195c369846a92179344ac88db15a6272e59c791fee03382ace645a203435e7e",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/canonical.py",
-      "size_bytes": 1857,
-      "sha256": "7337cd8742fb7f2cc72b4472a93119828ec732c551dd40b015e01c1c0e1fed40",
+      "size_bytes": 1850,
+      "sha256": "3311a46d9bb2ba8e9514c336d5c4edd0366c3cfc22865df8f2a05ea489319fa7",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/cli.py",
-      "size_bytes": 30161,
-      "sha256": "e83bf5a3f2c9ccfcb0740d00e385b07d1eb3650ac46affbbb92b05fc2b501f5b",
+      "size_bytes": 31835,
+      "sha256": "b5cde04689876138b1e028ef71dd0f7c2f40d5a3f58690340816671181c9b8e5",
       "media_type": "text/x-python"
     },
     {
@@ -1484,44 +1646,44 @@
     },
     {
       "path": "src/l9_deploy/contracts/alias_policy.py",
-      "size_bytes": 2986,
-      "sha256": "14e0007d32d31eaf7b5e7d3de438723a2d0b4923160f2d2bdc62d4e4aa4509e2",
+      "size_bytes": 2965,
+      "sha256": "c21e72f97c3577d386ca269725c9631cb2eb7942abe10f07c546cf24f5f98daf",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/contracts/catalog.py",
-      "size_bytes": 2870,
-      "sha256": "a93b082645fe1c91c189af27fcf5d80162611b72b45feb994b9994c6b05e28ba",
+      "size_bytes": 3072,
+      "sha256": "514c819629d8c74cc688cdd10602e63b936f92e4c186c0624cec8d76586c1654",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/contracts/compatibility.py",
-      "size_bytes": 780,
-      "sha256": "e33e326f5343686fd2ca2dd5bdc4562556c7f0e645e360c1501e560eb2a977a5",
+      "size_bytes": 781,
+      "sha256": "35295c85b122e9b3d6b869325ab594327a5ed6dd4f4e7413c6eb289bc27e34cb",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/contracts/loader.py",
-      "size_bytes": 615,
-      "sha256": "fcef8081285d0341d8cd621b1b72774b4959d5c2ea5d58f687c30049e3187003",
+      "size_bytes": 616,
+      "sha256": "cbe16de940bcaeccd0034f98b00d70149c02d11cec66666f292b8bf788934f62",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/contracts/models.py",
-      "size_bytes": 14796,
-      "sha256": "075fbedc8e6202cf89cd6c1b49441aeb5edb940674310532a8d1daeaeb1f36eb",
+      "size_bytes": 15208,
+      "sha256": "c03d1dbca357c20d5798c18a6dab2a1063ba2745b0c8f9d47dd12c04afd93305",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/contracts/validator.py",
-      "size_bytes": 3665,
-      "sha256": "b99d1b913096ca9e560754f4fdd4d11dae16ac46e539947c2a12cf0df9b3fb96",
+      "size_bytes": 3716,
+      "sha256": "193833dd9f7c6ab9e8d2dbbbe7db6144c17e01b1c667cf87883361b3d17db849",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/errors.py",
-      "size_bytes": 560,
-      "sha256": "e8893f6af96dd123159741060aaf711d2bf66d50dacc2f8e8dfc244f3645ea1e",
+      "size_bytes": 561,
+      "sha256": "888566ecc102386605d86ae8b6b86dea193927ae03c8026c1b48de8ffdc8411a",
       "media_type": "text/x-python"
     },
     {
@@ -1532,44 +1694,44 @@
     },
     {
       "path": "src/l9_deploy/evidence/approval.py",
-      "size_bytes": 4830,
-      "sha256": "af2b5d053245218febcdf765bca15531321660f33ad30581dabe4e2eeb6c040e",
+      "size_bytes": 4857,
+      "sha256": "ed6afea2c476df981ec276709f6c9808198b36f8a83afd038b5e3910c82709ec",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/evidence/ci.py",
-      "size_bytes": 6593,
-      "sha256": "f1a7e0177af7386457ba3fe5eb9726eafc1ba40dc331321ff88775d64e31a165",
+      "size_bytes": 6594,
+      "sha256": "3b465d2a8ca6615252ecffc192532aba47d847d702cd80626e0e7d0049fc9f6c",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/evidence/digests.py",
-      "size_bytes": 269,
-      "sha256": "04ee5b0d1f4bc97b6eb1ff0ea9f4a93f4e2ce46ef3e8e291c5f7c7a42235131a",
+      "size_bytes": 270,
+      "sha256": "afd0ee3c65a1af7c27d92b6e67fbabffaf960c207031e03ab9a2d4b92c465410",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/evidence/ledger.py",
-      "size_bytes": 8945,
-      "sha256": "0afc75c26f77c9c69e0807b3704a871e80409c59b7bd233ee6ed11d6cb6b46d1",
+      "size_bytes": 8946,
+      "sha256": "4608294466d557fcb02c3bb45fbb86e7dbe7588636e0c47f764a4220280ddc33",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/evidence/publisher.py",
-      "size_bytes": 1188,
-      "sha256": "9eef476a36efa7114db534b883184cd67d20b15d272a26a15f00b0cc7749fbee",
+      "size_bytes": 1189,
+      "sha256": "01b7034eed64e2a374409c4a48ff10f95eafbb30f0ff220287a2c4a4c57f8e33",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/evidence/receipts.py",
-      "size_bytes": 3718,
-      "sha256": "520312f4f3ec5d1d81e22ebe52a8ceb886a3b5ab6fb804809712215c929b1ed5",
+      "size_bytes": 3695,
+      "sha256": "d0bd41fd2f38314a64b044b05690aab366d6dce6c02e62bbf0705589f60e56ce",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/evidence/records.py",
-      "size_bytes": 1140,
-      "sha256": "a8c877e4c5b32ef8b0efbf22c06914c186c9748c2b0a338d626d1d166cf27f97",
+      "size_bytes": 1141,
+      "sha256": "8d630cceef65fa4cc018a4f5b9d1242a369191fbd50623f3731d47c86d0bf8ee",
       "media_type": "text/x-python"
     },
     {
@@ -1580,62 +1742,68 @@
     },
     {
       "path": "src/l9_deploy/execution/backups.py",
-      "size_bytes": 1667,
-      "sha256": "bea41227400e42e912413e6c37758b10a41b5fdc4aaf4416575033e9260884bf",
+      "size_bytes": 2999,
+      "sha256": "e2c3efe2730c021786b234138bfdb944da22ee2c495f9aa01324fdf5bad4b32d",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/execution/compose.py",
-      "size_bytes": 2051,
-      "sha256": "566752b2e27f9b5058d1f333011c616b10b2e31674f107536ab6984074a3284a",
+      "size_bytes": 2388,
+      "sha256": "cbce7df16ede037af0ff0a0249c4580dc312e126e64e16222cc578b71cc73f23",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/execution/engine.py",
-      "size_bytes": 11524,
-      "sha256": "2116d7465bc3c176d181133e63cf828c3a9f47c08382909caf15e7f09cb42bff",
+      "size_bytes": 16350,
+      "sha256": "322c26ee6477482425d18a2ba4b3c1e86e9fa2fa307e33ddb46d5785dc0a7b5e",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/execution/health.py",
-      "size_bytes": 2725,
-      "sha256": "133306f4f8b1816f0e3900755e1df038d73ee6e48f91896f6b0802970e41002e",
+      "size_bytes": 2740,
+      "sha256": "cb1167b0e462d5d04d15f16ffee9b27de3ce5585369c63c8e3e76e01656ad932",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/execution/images.py",
-      "size_bytes": 1322,
-      "sha256": "e5b9d5ed555000370be255a98c9ce8e10366e231e410a4f1a53663fc8e40b3eb",
+      "size_bytes": 1323,
+      "sha256": "28a64a3276f6ca14ba85865e8653f24dbb875e435afe6ecc941c42e48d81e417",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/execution/locks.py",
-      "size_bytes": 1010,
-      "sha256": "a713b7909d47b1c918bd7475f9f460bf56f04cc7dad4e8267b5896318ee3de78",
+      "size_bytes": 1011,
+      "sha256": "ce15b405e8dfd501abc9f12cfbb6a0755f53af16bf77a7b97bb583c4d987111c",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/execution/migrations.py",
-      "size_bytes": 1275,
-      "sha256": "b62066ee1cdff845299e7b7eaf1ad76f66279303dc0918df16cceedcd70a2e72",
+      "size_bytes": 1276,
+      "sha256": "d58a2e0e1bfaac62ac4edf0552c35c6900daaf4b35594e3e7fa3a4ceb14b31cf",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/execution/promotion.py",
-      "size_bytes": 1791,
-      "sha256": "c7aa11c7d42e43f80f17ea6c9095b35b1ff8974e9d0f616fa8501d0c771d97f5",
+      "size_bytes": 2044,
+      "sha256": "8c974b5fe1ec82fd8f887850eacb8d43e78c660a26ae6c1822121ec58521d993",
+      "media_type": "text/x-python"
+    },
+    {
+      "path": "src/l9_deploy/execution/releases.py",
+      "size_bytes": 5296,
+      "sha256": "02b87c622b5a3fd9b0bcbba7eb50022b1b7f9c4c0eefb52c5760a0d63261b652",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/execution/remote.py",
-      "size_bytes": 3152,
-      "sha256": "d5b6eee12536c590c1719aa0d43c1f9a3a85066051fb2f7d8f3e97b10abe6b39",
+      "size_bytes": 3654,
+      "sha256": "42f582d0210f5512fe546ea0de1859cdf05923d3547d3457b1f1c0f606b2da7b",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/execution/rollback.py",
-      "size_bytes": 1608,
-      "sha256": "636f02b59a0a7051abd9716e78c061dea9c334ca1beae0d7572354bb803a7feb",
+      "size_bytes": 2626,
+      "sha256": "85def6fbef4d94c089c2c1a1a296f5935295641bd12714bb33f59a14bbc85de0",
       "media_type": "text/x-python"
     },
     {
@@ -1646,38 +1814,38 @@
     },
     {
       "path": "src/l9_deploy/integrations/ansible.py",
-      "size_bytes": 1069,
-      "sha256": "7621b6cf6a2d60d6eaba509ad01df4cedcf6bbe1c1e892b85814b9793ef514a7",
+      "size_bytes": 1070,
+      "sha256": "b26ccf075b01f35259f83135a98087bb8bc2482b85d3098ba2487cfc71595a32",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/integrations/ghcr.py",
-      "size_bytes": 596,
-      "sha256": "5055f89ef6c0b88ed28c30612948b81ff419bc765877409a0bba2de4e5bcc0f5",
+      "size_bytes": 597,
+      "sha256": "49d6c390f363e8eb82aa0c5dad8139d8f2a3fe7f02c63e3790fe0f2ecec75aa4",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/integrations/github.py",
-      "size_bytes": 1293,
-      "sha256": "8a17ebdbc641d12767885b9da470f777a6e1a1dd822a5303b76e8ad5b442a838",
+      "size_bytes": 1272,
+      "sha256": "1012b0ab3467a5b59ef31f6d3a690b640f60240d250c1f10eba9b18e0e491c61",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/integrations/hetzner.py",
-      "size_bytes": 591,
-      "sha256": "ea46828c9aaf2eec9c5d3b937d6f58e3403ec719ac63632e1a4077c71e3b9387",
+      "size_bytes": 592,
+      "sha256": "241114b3bc9f31fe4b2e407b15d2f2a928428bdf20d8350a40a13e9bc9a107b3",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/integrations/infisical.py",
-      "size_bytes": 2337,
-      "sha256": "3465cf5a2f445dd5c09ef4b8110da8037f318e9ad205af2f93e72fe7a115bdab",
+      "size_bytes": 2338,
+      "sha256": "9b8ab1b5e6c8caf33b6d9c9463afe62f41aa00816ba43be36c70707fe6b39b5f",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/integrations/opentofu.py",
-      "size_bytes": 3042,
-      "sha256": "a035fca6679391966dea8a24edb7e4295109f5e2247b330021b9f627a0248b0d",
+      "size_bytes": 3043,
+      "sha256": "a5472533556658ee158751b419f94e63341019b26eb075b33a3a245a6a08e8fc",
       "media_type": "text/x-python"
     },
     {
@@ -1688,26 +1856,26 @@
     },
     {
       "path": "src/l9_deploy/inventory/generator.py",
-      "size_bytes": 1176,
-      "sha256": "9e534bcaf2a2604e4d4dd143ba49716b454818e3a908df3917bbc61d24c2ea4c",
+      "size_bytes": 1177,
+      "sha256": "e42a272dad5ddcfb025a7fafb703e5d352adbcfc01a18abe3ee0e53fde32df13",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/inventory/loader.py",
-      "size_bytes": 626,
-      "sha256": "a8c6bea6c3ad486b9d19afb646627a3019857b6cb950aeb95711f9d3215f2444",
+      "size_bytes": 627,
+      "sha256": "954931c5d1f2ad15cd0b06e0a2453069a24440a5b043e5d5a2c11ed351103aa1",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/inventory/resolver.py",
-      "size_bytes": 1504,
-      "sha256": "2fbab1856c233b445388d8a489e6eb574be1db9cc496886554add89802ea1db9",
+      "size_bytes": 1505,
+      "sha256": "48504c210c49229860665f84f13a540e490670e126edc77abf7e313e14050429",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/logging.py",
-      "size_bytes": 1100,
-      "sha256": "5759eaae77098c41034be01d0b4ebd332863a191018daf3e06239daabdc2e64f",
+      "size_bytes": 1101,
+      "sha256": "8b4aaea52e7420a136e193a017c33da7d504a6fc563fab5a17e189eb1277858a",
       "media_type": "text/x-python"
     },
     {
@@ -1718,44 +1886,44 @@
     },
     {
       "path": "src/l9_deploy/planning/backups.py",
-      "size_bytes": 906,
-      "sha256": "8faa3bb136e3e6ac9f18705ba1ccad7f4db4d8a023ab3fb0be9c36f1756ad154",
+      "size_bytes": 899,
+      "sha256": "5adb98e6997ccb3d6ef90903dfa7ccc0b5a9d611e2cb0779ce0f5f41ebbfd85c",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/planning/migrations.py",
-      "size_bytes": 799,
-      "sha256": "e485adcb7de30034f5b738dd6900584a907b4a141612578bb7bb07db4177c221",
+      "size_bytes": 800,
+      "sha256": "25f745492a9e7cdf7a96a095758af239db2dc81484ab5cdd9769d4185d6ae817",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/planning/planner.py",
-      "size_bytes": 3410,
-      "sha256": "7f2c62c4c71bd8129c123de2155e2fb235120b22dcece934f3a06a9171f11681",
+      "size_bytes": 3411,
+      "sha256": "7a4a073ede67692ecfbc3fb0c4cf1135e1d72563357bd073415eb97c4f44e164",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/planning/rollback.py",
-      "size_bytes": 353,
-      "sha256": "6c93424687271cbdb4d6fa53679b76dbbc01cdde67dbef1b996d08061674af33",
+      "size_bytes": 354,
+      "sha256": "ffa4d7fc7ff07faaa232f7c4f9cb25f725cb850939d10e8ac6329602ddd42f8d",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/planning/topology.py",
-      "size_bytes": 381,
-      "sha256": "29be8302daf8272466a1774a013b124aeda878e64dd080cd39bdb690ef499af6",
+      "size_bytes": 382,
+      "sha256": "abad530b7999581c49bfbfcc4ecc29bf94749db80777ad1ea269c6e7f8d5845a",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/redaction.py",
-      "size_bytes": 1523,
-      "sha256": "487fa7fa4a1efbb94b36d2d214ae6b947a9b00354cc27a0d30f55eba949c3b06",
+      "size_bytes": 1524,
+      "sha256": "806ca45d7ac270d34166e640d5ebff762d8c33cd78227e4a69bec576ec901cfa",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/release_inventory.py",
-      "size_bytes": 1564,
-      "sha256": "08f91c53af925f72fedee16c3dfb0d004005520101ac69a8f769c4402e19e777",
+      "size_bytes": 1535,
+      "sha256": "74aceb290e4149b01dc2553c3a0af73e4d2d1a67056194f8e8aa7861b0b8a7ab",
       "media_type": "text/x-python"
     },
     {
@@ -1766,32 +1934,32 @@
     },
     {
       "path": "src/l9_deploy/requests/allowlist.py",
-      "size_bytes": 1149,
-      "sha256": "7db9cce8a9afb5439ff849a99c67f62ae29e6f9e2a1513759b373d031aa240ac",
+      "size_bytes": 1144,
+      "sha256": "a19ceabcdae8e5782a6b114b8740aa98f28b0f3e26e6f6155713c377df3b5fa2",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/requests/idempotency.py",
-      "size_bytes": 6666,
-      "sha256": "40428483dab2740482ddbb7df921d964b34af680a820e77dafd0587179203ac5",
+      "size_bytes": 6469,
+      "sha256": "3cc3e2db634cb00450fe9d259ff69f7eec4035699c2ccc65730c9639e291410c",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/requests/parser.py",
-      "size_bytes": 704,
-      "sha256": "18f98b779dadac99dea67d3104c2ddc85effc8eee0e7cf0e705932ccb405b05c",
+      "size_bytes": 705,
+      "sha256": "b55529e497d3e8401075855c5904956032172c7a092386ac95fb9d61d9094da9",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/requests/verifier.py",
-      "size_bytes": 4067,
-      "sha256": "70a0b345e0de11a7639397d5c4a0912900dd446f87493bbe047711087e068d2e",
+      "size_bytes": 4068,
+      "sha256": "b41e7ee0c7afdb8b928d6caddc34afe3e6719ad2f46294e1d965e7e335e5c123",
       "media_type": "text/x-python"
     },
     {
       "path": "src/l9_deploy/subprocesses.py",
-      "size_bytes": 2346,
-      "sha256": "6926cd33899b2d4e138c05146c2d681cfc4cb7aa8b21a3d693917e0726e36475",
+      "size_bytes": 2347,
+      "sha256": "4abe6fd3246bd683b64d5eb583dda78ee9087b38080850739923246b0993c713",
       "media_type": "text/x-python"
     },
     {
@@ -1804,204 +1972,222 @@
       "path": "templates/consumer/container-service/.github/workflows/release.yml",
       "size_bytes": 804,
       "sha256": "256153ee27df626ab3a3bff20df4db2e27d9921a2179ad9a1ff31cabbcf18656",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "templates/consumer/container-service/.l9/deployment.yaml",
       "size_bytes": 1492,
       "sha256": "49f3cc0fbd13ff52f91ea0622b9b4b0e9c10918a7fb388ba0bc031f8b6b79835",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "templates/consumer/scheduled-job/.github/workflows/release.yml",
       "size_bytes": 804,
       "sha256": "256153ee27df626ab3a3bff20df4db2e27d9921a2179ad9a1ff31cabbcf18656",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "templates/consumer/scheduled-job/.l9/deployment.yaml",
       "size_bytes": 1458,
       "sha256": "7d19a73b0041989ccb331efe1c582cd820c9d1d33c4dc24c41bfeec72aac6a42",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "templates/consumer/stateful-container/.github/workflows/release.yml",
       "size_bytes": 804,
       "sha256": "256153ee27df626ab3a3bff20df4db2e27d9921a2179ad9a1ff31cabbcf18656",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "templates/consumer/stateful-container/.l9/deployment.yaml",
       "size_bytes": 2156,
       "sha256": "f461aa4eccf32e25c8290771022c35547ab34be9957737673363d8ae1f577ebe",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "templates/consumer/worker-service/.github/workflows/release.yml",
       "size_bytes": 804,
       "sha256": "256153ee27df626ab3a3bff20df4db2e27d9921a2179ad9a1ff31cabbcf18656",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "templates/consumer/worker-service/.l9/deployment.yaml",
       "size_bytes": 1473,
       "sha256": "6c34b1156f9ead76a69fbad202617a89430e89d893b0e39450b91baea8472765",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     },
     {
       "path": "tests/compliance/test_coverage_policy.py",
-      "size_bytes": 1362,
-      "sha256": "23efd8ecd148e3f0c89b4ac9e0b71d0730f1e14f57c0af4ef2e22f00e875d0a8",
+      "size_bytes": 1363,
+      "sha256": "4a79b738a34870f0ae7bd605cb7b8f95e4769b25234fdb621c0d8f0d9648b9eb",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/compliance/test_l9_alignment.py",
-      "size_bytes": 2707,
-      "sha256": "20f505f1742bb4c45f64a3ce06da5983c2d950320546cbd4408449d88ad23fec",
+      "size_bytes": 2762,
+      "sha256": "21b3f327fdcee849dde9148df9baa2015eb950f9e23a02032896914723dee15f",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/compliance/test_pack_hardening.py",
-      "size_bytes": 5478,
-      "sha256": "484957ff965259d6b4db5ede2da8dbe9cdab3641035b7dad22722d1d6e426be1",
+      "size_bytes": 5479,
+      "sha256": "f7612df962460a75506d2cd70789555b1b0ada15cccb7084863f1dbe781f7911",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/compliance/test_release_archive.py",
-      "size_bytes": 6829,
-      "sha256": "5e67791888d085f8db232e3441c93c621953c50d844df36c85f84d5ad9576777",
+      "size_bytes": 7422,
+      "sha256": "f5aa5833bc6cdc5ece05738d416ac6cf349c373a1bdd84dafaebc8bbe01d5ec2",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/conftest.py",
-      "size_bytes": 8669,
-      "sha256": "6cc9ffa6dcb39a3f1a8c75f1149706c93cce8dfc881b18bd2a2c8818c8ec8e78",
+      "size_bytes": 8670,
+      "sha256": "7aac470a58264356fb0e7567593a25e9a32fcb42d6edaa6970de200e9de0d873",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/contract/test_alias_policy.py",
-      "size_bytes": 1868,
-      "sha256": "1a155af50cbdc1336aee0027ce1d8ad365dd28cc977358b42d42161b8a829179",
+      "size_bytes": 1869,
+      "sha256": "c0d4dbdeb43252614460efb11e4630df628c64f789524cd2e390a4c6e84635b9",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/contract/test_schemas.py",
-      "size_bytes": 2823,
-      "sha256": "44ad7b3b853921bdeeec682aba4362206d4fac93e33d0bfdc0e35221453b02d3",
+      "size_bytes": 2824,
+      "sha256": "6ec7d4750d8eb2b1b8ad2337e08a03f2dca6d4edfa61a383b7b002f79c9b6104",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/contract/test_wire_aliases.py",
-      "size_bytes": 8189,
-      "sha256": "39d901fe1faba10008c1758b5161710617a88e3985a585a23d2e581b7f1a977b",
+      "size_bytes": 8803,
+      "sha256": "41816806874dfa64abca94e184d26d14e7ca8cdc1f2eb0c8c5a84a0d1c2d4070",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/infrastructure/test_structure.py",
-      "size_bytes": 1265,
-      "sha256": "e7ab953b813ef5fe3725330bf89e1794cff9e4ab919fb1dc5e385037aea75bb8",
+      "size_bytes": 1266,
+      "sha256": "adf5f04446e12b0ccc164ffb258be071acbea00028d4f639dc87b0ad34f74235",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/integration/test_adoption_templates.py",
-      "size_bytes": 1494,
-      "sha256": "40681529ebbe8ece989c84cd083c4143b6303c1a8f901c980e2a6253279c4cfa",
+      "size_bytes": 1495,
+      "sha256": "4f767a5130d25a87a9cad96a835880c7a99dc87b0c2e92bb96a4a1decd469790",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/integration/test_execution_engine.py",
-      "size_bytes": 11940,
-      "sha256": "9e9bbbcb90f26e410921234d7efb2b4c8a0416ac2992c232bdc3b250cab9939e",
+      "size_bytes": 18822,
+      "sha256": "3604ffbf4ea9dc12a31e1e2f89807213eb5f159659929f9bb493dd020ef433d4",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/integration/test_promotion_request.py",
-      "size_bytes": 3251,
-      "sha256": "8e87831f6ac9bef4b4ad9ec6fe384bd1c20e329576bc21714b47ae57a4da4aa9",
+      "size_bytes": 3252,
+      "sha256": "141cceb0190281c948500343fc4daa01e51ee911f53e5e4b5271e84a696f2c28",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/security/test_approval.py",
-      "size_bytes": 3385,
-      "sha256": "a84f96f377e118816021a99e9903c89e46205f1b15a6878e6c92c7d4fd3e2f66",
+      "size_bytes": 3380,
+      "sha256": "c2d954da77ab555574e64f7d0e4c626b8bc21483fbe15e2056310c5c9a8a6154",
+      "media_type": "text/x-python"
+    },
+    {
+      "path": "tests/security/test_infisical_oidc_env_script.py",
+      "size_bytes": 5198,
+      "sha256": "f1a9ababa395b3cfd488e78ccae61dd3ea3d1026191cc074b4b598de7f2d2b13",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/security/test_redaction.py",
-      "size_bytes": 1263,
-      "sha256": "afef5d6ff3f1fadfa1ccf66467ae1c4414b02cd6b5a9e51623519598373a87ac",
+      "size_bytes": 1264,
+      "sha256": "473332b6ef51548e61fb6942c8261afaf7b19ac718f157faee8012bd4ad3ad85",
+      "media_type": "text/x-python"
+    },
+    {
+      "path": "tests/unit/test_backup_verification.py",
+      "size_bytes": 2242,
+      "sha256": "46a3ad3e586ab3b86647759d70cb4969638d0afeee0a3c102c6f7adabe86efdc",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_boundary_components.py",
-      "size_bytes": 9891,
-      "sha256": "113cf31a9565b1747e8457e436405ea6a1fec272b7421dec9314b3bef099d9af",
+      "size_bytes": 9923,
+      "sha256": "242c927273db5a9d379fe92d85818a9110e7faa49fa17c55c66c824672f99252",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_canonical.py",
-      "size_bytes": 1346,
-      "sha256": "bbccbec2c377eb13925e0d6326a2dfe7da5a8ac6f5bcfb284ee75134cac7ca2b",
+      "size_bytes": 1347,
+      "sha256": "b3ebba8af2db86f7b5fb8c945a48a7861a848bb7f8edde3bc298ddc40f5d5805",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_cli_surface.py",
-      "size_bytes": 4978,
-      "sha256": "b90f26d7895712074b4a3e33fd0704dda0a6dadfd038c2cfdc21d31e29900765",
+      "size_bytes": 5087,
+      "sha256": "2a42e5a86fe79d9aca077276c8eafcc946cbbd5eb49ee8cd3690c9cb611511b1",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_compose_and_images.py",
-      "size_bytes": 1183,
-      "sha256": "f6b73bd5cfb5b5cb4421ec0c0bb1146c4a500b4e9b016a14ea8101f1e69e486c",
+      "size_bytes": 1299,
+      "sha256": "28da32623f8b59ac30692c8d4a86638d226bf15861dd66d24bf00bac98454b31",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_contract_primitives.py",
-      "size_bytes": 2233,
-      "sha256": "557dc782e89adc028dfe33d4888097e1d50df5aac38452a0eff10da033cc8223",
+      "size_bytes": 2234,
+      "sha256": "b5e6a85c8e65f0b5d975c98cda316d326f318b0866ea6377880d3d4d566c9994",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_idempotency_and_locks.py",
-      "size_bytes": 4728,
-      "sha256": "e91d9173296cbaa0115ff7335dcbb80876df139f67863aa9485991607c216d47",
+      "size_bytes": 4729,
+      "sha256": "c59196e02fbc6f5cc450562e39fdc69a6865c686f591d0dde7f8ed300766943b",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_inventory_and_logging.py",
-      "size_bytes": 3230,
-      "sha256": "2e3ad98453f2b82f0d292bb24480839c9296d0c61fb4cc1869eb03bca139b5f5",
+      "size_bytes": 3263,
+      "sha256": "73e6a27bf0c8b8e9ba9877d8729fee82a66b819ebe804db1219f48b03b980080",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_planning.py",
-      "size_bytes": 1664,
-      "sha256": "9e5e2f96ee3e30898b4b6d7ad8285ceaea20b743b3d65e76fded374a64b40543",
+      "size_bytes": 1659,
+      "sha256": "51d25479f2e814414f11edbee3c61cefee3ac5678acfb6ea675b5990c65965b2",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_receipt_ledger.py",
-      "size_bytes": 2236,
-      "sha256": "d633ba5e4c91fafc91417e2e8146617b5487173884be279ebc11ecb3d57ce859",
+      "size_bytes": 2237,
+      "sha256": "cd6bf26ed4f69aa9f6d5dbe2a11bfd668197c1c97ca4c9d0c5cbc4a2fae0c578",
+      "media_type": "text/x-python"
+    },
+    {
+      "path": "tests/unit/test_release_runtime_state.py",
+      "size_bytes": 9462,
+      "sha256": "a65ef8a453ffa75b3295629f983fe58322ee375861c91db9cd27aa4308b26f39",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/unit/test_requests.py",
-      "size_bytes": 4093,
-      "sha256": "6d871ad1c8a7c7b2ec57408ccf5eace99cbbb3160fa59ad085715336875ea14e",
+      "size_bytes": 4076,
+      "sha256": "951144be70145144be2c7787d1f3a0f508cfa96294f4865ff12a578adaf19ba1",
       "media_type": "text/x-python"
     },
     {
       "path": "tests/workflows/test_workflows.py",
-      "size_bytes": 2697,
-      "sha256": "a881eafcd31e6b47484eb702cc65188f24fbf8cc65db2f9a1f3b67b51b55ece1",
+      "size_bytes": 6057,
+      "sha256": "6696b217b8afcc27e3650a565e0bd45a903986fad95f4a4ac60dda215e54bd36",
       "media_type": "text/x-python"
     },
     {
       "path": "uv.lock",
-      "size_bytes": 62342,
-      "sha256": "5afe87d097fd674d19647ac885197415adc0a1fccee4b325e9283475f8672289",
+      "size_bytes": 74129,
+      "sha256": "54e84a66f5db7d9f944c8b47ab700d86d05ca5a5845aa751bdfeb5f58eef8579",
       "media_type": "application/octet-stream"
     },
     {
@@ -2125,6 +2311,42 @@
       "media_type": "text/plain"
     },
     {
+      "path": "validation/evidence/phase5-environment.txt",
+      "size_bytes": 153,
+      "sha256": "d97e9bdf862acbee20ad2bcb42dd675aa47ccecdd2abf49dd189e7fc161a4ea5",
+      "media_type": "text/plain"
+    },
+    {
+      "path": "validation/evidence/phase5-meta.txt",
+      "size_bytes": 50,
+      "sha256": "dc41ca862765bf779a7df54880e3b63193bb488cf0113be9e3054ebcda77b85b",
+      "media_type": "text/plain"
+    },
+    {
+      "path": "validation/evidence/phase5-pytest.txt",
+      "size_bytes": 180,
+      "sha256": "fbe08196459b41339375bfb47fe32d00e92bd4bbd841f91654a57e9febd4b51e",
+      "media_type": "text/plain"
+    },
+    {
+      "path": "validation/evidence/phase5-release-archive.txt",
+      "size_bytes": 394,
+      "sha256": "d83e30aceab2128b27b33e97c98910bae4fbac9c48b0d6f223ab252ab0a96596",
+      "media_type": "text/plain"
+    },
+    {
+      "path": "validation/evidence/phase5-release-receipt.json",
+      "size_bytes": 591,
+      "sha256": "4506a8bd7a02c817cbd8a4cfbf6aca0035424a3889575edd985d5a51212df7e7",
+      "media_type": "application/json"
+    },
+    {
+      "path": "validation/evidence/phase5-root-digests.sha256",
+      "size_bytes": 317,
+      "sha256": "e7ac189b22261cf4cc8444c78fd198ca00ed1de87373b525904d7eea18a1a763",
+      "media_type": "application/octet-stream"
+    },
+    {
       "path": "validation/validation_checks.jsonl",
       "size_bytes": 8465,
       "sha256": "b99a78446a7b7ef99f6c3875c52de715eaa729de704dd21aa6d21512e4fc68ef",
@@ -2140,7 +2362,7 @@
       "path": "validation/validation_report.yaml",
       "size_bytes": 2393,
       "sha256": "a003dd226cd166b889f278df7f5aa70db47ee5c2d6d0ea2e13d9fda94b1e1a94",
-      "media_type": "application/yaml"
+      "media_type": "application/octet-stream"
     }
   ]
 }

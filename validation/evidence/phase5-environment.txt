@@ -1,0 +1,3 @@
+source_commit_before_generation=196ce8a4a90d2ae09dc207cd8fb7976627bff762
+python=Python 3.12.13
+uv=uv 0.11.23 (3cdf50e09 2026-06-19 aarch64-apple-darwin)

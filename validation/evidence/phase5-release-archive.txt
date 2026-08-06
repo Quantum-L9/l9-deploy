@@ -1,0 +1,9 @@
+{
+  "archive": "/private/tmp/l9-deploy-release-out/l9-deploy-release.zip",
+  "files": 393,
+  "receipt": "/private/tmp/l9-deploy-release-out/release-receipt.json",
+  "receipt_digest": "sha256:10a5f429f16fa2aabf1dc6debee83b7de38a93c6cbe3b3d2ddd739dd9744e743",
+  "sha256": "7b91146d6f9e8da670d8c6d375eca4945084de50fb98a1fc9839229d4380feb8",
+  "source_date_epoch": 1786003398,
+  "status": "PASS"
+}
