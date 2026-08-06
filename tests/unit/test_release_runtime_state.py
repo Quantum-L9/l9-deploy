@@ -244,9 +244,7 @@ def test_cleanup_removes_only_unretained_release_directories() -> None:
         return _RunResult("")
 
     executor.run = run  # type: ignore[method-assign]
-    result = cleanup_release_directories(
-        executor, current, previous, "seo-bot", "staging"
-    )
+    result = cleanup_release_directories(executor, current, previous, "seo-bot", "staging")
 
     assert result["removed_release_directories"] == [stale]
     assert (["rm", "-rf", "--", stale], {}) in executor.runs
