@@ -36,7 +36,7 @@ def rollback_release(
     previous_release: ReleaseState | None,
     failed_release: ReleaseState | None = None,
     *,
-    health_probe: HealthProbe,
+    health_probe: HealthProbe | None = None,
     base_url: str | None = None,
     publish_state: bool = True,
 ) -> dict[str, JsonValue]:
@@ -68,13 +68,13 @@ def rollback_release(
         },
         timeout=600,
     )
-    health = run_probe(health_probe, executor=executor, base_url=base_url)
     result: dict[str, JsonValue] = {
         "status": "PASS",
         "restored_image_ref": image_ref,
         "restored_runtime_env_path": str(runtime_env),
-        "health": health,
     }
+    if health_probe is not None:
+        result["health"] = run_probe(health_probe, executor=executor, base_url=base_url)
     if publish_state:
         state_result = write_runtime_state(
             executor,
