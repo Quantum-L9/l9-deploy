@@ -8,15 +8,14 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
 
 import pytest
 
@@ -68,10 +67,12 @@ def test_github_event_loader_and_dispatch(tmp_path: Path) -> None:
 def test_infisical_environment_is_private_cleaned_and_injection_safe(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    payload = json.dumps([
-        {"secretKey": "API_KEY", "secretValue": "abc=123"},
-        {"secretKey": "PORT", "secretValue": "443"},
-    ])
+    payload = json.dumps(
+        [
+            {"secretKey": "API_KEY", "secretValue": "abc=123"},
+            {"secretKey": "PORT", "secretValue": "443"},
+        ]
+    )
     monkeypatch.setattr(infisical, "run_command", lambda *a, **k: _result([], payload))
     with infisical.rendered_environment("project", "production") as path:
         assert path.read_text(encoding="utf-8") == "API_KEY=abc=123\nPORT=443\n"
@@ -88,18 +89,22 @@ def test_infisical_environment_is_private_cleaned_and_injection_safe(
         monkeypatch.setattr(
             infisical,
             "run_command",
-            lambda *a, payload=json.dumps(invalid), **k: _result([], payload),
+            lambda *a, payload=json.dumps(invalid), **k: _result([], payload),  # noqa: B008
         )
-        with pytest.raises(ExecutionError):
-            with infisical.rendered_environment("project", "production"):
-                pytest.fail("unsafe secret material was yielded")
+        with (
+            pytest.raises(ExecutionError),
+            infisical.rendered_environment("project", "production"),
+        ):
+            pytest.fail("unsafe secret material was yielded")
 
 
 def test_infisical_rejects_invalid_json(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(infisical, "run_command", lambda *a, **k: _result([], "not-json"))
-    with pytest.raises(ExecutionError, match="invalid JSON"):
-        with infisical.rendered_environment("project", "production"):
-            pytest.fail("invalid export was yielded")
+    with (
+        pytest.raises(ExecutionError, match="invalid JSON"),
+        infisical.rendered_environment("project", "production"),
+    ):
+        pytest.fail("invalid export was yielded")
 
 
 def test_evidence_record_is_redacted_schema_valid_and_digest_bound() -> None:
@@ -231,7 +236,7 @@ def test_health_command_probe_and_http_scheme_restriction() -> None:
         attempts=1,
     )
     assert run_probe(probe, executor=Executor()) == {"attempt": 1, "type": "command"}
-    assert calls == [(('true',), {"timeout": 2})]
+    assert calls == [(("true",), {"timeout": 2})]
 
     http = HealthProbe(
         type="http",

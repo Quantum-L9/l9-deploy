@@ -12,6 +12,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 import sys
 from pathlib import Path
 
@@ -19,11 +20,11 @@ from _bootstrap import add_repository_src
 
 add_repository_src()
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator  # noqa: E402
 
 from l9_deploy.contracts.catalog import WIRE_CONTRACTS  # noqa: E402
-from l9_deploy.contracts.models import FrozenModel  # noqa: E402
 from l9_deploy.contracts.loader import load_document  # noqa: E402
+from l9_deploy.contracts.models import FrozenModel  # noqa: E402
 from l9_deploy.contracts.validator import SchemaRegistry  # noqa: E402
 
 
@@ -55,9 +56,7 @@ def validate_wire_model_parity(registry: SchemaRegistry) -> None:
 
         generated_properties = generated.get("properties")
         committed_properties = committed.get("properties")
-        if not isinstance(generated_properties, dict) or not isinstance(
-            committed_properties, dict
-        ):
+        if not isinstance(generated_properties, dict) or not isinstance(committed_properties, dict):
             raise ValueError(f"contract properties are malformed: {definition.name}")
 
         if "schema_id" in generated_properties or "schema" not in generated_properties:

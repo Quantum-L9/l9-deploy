@@ -10,6 +10,7 @@ status: active
 
 Create-only, content-addressed receipt storage with a hash-chained append-only index.
 """
+
 from __future__ import annotations
 
 import fcntl

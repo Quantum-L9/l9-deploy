@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -18,7 +19,7 @@ from typing import Protocol
 from pydantic import JsonValue
 
 from ..canonical import sha256_digest
-from ..contracts.models import DeploymentProfile
+from ..contracts.models import BackupConfig, DeploymentProfile
 from ..errors import ExecutionError
 
 
@@ -51,4 +52,32 @@ def verify_backup(executor: Executor, path: Path) -> dict[str, JsonValue]:
     return {
         "status": "PASS" if getattr(result, "returncode", 1) == 0 else "FAIL",
         "path": str(path),
+    }
+
+
+def verify_backup_command(
+    executor: Executor,
+    configuration: BackupConfig,
+    project_id: str,
+    environment: str,
+    request_id: str,
+) -> dict[str, JsonValue]:
+    """Run the profile-declared backup ``verify_command`` after a pre-deploy backup.
+
+    The deployment-profile schema requires ``verify_command`` and consumer
+    profiles populate it, yet the deploy transaction created the backup and
+    recorded ``PASS`` without ever confirming the artifact. This closes that
+    producer→consumer gap so ``backup_required`` truly yields the *verified*
+    pre-deploy backup its contract promises. A profile that declares no
+    ``verify_command`` (an empty tuple) is reported ``SKIPPED`` so behaviour is
+    unchanged for such profiles.
+    """
+    if not configuration.verify_command:
+        return {"status": "SKIPPED", "reason": "profile declares no backup verify_command"}
+    substitutions = {"project": project_id, "environment": environment, "request_id": request_id}
+    command = [part.format_map(substitutions) for part in configuration.verify_command]
+    result = executor.run(command, timeout=configuration.timeout_seconds, check=False)
+    return {
+        "status": "PASS" if getattr(result, "returncode", 1) == 0 else "FAIL",
+        "command_digest": sha256_digest(command),
     }

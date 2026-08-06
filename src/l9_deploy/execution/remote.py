@@ -11,6 +11,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import os
@@ -76,8 +77,8 @@ class RemoteExecutor:
         command = (
             f"set -euo pipefail; mkdir -p {parent}; "
             f"tmp=$(mktemp {parent}/.l9-write.XXXXXX); "
-            f"trap 'rm -f -- \"$tmp\"' EXIT; cat > \"$tmp\"; "
-            f"chmod {mode:o} \"$tmp\"; mv -f -- \"$tmp\" {target}; trap - EXIT"
+            f'trap \'rm -f -- "$tmp"\' EXIT; cat > "$tmp"; '
+            f'chmod {mode:o} "$tmp"; mv -f -- "$tmp" {target}; trap - EXIT'
         )
         self.run(["bash", "-lc", command], input_text=text)
 

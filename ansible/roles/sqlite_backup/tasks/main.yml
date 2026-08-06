@@ -1,0 +1,21 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+# Installs the canonical SQLite backup toolchain used by the graphiti-memory
+# deployment profile's before_deploy backup + in-band verify_command.
+- name: Install SQLite backup dependencies
+  ansible.builtin.apt: {name: [sqlite3, gzip], state: present}
+- name: Install SQLite backup command
+  ansible.builtin.copy: {src: l9-sqlite-backup, dest: /usr/local/sbin/l9-sqlite-backup, owner: root, group: l9deploy, mode: "0750"}
+- name: Install SQLite backup verification command
+  ansible.builtin.copy: {src: l9-sqlite-verify, dest: /usr/local/sbin/l9-sqlite-verify, owner: root, group: l9deploy, mode: "0750"}
+- name: Install SQLite restore-test command
+  ansible.builtin.copy: {src: l9-sqlite-restore-test, dest: /usr/local/sbin/l9-sqlite-restore-test, owner: root, group: l9deploy, mode: "0750"}

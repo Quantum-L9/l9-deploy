@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
@@ -18,8 +19,8 @@ from pydantic import ValidationError
 
 from l9_deploy.canonical import file_sha256, sha256_digest
 from l9_deploy.contracts.models import ApprovalReceipt
-from l9_deploy.evidence.approval import verify_approval_receipt
 from l9_deploy.errors import AuthorizationError
+from l9_deploy.evidence.approval import verify_approval_receipt
 
 
 def approval_documents(tmp_path: Path) -> tuple[dict[str, object], Path]:
@@ -72,9 +73,7 @@ def test_approval_contract_rejects_self_approval(tmp_path: Path) -> None:
         ApprovalReceipt.model_validate(document)
 
 
-def test_approval_verifier_rejects_unmatched_history(
-    tmp_path: Path, schema_registry
-) -> None:  # type: ignore[no-untyped-def]
+def test_approval_verifier_rejects_unmatched_history(tmp_path: Path, schema_registry) -> None:  # type: ignore[no-untyped-def]
     document, history_path = approval_documents(tmp_path)
     document["approved_by"] = "different-reviewer"
     digest_input = dict(document)

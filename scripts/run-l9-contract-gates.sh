@@ -10,21 +10,26 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+cd "$root"
+
 artifact_root=${L9_ARTIFACT_ROOT:-"$root/artifacts/l9-contracts"}
 mkdir -p "$artifact_root/raw/semgrep" "$artifact_root/l9"
 
+semgrep_version=$(semgrep --version)
+
+# Paths must be repository-relative for l9-ci normalize (SDK v1+).
 semgrep scan \
-  --config "$root/.l9/policies/l9-deployment-contracts.yml" \
+  --config .l9/policies/l9-deployment-contracts.yml \
   --json \
   --output "$artifact_root/raw/semgrep/report.json" \
-  "$root/src" "$root/scripts"
+  src scripts
 
 l9-ci semgrep normalize \
   --input "$artifact_root/raw/semgrep/report.json" \
   --output "$artifact_root/l9/finding-bundle.json" \
-  --root "$root" \
+  --root . \
   --snapshot-id "${GITHUB_SHA:-local}" \
-  --policy "$root/.l9/policies/l9-deployment-contracts.yml" \
+  --provider-version "$semgrep_version" \
   --strict \
   --required \
   --revision "${GITHUB_SHA:-local}" \
