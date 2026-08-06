@@ -1,0 +1,65 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+# Private, authenticated, ACL-scoped Redis for the l9-graphiti-memory active-memory
+# tier. Honors l9-graphiti-memory/docs/ACTIVE_MEMORY_DEPLOYMENT_CONTRACT.md and the
+# capability contract at src/l9_graphite_memory/resources/active_memory_redis_capabilities.yaml.
+l9_redis_min_version: "7.2"
+l9_redis_port: 6379
+# Bind to loopback + the host's private IP only — never a publicly routable interface.
+l9_redis_bind_addresses: "127.0.0.1 {{ ansible_host }}"
+l9_redis_maxmemory: "512mb"
+l9_redis_maxmemory_policy: "volatile-lru"   # contract allows volatile-lru or allkeys-lru
+l9_redis_appendonly: "yes"
+l9_redis_data_dir: /var/lib/redis
+# Least-privilege application ACL user. Password MUST be supplied at runtime from
+# Infisical (never defaulted here); the role asserts it is present.
+l9_redis_acl_username: l9-active-memory
+l9_redis_key_prefix: l9mem
+l9_redis_channel_prefix: l9mem
+# Command allowlist mirrors active_memory_redis_capabilities.yaml (connection,
+# scalar_state, indexes, scripts, awareness). Dangerous/admin categories and every
+# prohibited command are explicitly denied below.
+l9_redis_acl_allowed_categories:
+  - "+@connection"
+  - "+@string"
+  - "+@sortedset"
+  - "+@scripting"
+  - "+@pubsub"
+  - "+get"
+  - "+mget"
+  - "+del"
+  - "+unlink"
+  - "+exists"
+  - "+expire"
+  - "+pexpire"
+  - "+ttl"
+  - "+pttl"
+  - "+incr"
+# Prohibited commands from the contract (denied even if a category would grant them).
+l9_redis_acl_prohibited:
+  - "-@dangerous"
+  - "-@admin"
+  - "-flushall"
+  - "-flushdb"
+  - "-config"
+  - "-shutdown"
+  - "-debug"
+  - "-module"
+  - "-migrate"
+  - "-replicaof"
+  - "-slaveof"
+  - "-keys"
+  - "-save"
+  - "-bgsave"
+  - "-bgrewriteaof"
+  - "-cluster"
+  - "-acl"
