@@ -37,4 +37,62 @@ servers:
     roles: [management]
     labels: {managed_by: l9-deployment-platform}
     conformance: {profile: management-runner, max_age_hours: 24}
-projects: []
+  # Application/cache host for the l9-graphiti-memory active-memory service (memory
+  # server + its private, ACL-scoped Redis co-located; v1 is rolling-single-host).
+  # Provisional private IPs below MUST equal TF_VAR_servers[<id>].private_ip supplied
+  # from Infisical at provision time (no automated tofu -> registry feedback exists).
+  - schema: l9.server-profile/v1
+    id: mem-staging-01
+    environment: staging
+    provider: hetzner
+    private_ip: 10.90.10.10
+    public_ip: null
+    ssh: {user: l9deploy, port: 22}
+    roles: [application, cache]
+    labels: {managed_by: l9-deployment-platform, workload: graphiti-memory}
+    conformance: {profile: application, max_age_hours: 24}
+  - schema: l9.server-profile/v1
+    id: mem-prod-01
+    environment: production
+    provider: hetzner
+    private_ip: 10.90.20.10
+    public_ip: null
+    ssh: {user: l9deploy, port: 22}
+    roles: [application, cache]
+    labels: {managed_by: l9-deployment-platform, workload: graphiti-memory}
+    conformance: {profile: application, max_age_hours: 24}
+  # Application/worker host for SEO-Bot (registration only; its full deploy stays
+  # gated on postgres, which is out of scope for this change).
+  - schema: l9.server-profile/v1
+    id: seo-staging-01
+    environment: staging
+    provider: hetzner
+    private_ip: 10.90.10.20
+    public_ip: null
+    ssh: {user: l9deploy, port: 22}
+    roles: [application, worker]
+    labels: {managed_by: l9-deployment-platform, workload: seo-bot}
+    conformance: {profile: application, max_age_hours: 24}
+  - schema: l9.server-profile/v1
+    id: seo-prod-01
+    environment: production
+    provider: hetzner
+    private_ip: 10.90.20.20
+    public_ip: null
+    ssh: {user: l9deploy, port: 22}
+    roles: [application, worker]
+    labels: {managed_by: l9-deployment-platform, workload: seo-bot}
+    conformance: {profile: application, max_age_hours: 24}
+projects:
+  - id: graphiti-memory
+    repository: Quantum-L9/l9-graphiti-memory
+    profile_path: integrations/consumers/graphiti-memory.deployment.yaml
+    environments:
+      staging: {server_ids: [mem-staging-01], infisical_environment: staging}
+      production: {server_ids: [mem-prod-01], infisical_environment: prod}
+  - id: seo-bot
+    repository: Quantum-L9/SEO-Bot
+    profile_path: integrations/consumers/seo-bot.deployment.yaml
+    environments:
+      staging: {server_ids: [seo-staging-01], infisical_environment: staging}
+      production: {server_ids: [seo-prod-01], infisical_environment: prod}

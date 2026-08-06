@@ -1,0 +1,76 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer:
+# - repository
+# tags:
+# - L9_META
+# - deployment-platform
+# owner: platform
+# status: active
+# --- /L9_META ---
+schema: l9.deployment-profile/v1
+# l9-graphiti-memory active-memory service (l9-memory-server MCP + worker).
+# Backing stores: an ACL-scoped, private Redis 7.2+ (managed_on_fleet) as the
+# active-memory tier, and the canonical SQLite store on a persistent volume.
+# NO postgres/pgvector — the bot-memory integration pack forbids a postgres
+# memory mirror. Redis is a rebuildable projection (not backed up); the canonical
+# SQLite store gets a verified before_deploy backup via the l9-sqlite-* host
+# scripts installed by the sqlite_backup Ansible role. The deploy engine now runs
+# verify_command in-band and fails closed if the backup cannot be verified.
+project:
+  id: graphiti-memory
+  repository: Quantum-L9/l9-graphiti-memory
+  owner_team: platform
+  runtime_profile: stateful-container
+artifact:
+  registry: ghcr.io
+  image: ghcr.io/quantum-l9/l9-graphiti-memory
+  require_digest: true
+  require_provenance_attestation: true
+  require_sbom_attestation: true
+runtime:
+  architecture: linux/amd64
+  # l9-memory-server serves --transport http on port 8200 by default (server.py).
+  container_port: 8200
+  user: non_root
+  read_only_root_filesystem: false
+  stop_grace_seconds: 30
+health:
+  # The server exposes /healthz (200 when health is complete, else 503).
+  startup: {type: http, path: /healthz, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 24}
+  post_deploy: {type: http, path: /healthz, expected_status: 200, timeout_seconds: 10, interval_seconds: 5, attempts: 12}
+release:
+  strategy: rolling-single-host
+  retain_successful_releases: 5
+  automatic_rollback: true
+  production_approval_required: true
+  stabilization_seconds: 30
+migrations:
+  enabled: false
+  backup_required: false
+storage:
+  persistent_volumes:
+    - {name: memory-store, mount_path: /var/lib/l9-memory, backup_policy: before_deploy}
+services:
+  redis: {mode: managed_on_fleet, required: true}
+backup:
+  command: [/usr/local/sbin/l9-sqlite-backup, "{project}", "{environment}", "{request_id}"]
+  verify_command: [/usr/local/sbin/l9-sqlite-verify, "/srv/l9/backups/{project}/{environment}/latest.sqlite.gz"]
+  restore_test_command: [/usr/local/sbin/l9-sqlite-restore-test, "{project}", "{environment}"]
+  timeout_seconds: 600
+secrets:
+  authority: infisical
+  runtime_mode: deploy_render
+  project_slug: l9-graphiti-memory
+  environment_mapping: {staging: staging, production: prod}
+network:
+  # Shared internal service: bots reach /mcp over the private network only.
+  public_ingress: {enabled: false, hostnames: [], tls: disabled}
+  private_dependencies_only: true
+policy:
+  allowed_source_refs:
+    staging: [refs/heads/main]
+    production: [refs/tags/v*]
+  require_clean_ci_gate: true
+  require_profile_digest_match: true

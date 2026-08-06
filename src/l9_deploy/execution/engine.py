@@ -34,7 +34,7 @@ from ..evidence.ledger import ReceiptLedger
 from ..evidence.publisher import publish_receipt
 from ..evidence.receipts import create_deployment_receipt
 from ..requests.idempotency import IdempotencyStore
-from .backups import create_backup
+from .backups import create_backup, verify_backup_command
 from .compose import compose_path, render_compose
 from .health import run_probe
 from .images import inspect_repo_digest, pull_image, require_digest_ref
@@ -195,6 +195,21 @@ def execute_plan(
                         typed_plan.environment,
                         typed_plan.request_id,
                     )
+                    backup_config = typed_profile.backup
+                    if backup_config is not None:
+                        verification = verify_backup_command(
+                            executor,
+                            backup_config,
+                            typed_plan.project_id,
+                            typed_plan.environment,
+                            typed_plan.request_id,
+                        )
+                        details = {**details, "verification": verification}
+                        if verification["status"] == "FAIL":
+                            raise ExecutionError(
+                                "pre-deploy backup verification failed; "
+                                "aborting before release mutation"
+                            )
                 elif kind == "pull":
                     pull_image(executor, typed_plan.image_ref, step.timeout_seconds)
                     inspect_repo_digest(executor, typed_plan.image_ref)
