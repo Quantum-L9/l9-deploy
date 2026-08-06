@@ -25,6 +25,7 @@ from l9_deploy.execution.promotion import write_runtime_state
 from l9_deploy.execution.releases import (
     active_runtime_env_path,
     bind_release_runtime_env,
+    cleanup_release_directories,
     materialize_release_runtime_env,
     release_runtime_env_path,
     retained_release_directories,
@@ -214,3 +215,50 @@ def test_release_state_rejects_non_release_runtime_env_path() -> None:
             plan_digest="sha256:" + "a" * 64,
             runtime_env_path="/srv/l9/projects/seo-bot/staging/runtime.env",
         )
+
+
+class _RunResult:
+    def __init__(self, stdout: str) -> None:
+        self.stdout = stdout
+
+
+def test_cleanup_removes_only_unretained_release_directories() -> None:
+    executor = RecordingExecutor()
+    current = bind_release_runtime_env(_release("sha256:" + "a" * 64), "seo-bot", "staging")
+    previous = bind_release_runtime_env(_release("sha256:" + "d" * 64), "seo-bot", "staging")
+    stale = "/srv/l9/projects/seo-bot/staging/releases/" + "e" * 64
+
+    def run(command: list[str], **kwargs: object) -> object:
+        executor.runs.append((command, kwargs))
+        if command[0] == "find":
+            return _RunResult(
+                "\n".join(
+                    [
+                        str(Path(current.runtime_env_path or "").parent),
+                        str(Path(previous.runtime_env_path or "").parent),
+                        stale,
+                    ]
+                )
+                + "\n"
+            )
+        return _RunResult("")
+
+    executor.run = run  # type: ignore[method-assign]
+    result = cleanup_release_directories(executor, current, previous, "seo-bot", "staging")
+
+    assert result["removed_release_directories"] == [stale]
+    assert (["rm", "-rf", "--", stale], {}) in executor.runs
+
+
+def test_cleanup_rejects_untrusted_inventory_paths_before_delete() -> None:
+    executor = RecordingExecutor()
+    current = bind_release_runtime_env(_release(), "seo-bot", "staging")
+
+    def run(command: list[str], **kwargs: object) -> object:
+        executor.runs.append((command, kwargs))
+        return _RunResult("/srv/l9/projects/seo-bot/staging/releases/../escape\n")
+
+    executor.run = run  # type: ignore[method-assign]
+    with pytest.raises(ExecutionError, match="unsafe release directory"):
+        cleanup_release_directories(executor, current, None, "seo-bot", "staging")
+    assert not any(command[0] == "rm" for command, _ in executor.runs)

@@ -21,7 +21,12 @@ from ..contracts.models import DeploymentProfile
 from ..errors import ContractError
 
 
-def render_compose(profile: DeploymentProfile, image_ref: str, environment: str) -> str:
+def render_compose(
+    profile: DeploymentProfile,
+    image_ref: str,
+    environment: str,
+    runtime_env_path: str,
+) -> str:
     runtime = profile.runtime
     project = profile.project.id
     service: dict[str, JsonValue] = {
@@ -36,7 +41,11 @@ def render_compose(profile: DeploymentProfile, image_ref: str, environment: str)
         service["read_only"] = True
     if runtime.environment:
         service["environment"] = cast(JsonValue, runtime.environment)
-    service["env_file"] = [f"/srv/l9/projects/{project}/{environment}/runtime.env"]
+    if not runtime_env_path.startswith(
+        f"/srv/l9/projects/{project}/{environment}/releases/"
+    ) or not runtime_env_path.endswith("/runtime.env"):
+        raise ContractError("Compose runtime environment must be release-owned")
+    service["env_file"] = ["${L9_RUNTIME_ENV_FILE:?L9_RUNTIME_ENV_FILE is required}"]
     if runtime.container_port:
         service["expose"] = [runtime.container_port]
     volumes: list[JsonValue] = []

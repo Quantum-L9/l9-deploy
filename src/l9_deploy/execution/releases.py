@@ -100,6 +100,44 @@ def materialize_release_runtime_env(
     return bound
 
 
+def remove_release_directory(
+    executor: Executor,
+    release: ReleaseState,
+    project_id: str,
+    environment: str,
+) -> None:
+    path = release_directory(project_id, environment, release.plan_digest)
+    executor.run(["rm", "-rf", "--", str(path)])
+
+
+def cleanup_release_directories(
+    executor: Executor,
+    current: ReleaseState,
+    previous: ReleaseState | None,
+    project_id: str,
+    environment: str,
+) -> dict[str, object]:
+    retained = retained_release_directories(current, previous, project_id, environment)
+    root = environment_root(project_id, environment) / "releases"
+    result = executor.run(
+        ["find", str(root), "-mindepth", "1", "-maxdepth", "1", "-type", "d", "-print"]
+    )
+    removed: list[str] = []
+    retained_set = {str(path) for path in retained}
+    for line in str(getattr(result, "stdout", "")).splitlines():
+        candidate = Path(line)
+        if candidate.parent != root or re.fullmatch(r"[0-9a-f]{64}", candidate.name) is None:
+            raise ExecutionError("unsafe release directory returned by cleanup inventory")
+        if str(candidate) not in retained_set:
+            executor.run(["rm", "-rf", "--", str(candidate)])
+            removed.append(str(candidate))
+    return {
+        "status": "PASS",
+        "retained_release_directories": [str(path) for path in retained],
+        "removed_release_directories": removed,
+    }
+
+
 def retained_release_directories(
     current: ReleaseState,
     previous: ReleaseState | None,

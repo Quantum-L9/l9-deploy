@@ -26,10 +26,11 @@ from l9_deploy.execution.images import require_digest_ref
 def test_compose_uses_runtime_digest_variable(profile) -> None:  # type: ignore[no-untyped-def]
     image = "ghcr.io/quantum-l9/seo-bot@sha256:" + "a" * 64
     typed_profile = DeploymentProfile.model_validate(profile)
-    document = yaml.safe_load(render_compose(typed_profile, image, "staging"))
+    runtime_env = "/srv/l9/projects/seo-bot/staging/releases/" + "b" * 64 + "/runtime.env"
+    document = yaml.safe_load(render_compose(typed_profile, image, "staging", runtime_env))
     assert document["services"]["app"]["image"].startswith("${L9_IMAGE_REF:")
     assert document["services"]["app"]["env_file"] == [
-        "/srv/l9/projects/seo-bot/staging/runtime.env"
+        "${L9_RUNTIME_ENV_FILE:?L9_RUNTIME_ENV_FILE is required}"
     ]
 
 
