@@ -8,13 +8,14 @@ owner: platform
 status: active
 --- /L9_META ---
 """
-from __future__ import annotations
 
-from pydantic import JsonValue
+from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol
+
+from pydantic import JsonValue
 
 from ..contracts.models import HealthProbe, ReleaseState
 from ..errors import ExecutionError
@@ -41,9 +42,7 @@ def rollback_release(
 ) -> dict[str, JsonValue]:
     if previous_release is None:
         raise ExecutionError("previous release is unavailable; automatic rollback is blocked")
-    runtime_env = validate_release_runtime_env_path(
-        previous_release, project_id, environment
-    )
+    runtime_env = validate_release_runtime_env_path(previous_release, project_id, environment)
     if runtime_env is None:
         raise ExecutionError(
             "previous release lacks runtime configuration identity; automatic rollback is blocked"

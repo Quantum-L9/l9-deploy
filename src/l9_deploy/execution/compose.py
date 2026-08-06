@@ -8,11 +8,11 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
-from typing import cast
-
 from pathlib import Path
+from typing import cast
 
 import yaml
 from pydantic import JsonValue
@@ -52,8 +52,8 @@ def render_compose(
     for item in runtime.volumes:
         suffix = ":ro" if item.read_only else ""
         volumes.append(f"{item.source}:{item.target}{suffix}")
-    for item in profile.storage.persistent_volumes:
-        volumes.append(f"/srv/l9/data/{project}/{item.name}:{item.mount_path}")
+    for volume in profile.storage.persistent_volumes:
+        volumes.append(f"/srv/l9/data/{project}/{volume.name}:{volume.mount_path}")
     if volumes:
         service["volumes"] = volumes
     document: dict[str, JsonValue] = {

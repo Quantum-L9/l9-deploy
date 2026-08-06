@@ -183,19 +183,13 @@ def test_execute_plan_writes_immutable_receipt_and_runtime_state(
     state_path = tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json"
     state = json.loads(state_path.read_text(encoding="utf-8"))
     assert state["current"]["image_ref"] == plan.image_ref
-    compose_commands = [
-        item
-        for item in executor.commands
-        if item[0][:2] == ["docker", "compose"]
-    ]
+    compose_commands = [item for item in executor.commands if item[0][:2] == ["docker", "compose"]]
     assert compose_commands[0][1]["env"]["L9_IMAGE_REF"] == plan.image_ref
     candidate_env = state["current"]["runtime_env_path"]
     assert candidate_env in compose_commands[0][0]
     assert compose_commands[0][1]["env"]["L9_RUNTIME_ENV_FILE"] == candidate_env
     migration_commands = [
-        command
-        for command, _ in executor.commands
-        if command[:2] == ["docker", "run"]
+        command for command, _ in executor.commands if command[:2] == ["docker", "run"]
     ]
     assert candidate_env in migration_commands[0]
     assert "/srv/l9/projects/seo-bot/staging/runtime.env" not in str(executor.commands)
@@ -267,8 +261,7 @@ def test_health_failure_rolls_back_container_and_state(
     assert str(previous.runtime_env_path) in rollback_commands[-1]
     candidate_directory = str(
         Path(
-            "/srv/l9/projects/seo-bot/staging/releases/"
-            + plan.plan_digest.removeprefix("sha256:")
+            "/srv/l9/projects/seo-bot/staging/releases/" + plan.plan_digest.removeprefix("sha256:")
         )
     )
     assert (["rm", "-rf", "--", candidate_directory], {}) in executor.commands

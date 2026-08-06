@@ -151,9 +151,12 @@ def execute_plan(
     if typed_profile.release.automatic_rollback and previous is not None:
         if rollback_probe is None:
             raise ExecutionError("automatic rollback requires a health probe")
-        if validate_release_runtime_env_path(
-            previous, typed_plan.project_id, typed_plan.environment
-        ) is None:
+        if (
+            validate_release_runtime_env_path(
+                previous, typed_plan.project_id, typed_plan.environment
+            )
+            is None
+        ):
             raise ExecutionError(
                 "previous release lacks runtime configuration identity; deployment is blocked"
             )
