@@ -286,6 +286,7 @@ def _remote_state(executor: Any, project: str, environment: str) -> dict[str, An
 
 
 def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
+    root = repository_root(args)
     reg = registry(args)
     fleet = load_fleet(Path(args.fleet), reg)
     project = next(
@@ -293,6 +294,9 @@ def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
     )
     if not isinstance(project, dict):
         raise ContractError("project is not registered")
+    profile_document = object_document(root / str(project["profile_path"]))
+    reg.validate(profile_document, "deployment-profile")
+    profile = DeploymentProfile.model_validate(profile_document)
     request_id = args.request_id or "manual-rollback"
     require_mutation_approval(args, request_id=request_id)
     executor = _target_executor(args, fleet, project, args.environment)
@@ -310,6 +314,8 @@ def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
         args.environment,
         previous_release,
         failed_release=current_release,
+        health_probe=profile.health.post_deploy,
+        base_url=args.base_url,
     )
     receipt = create_receipt(
         "l9.rollback-receipt/v1",
