@@ -78,8 +78,6 @@ def _run(
     )
 
 
-
-
 def _non_mask_output(result: subprocess.CompletedProcess[str]) -> str:
     """Stdout/stderr excluding GitHub Actions ::add-mask:: lines (values are intentional)."""
     lines: list[str] = []
