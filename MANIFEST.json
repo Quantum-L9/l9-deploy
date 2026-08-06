@@ -17,7 +17,7 @@
   "version": "0.1.5",
   "generated_at": "2026-08-06T08:03:18Z",
   "file_count": 390,
-  "total_size_bytes": 910810,
+  "total_size_bytes": 911047,
   "self_exclusions": [
     "MANIFEST.json",
     "MANIFEST.md",
@@ -2336,14 +2336,14 @@
     },
     {
       "path": "validation/evidence/phase5-release-receipt.json",
-      "size_bytes": 591,
-      "sha256": "4506a8bd7a02c817cbd8a4cfbf6aca0035424a3889575edd985d5a51212df7e7",
+      "size_bytes": 828,
+      "sha256": "7249447e8ad8e32acb1a850653e136345fca394212f62a6fad23f4a56c99703e",
       "media_type": "application/json"
     },
     {
       "path": "validation/evidence/phase5-root-digests.sha256",
       "size_bytes": 317,
-      "sha256": "e7ac189b22261cf4cc8444c78fd198ca00ed1de87373b525904d7eea18a1a763",
+      "sha256": "aa981cbf00fe8ab0617646d40d4d95d1b475d698b5018cbb37554ad3124e7d39",
       "media_type": "application/octet-stream"
     },
     {

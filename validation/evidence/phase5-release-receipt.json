@@ -1,4 +1,17 @@
 {
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
   "archive_files": 393,
   "archive_name": "l9-deploy-release.zip",
   "archive_sha256": "sha256:7b91146d6f9e8da670d8c6d375eca4945084de50fb98a1fc9839229d4380feb8",

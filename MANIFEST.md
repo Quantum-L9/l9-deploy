@@ -13,7 +13,7 @@ status: active
 - Repository: `Quantum-L9/l9-deployment-platform`
 - Version: `0.1.5`
 - Manifested files: **390**
-- Manifested bytes: **910810**
+- Manifested bytes: **911047**
 
 `MANIFEST.json`, `MANIFEST.md`, and `checksums.sha256` are excluded from the JSON 
 manifest to avoid self-referential hashes. The checksum index covers both manifest files.
@@ -426,8 +426,8 @@ manifest to avoid self-referential hashes. The checksum index covers both manife
 | `validation/evidence/phase5-meta.txt` | machine-readable validation evidence | 50 | `dc41ca862765bf779a7df54880e3b63193bb488cf0113be9e3054ebcda77b85b` |
 | `validation/evidence/phase5-pytest.txt` | machine-readable validation evidence | 180 | `fbe08196459b41339375bfb47fe32d00e92bd4bbd841f91654a57e9febd4b51e` |
 | `validation/evidence/phase5-release-archive.txt` | machine-readable validation evidence | 394 | `d83e30aceab2128b27b33e97c98910bae4fbac9c48b0d6f223ab252ab0a96596` |
-| `validation/evidence/phase5-release-receipt.json` | machine-readable validation evidence | 591 | `4506a8bd7a02c817cbd8a4cfbf6aca0035424a3889575edd985d5a51212df7e7` |
-| `validation/evidence/phase5-root-digests.sha256` | machine-readable validation evidence | 317 | `e7ac189b22261cf4cc8444c78fd198ca00ed1de87373b525904d7eea18a1a763` |
+| `validation/evidence/phase5-release-receipt.json` | machine-readable validation evidence | 828 | `7249447e8ad8e32acb1a850653e136345fca394212f62a6fad23f4a56c99703e` |
+| `validation/evidence/phase5-root-digests.sha256` | machine-readable validation evidence | 317 | `aa981cbf00fe8ab0617646d40d4d95d1b475d698b5018cbb37554ad3124e7d39` |
 | `validation/validation_checks.jsonl` | machine-readable validation evidence | 8465 | `b99a78446a7b7ef99f6c3875c52de715eaa729de704dd21aa6d21512e4fc68ef` |
 | `validation/validation_findings.jsonl` | machine-readable validation evidence | 10293 | `32a4219d5dd7eda381f04683ec88a0643b18ea14460c78757aac3ea790754b88` |
 | `validation/validation_report.yaml` | machine-readable validation evidence | 2393 | `a003dd226cd166b889f278df7f5aa70db47ee5c2d6d0ea2e13d9fda94b1e1a94` |
