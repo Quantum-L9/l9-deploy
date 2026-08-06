@@ -12,6 +12,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 import argparse
 
 from _bootstrap import add_repository_src

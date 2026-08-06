@@ -12,6 +12,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import argparse
@@ -126,7 +127,7 @@ def main() -> int:
         if path.name in mutating_workflows:
             if "collect-approval" not in text or "approval-history.json" not in text:
                 errors.append(f"{path}: mutating workflow lacks independent approval evidence")
-            forbidden_approver = '--approved-by ' + '"${{ github.actor }}"'
+            forbidden_approver = "--approved-by " + '"${{ github.actor }}"'
             if forbidden_approver in text:
                 errors.append(f"{path}: triggering actor cannot be recorded as approver")
             authorize = jobs.get("authorize")

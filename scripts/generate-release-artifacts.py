@@ -11,6 +11,7 @@ status: active
 
 Generate the repository manifest, responsibility map, final tree, and checksum index.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -102,11 +103,7 @@ def _write_final_tree(root: Path, paths: list[str]) -> None:
 
 def _generated_at(value: str | None) -> str:
     if value and value.isdigit():
-        return (
-            datetime.fromtimestamp(int(value), UTC)
-            .isoformat()
-            .replace("+00:00", "Z")
-        )
+        return datetime.fromtimestamp(int(value), UTC).isoformat().replace("+00:00", "Z")
     if value:
         return value
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -209,8 +206,7 @@ def main() -> int:
         "|---|---|---:|",
     ]
     lines.extend(
-        f"| `{prefix}/` | {role} | {count} |"
-        for prefix, role, count in responsibility_rows
+        f"| `{prefix}/` | {role} | {count} |" for prefix, role, count in responsibility_rows
     )
     lines.extend(
         [
@@ -230,15 +226,11 @@ def main() -> int:
     lines.append("")
     (root / "MANIFEST.md").write_text("\n".join(lines), encoding="utf-8")
 
-    checksum_paths = [
-        path for path in release_files(root) if path.name != "checksums.sha256"
-    ]
+    checksum_paths = [path for path in release_files(root) if path.name != "checksums.sha256"]
     checksum_lines = [
         f"{_sha256(path)}  {path.relative_to(root).as_posix()}" for path in checksum_paths
     ]
-    (root / "checksums.sha256").write_text(
-        "\n".join(checksum_lines) + "\n", encoding="utf-8"
-    )
+    (root / "checksums.sha256").write_text("\n".join(checksum_lines) + "\n", encoding="utf-8")
     return 0
 
 

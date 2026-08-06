@@ -11,6 +11,7 @@ status: active
 
 Build a deterministic, single-root repository ZIP from the validated release tree.
 """
+
 from __future__ import annotations
 
 import argparse

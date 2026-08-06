@@ -10,6 +10,7 @@ status: active
 
 Verify external CI gate evidence separately from the status-free OCI artifact binding.
 """
+
 from __future__ import annotations
 
 import shutil

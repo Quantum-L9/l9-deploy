@@ -8,6 +8,7 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 from copy import deepcopy
@@ -151,9 +152,7 @@ def test_wire_contracts_round_trip_without_runtime_name_leak(
         contract = definition.model.model_validate(wire)
 
         assert contract.schema_id == definition.schema_id
-        assert contract.model_dump(
-            mode="json", by_alias=True, exclude_unset=True
-        ) == wire
+        assert contract.model_dump(mode="json", by_alias=True, exclude_unset=True) == wire
         default_dump = contract.model_dump(mode="json")
         assert "schema" in default_dump
         assert "schema_id" not in default_dump
@@ -206,8 +205,8 @@ def test_contract_scanner_allows_only_schema_wire_alias(tmp_path: Path) -> None:
     source = tmp_path / "src/l9_deploy/contracts"
     source.mkdir(parents=True)
     (source / "models.py").write_text(
-        'from typing import Literal\n'
-        'from pydantic import Field\n'
+        "from typing import Literal\n"
+        "from pydantic import Field\n"
         'schema_id: Literal["l9.example/v1"] = Field(alias="schema")\n',
         encoding="utf-8",
     )
@@ -219,12 +218,12 @@ def test_contract_scanner_rejects_unrelated_alias(tmp_path: Path) -> None:
     source = tmp_path / "src/l9_deploy/contracts"
     source.mkdir(parents=True)
     (source / "models.py").write_text(
-        'from pydantic import Field\n'
-        'runtime_name: str = Field(alias="wire_name")\n',
+        'from pydantic import Field\nruntime_name: str = Field(alias="wire_name")\n',
         encoding="utf-8",
     )
     findings = scanner.scan(tmp_path)
     assert [finding.rule_id for finding in findings] == ["NAME-001"]
+
 
 def test_contract_scanner_rejects_pass_only_function(tmp_path: Path) -> None:
     scanner = _load_fast_contract_scanner()
@@ -236,4 +235,3 @@ def test_contract_scanner_rejects_pass_only_function(tmp_path: Path) -> None:
     )
     findings = scanner.scan(tmp_path)
     assert [finding.rule_id for finding in findings] == ["STUB-007"]
-

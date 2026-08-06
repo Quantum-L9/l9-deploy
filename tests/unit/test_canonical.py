@@ -11,13 +11,14 @@ owner: platform
 status: active
 --- /L9_META ---
 """
+
 from __future__ import annotations
 
 import json
 import math
+from pathlib import Path
 
 import pytest
-from pathlib import Path
 
 from l9_deploy.canonical import atomic_write_json, canonical_json_bytes, file_sha256, sha256_digest
 
