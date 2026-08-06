@@ -14,8 +14,9 @@ status: active
 
 from __future__ import annotations
 
-import base64
+import os
 import shlex
+import tempfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -42,6 +43,7 @@ class RemoteExecutor:
         *,
         timeout: int | None = None,
         env: Mapping[str, str] | None = None,
+        input_text: str | None = None,
         check: bool = True,
     ) -> CommandResult:
         exports = ""
@@ -65,20 +67,20 @@ class RemoteExecutor:
                 remote,
             ],
             timeout=timeout or self.timeout,
+            input_text=input_text,
             check=check,
         )
 
     def write_text(self, path: Path, text: str, mode: int = 0o600) -> None:
-        encoded = base64.b64encode(text.encode()).decode()
         parent = shlex.quote(str(path.parent))
         target = shlex.quote(str(path))
         command = (
             f"set -euo pipefail; mkdir -p {parent}; "
             f"tmp=$(mktemp {parent}/.l9-write.XXXXXX); "
-            f'printf %s {shlex.quote(encoded)} | base64 -d > "$tmp"; '
-            f'chmod {mode:o} "$tmp"; mv "$tmp" {target}'
+            f'trap \'rm -f -- "$tmp"\' EXIT; cat > "$tmp"; '
+            f'chmod {mode:o} "$tmp"; mv -f -- "$tmp" {target}; trap - EXIT'
         )
-        self.run(["bash", "-lc", command])
+        self.run(["bash", "-lc", command], input_text=text)
 
 
 class LocalExecutor:
@@ -93,6 +95,7 @@ class LocalExecutor:
         *,
         timeout: int | None = None,
         env: Mapping[str, str] | None = None,
+        input_text: str | None = None,
         check: bool = True,
     ) -> CommandResult:
         return run_command(
@@ -100,6 +103,7 @@ class LocalExecutor:
             cwd=self.root,
             timeout=timeout or self.timeout,
             env=env,
+            input_text=input_text,
             check=check,
         )
 
@@ -110,5 +114,16 @@ class LocalExecutor:
         if target != root and root not in target.parents:
             raise ValueError("local executor write path escapes its root")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(text, encoding="utf-8")
-        target.chmod(mode)
+        descriptor, raw_temporary = tempfile.mkstemp(
+            prefix=".l9-write.",
+            dir=target.parent,
+            text=True,
+        )
+        temporary = Path(raw_temporary)
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                handle.write(text)
+            temporary.chmod(mode)
+            os.replace(temporary, target)
+        finally:
+            temporary.unlink(missing_ok=True)

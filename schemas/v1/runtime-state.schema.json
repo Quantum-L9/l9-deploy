@@ -1,0 +1,97 @@
+{
+  "x-l9-meta": {
+    "l9_schema": 1,
+    "origin": "l9-deployment-platform",
+    "layer": [
+      "repository"
+    ],
+    "tags": [
+      "L9_META",
+      "deployment-platform"
+    ],
+    "owner": "platform",
+    "status": "active"
+  },
+  "$id": "https://schemas.quantum-l9.invalid/l9/runtime-state/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ReleaseState": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "title": "Request Id",
+          "type": "string"
+        },
+        "source_commit_sha": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Source Commit Sha",
+          "type": "string"
+        },
+        "image_ref": {
+          "title": "Image Ref",
+          "type": "string"
+        },
+        "plan_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Plan Digest",
+          "type": "string"
+        },
+        "runtime_env_path": {
+          "anyOf": [
+            {
+              "pattern": "^/srv/l9/projects/[a-z][a-z0-9-]{1,63}/[a-z][a-z0-9-]{1,31}/releases/[a-f0-9]{64}/runtime\\.env$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runtime Env Path"
+        }
+      },
+      "required": [
+        "request_id",
+        "source_commit_sha",
+        "image_ref",
+        "plan_digest"
+      ],
+      "title": "ReleaseState",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "l9.runtime-state/v1",
+      "title": "Schema",
+      "type": "string"
+    },
+    "current": {
+      "$ref": "#/$defs/ReleaseState"
+    },
+    "previous": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReleaseState"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "promoted_at": {
+      "format": "date-time",
+      "title": "Promoted At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "current",
+    "previous",
+    "promoted_at"
+  ],
+  "title": "RuntimeState",
+  "type": "object"
+}
