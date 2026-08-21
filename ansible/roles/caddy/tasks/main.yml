@@ -50,14 +50,14 @@
 
 - name: Reset L9-managed Caddy sites
   ansible.builtin.file:
-    path: "{{ l9_deploy_root }}/caddy/sites"
+    path: /etc/caddy/sites
     state: absent
 
 - name: Create L9-managed Caddy sites directory
   ansible.builtin.file:
-    path: "{{ l9_deploy_root }}/caddy/sites"
+    path: /etc/caddy/sites
     state: directory
-    owner: "{{ l9_deploy_user }}"
+    owner: root
     group: caddy
     mode: "0750"
 
@@ -72,16 +72,16 @@
 - name: Keep the managed import valid when no routes exist
   ansible.builtin.copy:
     content: "# L9 managed Caddy site set is intentionally empty.\n"
-    dest: "{{ l9_deploy_root }}/caddy/sites/00-empty.caddy"
-    owner: "{{ l9_deploy_user }}"
+    dest: /etc/caddy/sites/00-empty.caddy
+    owner: root
     group: caddy
     mode: "0640"
 
 - name: Render L9-managed Caddy routes
   ansible.builtin.template:
     src: managed-site.caddy.j2
-    dest: "{{ l9_deploy_root }}/caddy/sites/l9-{{ item.project_id }}-{{ item.environment }}-{{ item.hostname }}.caddy"
-    owner: "{{ l9_deploy_user }}"
+    dest: "/etc/caddy/sites/l9-{{ item.project_id }}-{{ item.environment }}-{{ item.hostname }}.caddy"
+    owner: root
     group: caddy
     mode: "0640"
   loop: "{{ l9_caddy_sites | default([]) }}"

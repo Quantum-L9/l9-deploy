@@ -55,9 +55,14 @@ def test_caddy_role_uses_canonical_version_and_managed_site_templates() -> None:
     assert isinstance(tasks, list)
     assert tasks
     text = tasks_path.read_text(encoding="utf-8")
+    base = (ROOT / "ansible/roles/caddy/templates/Caddyfile.j2").read_text(encoding="utf-8")
     assert "l9_caddy_version" in text
     assert "l9_caddy_package_version" not in text
-    assert (ROOT / "ansible/roles/caddy/templates/Caddyfile.j2").is_file()
     assert (ROOT / "ansible/roles/caddy/templates/managed-site.caddy.j2").is_file()
     assert "caddy validate" not in text
     assert "Validate complete Caddy configuration" in text
+    assert "/etc/caddy/sites" in text
+    assert "l9_deploy_root" not in text
+    assert 'owner: root' in text
+    assert "import sites/*.caddy" in base
+    assert "/srv/l9/caddy" not in base
