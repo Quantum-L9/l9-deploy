@@ -83,20 +83,26 @@ servers:
     roles: [application, worker]
     labels: {managed_by: l9-deployment-platform, workload: seo-bot}
     conformance: {profile: application, max_age_hours: 24}
-  # Reserved managed staging host for the public l9-cognitive-runtime MCP service.
-  # This registry coordinate is a provisioning contract, not evidence that the host
-  # already exists. TF_VAR_servers[mcp-staging-01].private_ip MUST be 10.90.10.30;
-  # after apply, transcribe the real Hetzner public IP into public_ip before release.
+  # Existing Hetzner C1 host adopted for the l9-cognitive-runtime staging placement.
+  # Cursor-Governance is authoritative for this protected host: 46.62.243.82, root
+  # SSH, and an already-live Caddy edge. No private-network coordinate is invented.
+  # lifecycle=adopted prevents the normal l9-deploy host-configuration plane from
+  # treating C1 as a provisioned/owned fleet server.
   - schema: l9.server-profile/v1
-    id: mcp-staging-01
+    id: c1
     environment: staging
     provider: hetzner
-    private_ip: 10.90.10.30
-    public_ip: null
-    ssh: {user: l9deploy, port: 22}
+    lifecycle: adopted
+    private_ip: null
+    public_ip: 46.62.243.82
+    ssh: {user: root, port: 22}
     roles: [application]
-    labels: {managed_by: l9-deployment-platform, workload: l9-cognitive-runtime}
-    conformance: {profile: application, max_age_hours: 24}
+    labels:
+      managed_by: external
+      workload: shared-c1
+      protection: c1
+      caddy_management: external
+    conformance: {profile: adopted-c1, max_age_hours: 24}
 projects:
   - id: graphiti-memory
     repository: Quantum-L9/l9-graphiti-memory
@@ -115,6 +121,6 @@ projects:
     profile_path: integrations/consumers/l9-cognitive-runtime.deployment.yaml
     environments:
       staging:
-        server_ids: [mcp-staging-01]
+        server_ids: [c1]
         infisical_environment: staging
         public_hostnames: [mcp-staging.quantumaipartners.com]

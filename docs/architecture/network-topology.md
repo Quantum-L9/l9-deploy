@@ -18,5 +18,17 @@ runner private address. Public ingress is limited to application ports, normally
 private east-west traffic.
 
 Management, staging, and production occupy separate private subnets. The fleet registry is the
-source of host identity, private addresses, allowed source references, and environment approval
+source of host identity, connection addresses, allowed source references, and environment approval
 policy. No application workload or database runs on the deployment runner.
+
+## Adopted hosts
+
+A server with `lifecycle: adopted` is an existing host whose infrastructure and edge configuration
+are not owned by the normal l9-deploy provisioning/configuration plane. It must publish an observed
+`public_ip`; l9-deploy uses that address only as its SSH connection coordinate. No private address is
+invented to satisfy the managed-host schema.
+
+Adopted hosts are excluded from configuration-plan targets, and the runtime/Caddy Ansible path fails
+closed before roles execute. Runtime mutation additionally requires the normal approval receipt plus
+explicit `--allow-adopted-host-mutation`. This lets the fleet describe an existing protected host
+without silently claiming authority to reconfigure it.

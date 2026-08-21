@@ -190,7 +190,7 @@ def cmd_plan(args: argparse.Namespace) -> dict[str, Any]:
 
 def _host_from_server(server: ServerProfile | dict[str, Any]) -> Host:
     typed = server if isinstance(server, ServerProfile) else ServerProfile.model_validate(server)
-    return Host(typed.id, typed.private_ip, typed.ssh.user, typed.ssh.port)
+    return Host(typed.id, typed.connection_address, typed.ssh.user, typed.ssh.port)
 
 
 def _fleet_items(fleet: dict[str, object], key: str) -> list[dict[str, Any]]:
@@ -204,16 +204,30 @@ def _fleet_items(fleet: dict[str, object], key: str) -> list[dict[str, Any]]:
 
 
 def _target_executor(
-    args: argparse.Namespace, fleet: dict[str, Any], project: dict[str, Any], environment: str
+    args: argparse.Namespace,
+    fleet: dict[str, Any],
+    project: dict[str, Any],
+    environment: str,
+    *,
+    mutation: bool = False,
 ) -> Any:
     target = resolve_target(fleet, project, environment)
     if len(target.servers) != 1:
         raise ContractError(
             "version 1 rolling-single-host execution requires exactly one target server"
         )
+    server = target.servers[0]
+    if (
+        mutation
+        and server.lifecycle == "adopted"
+        and not getattr(args, "allow_adopted_host_mutation", False)
+    ):
+        raise AuthorizationError(
+            "adopted host mutation requires explicit --allow-adopted-host-mutation"
+        )
     if args.local_executor_root:
         return LocalExecutor(Path(args.local_executor_root), timeout=args.timeout)
-    return RemoteExecutor(_host_from_server(target.servers[0]), timeout=args.timeout)
+    return RemoteExecutor(_host_from_server(server), timeout=args.timeout)
 
 
 def cmd_deploy(args: argparse.Namespace) -> dict[str, Any]:
@@ -234,7 +248,7 @@ def cmd_deploy(args: argparse.Namespace) -> dict[str, Any]:
     profile_document = object_document(root / str(project["profile_path"]))
     reg.validate(profile_document, "deployment-profile")
     profile = DeploymentProfile.model_validate(profile_document)
-    executor = _target_executor(args, fleet, project, args.environment)
+    executor = _target_executor(args, fleet, project, args.environment, mutation=True)
     idempotency = IdempotencyStore(Path(args.idempotency_store))
     latest_pointer = Path(args.output or "receipts/latest/deployment.json")
     result = execute_plan(
@@ -299,7 +313,7 @@ def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
     profile = DeploymentProfile.model_validate(profile_document)
     request_id = args.request_id or "manual-rollback"
     require_mutation_approval(args, request_id=request_id)
-    executor = _target_executor(args, fleet, project, args.environment)
+    executor = _target_executor(args, fleet, project, args.environment, mutation=True)
     state = _remote_state(executor, args.project, args.environment)
     previous = state.get("previous")
     previous_release = ReleaseState.model_validate(previous) if isinstance(previous, dict) else None
@@ -388,10 +402,11 @@ def cmd_inventory_generate(args: argparse.Namespace) -> dict[str, Any]:
 
 def cmd_inventory_validate(args: argparse.Namespace) -> dict[str, Any]:
     fleet = load_fleet(Path(args.fleet), registry(args))
-    ids = [server["id"] for server in _fleet_items(fleet, "servers")]
-    ips = [server["private_ip"] for server in _fleet_items(fleet, "servers")]
-    if len(ids) != len(set(ids)) or len(ips) != len(set(ips)):
-        raise ContractError("fleet server ids and private IPs must be unique")
+    servers = [ServerProfile.model_validate(server) for server in _fleet_items(fleet, "servers")]
+    ids = [server.id for server in servers]
+    addresses = [server.connection_address for server in servers]
+    if len(ids) != len(set(ids)) or len(addresses) != len(set(addresses)):
+        raise ContractError("fleet server ids and connection addresses must be unique")
     registered = set(ids)
     projects = _fleet_items(fleet, "projects")
     for project in projects:
@@ -502,7 +517,7 @@ def cmd_config_apply(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _project_profile(
-    args: argparse.Namespace,
+    args: argparse.Namespace, *, mutation: bool = False
 ) -> tuple[dict[str, Any], DeploymentProfile, Any]:
     reg = registry(args)
     fleet = load_fleet(Path(args.fleet), reg)
@@ -514,12 +529,12 @@ def _project_profile(
     profile_document = object_document(repository_root(args) / project["profile_path"])
     reg.validate(profile_document, "deployment-profile")
     profile = DeploymentProfile.model_validate(profile_document)
-    executor = _target_executor(args, fleet, project, args.environment)
+    executor = _target_executor(args, fleet, project, args.environment, mutation=mutation)
     return project, profile, executor
 
 
 def cmd_backup_create(args: argparse.Namespace) -> dict[str, Any]:
-    _, profile, executor = _project_profile(args)
+    _, profile, executor = _project_profile(args, mutation=True)
     require_mutation_approval(args, request_id=args.request_id or "manual-backup")
     return cast(
         dict[str, Any],
@@ -549,7 +564,7 @@ def cmd_backup_verify(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def cmd_restore_test(args: argparse.Namespace) -> dict[str, Any]:
-    _, profile, executor = _project_profile(args)
+    _, profile, executor = _project_profile(args, mutation=True)
     require_mutation_approval(args, request_id=args.request_id or "manual-restore-test")
     config = profile.backup
     if config is None:
@@ -623,6 +638,14 @@ def add_mutation(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--receipt-ledger-root", default="receipts/ledger")
 
 
+def add_adopted_host_mutation(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--allow-adopted-host-mutation",
+        action="store_true",
+        help="explicitly authorize a protected adopted host after normal mutation approval",
+    )
+
+
 def leaf(
     parent: argparse._SubParsersAction[Any], name: str, handler: Handler, help_text: str
 ) -> argparse.ArgumentParser:
@@ -656,6 +679,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--previous-state")
     p = leaf(top, "deploy", cmd_deploy, "execute an approved deployment plan")
     add_mutation(p)
+    add_adopted_host_mutation(p)
     p.add_argument("--plan", required=True)
     p.add_argument("--fleet", default="fleet/registry.yaml")
     p.add_argument("--runtime-env-file")
@@ -669,6 +693,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--plan", required=True)
     p = leaf(top, "rollback", cmd_rollback, "restore the previous verified release")
     add_mutation(p)
+    add_adopted_host_mutation(p)
     p.add_argument("--project", required=True)
     p.add_argument("--fleet", default="fleet/registry.yaml")
     p.add_argument("--local-executor-root")
@@ -726,6 +751,7 @@ def build_parser() -> argparse.ArgumentParser:
     bs = backup.add_subparsers(dest="command", required=True)
     p = leaf(bs, "create", cmd_backup_create, "create a policy-bound backup")
     add_mutation(p)
+    add_adopted_host_mutation(p)
     p.add_argument("--project", required=True)
     p.add_argument("--fleet", default="fleet/registry.yaml")
     p.add_argument("--local-executor-root")
@@ -738,6 +764,7 @@ def build_parser() -> argparse.ArgumentParser:
     rss = restore.add_subparsers(dest="command", required=True)
     p = leaf(rss, "test", cmd_restore_test, "execute an isolated restore test")
     add_mutation(p)
+    add_adopted_host_mutation(p)
     p.add_argument("--project", required=True)
     p.add_argument("--fleet", default="fleet/registry.yaml")
     p.add_argument("--local-executor-root")

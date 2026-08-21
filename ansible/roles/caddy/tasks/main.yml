@@ -9,6 +9,14 @@
 # owner: platform
 # status: active
 # --- /L9_META ---
+- name: Refuse Caddy ownership on adopted hosts
+  ansible.builtin.assert:
+    that:
+      - (l9_lifecycle | default('managed')) == 'managed'
+    fail_msg: >-
+      Adopted hosts retain their existing edge configuration; l9-deploy must not
+      overwrite /etc/caddy/Caddyfile or reset /etc/caddy/sites.
+
 - name: Require pinned Caddy package version
   ansible.builtin.assert:
     that:

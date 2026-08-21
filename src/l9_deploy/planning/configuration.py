@@ -73,10 +73,26 @@ def _resolve_limit(
             raise AuthorizationError("server-id is not uniquely registered in fleet inventory")
         if matches[0].get("environment") != environment:
             raise AuthorizationError("server-id does not belong to the selected environment")
+        if matches[0].get("lifecycle", "managed") == "adopted":
+            raise AuthorizationError(
+                "adopted servers are outside the normal host-configuration plane"
+            )
         return server_id, server_id, False
     if not allow_environment_wide:
         raise AuthorizationError(
             "environment-wide configuration requires explicit allow-environment-wide"
+        )
+    adopted = [
+        str(server.get("id"))
+        for server in servers
+        if isinstance(server, dict)
+        and server.get("environment") == environment
+        and server.get("lifecycle", "managed") == "adopted"
+    ]
+    if adopted:
+        raise AuthorizationError(
+            "environment-wide configuration cannot include adopted servers: "
+            + ", ".join(sorted(adopted))
         )
     return environment, None, True
 

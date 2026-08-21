@@ -46,14 +46,14 @@ def write_output(name: str, value: str) -> None:
         sys.stdout.write(f"{name}={value}\n")
 
 
-def deployment_base_url(verified, private_ip: str) -> str:  # type: ignore[no-untyped-def]
+def deployment_base_url(verified, target_address: str | None) -> str:  # type: ignore[no-untyped-def]
     ingress = verified.profile.network.public_ingress
     public_hostnames = verified.environment.public_hostnames
     if ingress.enabled and public_hostnames:
         scheme = "https" if ingress.tls in {"automatic", "external"} else "http"
         return f"{scheme}://{sorted(public_hostnames)[0]}"
     port = verified.profile.runtime.container_port
-    return f"http://{private_ip}:{port}" if port else ""
+    return f"http://{target_address}:{port}" if port and target_address else ""
 
 
 def main() -> int:
@@ -89,8 +89,8 @@ def main() -> int:
     environment = plan.environment
     infisical_environment = secrets.environment_mapping[environment]
     target = resolve_target(verified.fleet, verified.project, environment)
-    private_ip = target.servers[0].private_ip
-    base_url = deployment_base_url(verified, private_ip)
+    target_address = target.servers[0].connection_address
+    base_url = deployment_base_url(verified, target_address)
     write_output("environment", environment)
     write_output("project_id", plan.project_id)
     write_output("plan_digest", plan.plan_digest)

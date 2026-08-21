@@ -41,6 +41,15 @@ def _is_valid_public_hostname(hostname: str) -> bool:
     return True
 
 
+def _server_connection_address(server: dict[str, Any]) -> str:
+    lifecycle = str(server.get("lifecycle", "managed"))
+    field = "public_ip" if lifecycle == "adopted" else "private_ip"
+    address = server.get(field)
+    if not isinstance(address, str) or not address:
+        raise ContractError(f"server {server.get('id', '<unknown>')} lacks {field}")
+    return address
+
+
 def _load_profile(root: Path, profile_path: str) -> dict[str, Any]:
     candidate = (root / profile_path).resolve()
     if candidate != root and root not in candidate.parents:
@@ -58,6 +67,7 @@ def _caddy_sites_by_server(
 ) -> dict[str, list[dict[str, str]]]:
     sites: dict[str, list[dict[str, str]]] = {}
     seen: dict[str, set[str]] = {}
+    server_by_id = {str(server["id"]): server for server in fleet["servers"]}
     for project in sorted(fleet["projects"], key=lambda item: item["id"]):
         public_environments = [
             (environment, config)
@@ -100,12 +110,20 @@ def _caddy_sites_by_server(
                 if not _is_valid_public_hostname(hostname):
                     raise ContractError(f"invalid public hostname: {hostname}")
                 for server_id in sorted(config["server_ids"]):
+                    server = server_by_id.get(server_id)
+                    if server is None:
+                        raise ContractError(f"fleet project references unknown server: {server_id}")
                     claimed = seen.setdefault(server_id, set())
                     if hostname in claimed:
                         raise ContractError(
                             f"duplicate public hostname on server {server_id}: {hostname}"
                         )
                     claimed.add(hostname)
+                    # Adopted hosts keep their existing edge configuration outside the
+                    # normal l9-deploy Ansible ownership plane. The hostname remains a
+                    # deployment/health contract, but no Caddy mutation is generated.
+                    if server.get("lifecycle", "managed") == "adopted":
+                        continue
                     sites.setdefault(server_id, []).append(
                         {
                             "environment": environment,
@@ -129,11 +147,12 @@ def generate_ansible_inventory(
     groups: dict[str, dict[str, Any]] = {}
     for server in fleet["servers"]:
         host_vars = {
-            "ansible_host": server["private_ip"],
+            "ansible_host": _server_connection_address(server),
             "ansible_user": server["ssh"]["user"],
             "ansible_port": server["ssh"]["port"],
             "l9_server_id": server["id"],
             "l9_environment": server["environment"],
+            "l9_lifecycle": server.get("lifecycle", "managed"),
             "l9_roles": server["roles"],
             "l9_caddy_sites": caddy_sites.get(server["id"], []),
         }

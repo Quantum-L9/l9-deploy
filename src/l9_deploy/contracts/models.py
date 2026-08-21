@@ -274,12 +274,28 @@ class ServerProfile(FrozenModel):
     id: str
     environment: str
     provider: Literal["hetzner"]
-    private_ip: str
+    lifecycle: Literal["managed", "adopted"] = "managed"
+    private_ip: str | None = None
     public_ip: str | None = None
     ssh: SshConfig
     roles: tuple[str, ...]
     labels: dict[str, str] = Field(default_factory=dict)
     conformance: ConformanceConfig
+
+    @model_validator(mode="after")
+    def address_contract_is_explicit(self) -> ServerProfile:
+        if self.lifecycle == "managed" and not self.private_ip:
+            raise ValueError("managed servers require private_ip")
+        if self.lifecycle == "adopted" and not self.public_ip:
+            raise ValueError("adopted servers require public_ip")
+        return self
+
+    @property
+    def connection_address(self) -> str:
+        address = self.public_ip if self.lifecycle == "adopted" else self.private_ip
+        if not address:
+            raise ValueError(f"server {self.id} has no connection address")
+        return address
 
 
 class FleetEnvironment(FrozenModel):

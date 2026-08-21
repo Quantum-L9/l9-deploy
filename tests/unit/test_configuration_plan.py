@@ -49,6 +49,18 @@ def _fixture_files(root: Path) -> tuple[Path, Path, Path]:
     return fleet, playbook, inventory
 
 
+def _adopt_c1(fleet_path: Path) -> None:
+    fleet = yaml.safe_load(fleet_path.read_text(encoding="utf-8"))
+    fleet["servers"].append(
+        {
+            "id": "c1",
+            "environment": "staging",
+            "lifecycle": "adopted",
+        }
+    )
+    fleet_path.write_text(yaml.safe_dump(fleet, sort_keys=True), encoding="utf-8")
+
+
 def test_configuration_plan_is_deterministic_and_binds_exact_server(tmp_path: Path) -> None:
     fleet, playbook, inventory = _fixture_files(tmp_path)
     kwargs = {
@@ -95,4 +107,36 @@ def test_configuration_plan_rejects_server_from_other_environment(tmp_path: Path
             inventory_path=inventory,
             environment="production",
             server_id="mcp-staging-01",
+        )
+
+
+def test_configuration_plan_rejects_exact_adopted_server(tmp_path: Path) -> None:
+    fleet, playbook, inventory = _fixture_files(tmp_path)
+    _adopt_c1(fleet)
+    with pytest.raises(AuthorizationError, match="outside the normal host-configuration plane"):
+        build_configuration_plan(
+            repository_root=tmp_path,
+            repository_revision="d" * 40,
+            fleet_path=fleet,
+            playbook_path=playbook,
+            inventory_path=inventory,
+            environment="staging",
+            server_id="c1",
+        )
+
+
+def test_configuration_plan_rejects_environment_wide_scope_containing_adopted_host(
+    tmp_path: Path,
+) -> None:
+    fleet, playbook, inventory = _fixture_files(tmp_path)
+    _adopt_c1(fleet)
+    with pytest.raises(AuthorizationError, match="cannot include adopted servers: c1"):
+        build_configuration_plan(
+            repository_root=tmp_path,
+            repository_revision="e" * 40,
+            fleet_path=fleet,
+            playbook_path=playbook,
+            inventory_path=inventory,
+            environment="staging",
+            allow_environment_wide=True,
         )

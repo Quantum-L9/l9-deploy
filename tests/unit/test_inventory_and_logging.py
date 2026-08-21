@@ -49,21 +49,23 @@ def test_inventory_generation_is_deterministic_private_and_role_grouped(
     children = first["all"]["children"]
     application_hosts = children["application"]["hosts"]
     assert application_hosts["seo-staging-01"]["l9_environment"] == "staging"
+    assert application_hosts["seo-staging-01"]["l9_lifecycle"] == "managed"
 
 
-def test_cognitive_runtime_ingress_is_derived_from_fleet_and_profile(tmp_path: Path) -> None:
+def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(tmp_path: Path) -> None:
     fleet = yaml.safe_load((ROOT / "fleet/registry.yaml").read_text(encoding="utf-8"))
     output = tmp_path / "hosts.yml"
     inventory = generate_ansible_inventory(fleet, output, repository_root=ROOT)
-    host = inventory["all"]["children"]["application"]["hosts"]["mcp-staging-01"]
-    assert host["ansible_host"] == "10.90.10.30"
-    assert host["l9_caddy_sites"] == [
-        {
-            "environment": "staging",
-            "hostname": "mcp-staging.quantumaipartners.com",
-            "project_id": "l9-cognitive-runtime",
-            "upstream": "127.0.0.1:8080",
-        }
+    host = inventory["all"]["children"]["application"]["hosts"]["c1"]
+    assert host["ansible_host"] == "46.62.243.82"
+    assert host["ansible_user"] == "root"
+    assert host["l9_lifecycle"] == "adopted"
+    assert host["l9_caddy_sites"] == []
+
+    project = next(item for item in fleet["projects"] if item["id"] == "l9-cognitive-runtime")
+    assert project["environments"]["staging"]["server_ids"] == ["c1"]
+    assert project["environments"]["staging"]["public_hostnames"] == [
+        "mcp-staging.quantumaipartners.com"
     ]
 
 

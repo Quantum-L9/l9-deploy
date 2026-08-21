@@ -12,4 +12,12 @@
 - name: Configure application runtime
   hosts: application:worker
   become: true
+  pre_tasks:
+    - name: Refuse normal host configuration on adopted servers
+      ansible.builtin.assert:
+        that:
+          - (l9_lifecycle | default('managed')) == 'managed'
+        fail_msg: >-
+          Adopted servers are outside the normal l9-deploy host-configuration plane;
+          use the protected-host procedure instead.
   roles: [docker, caddy, conformance]
