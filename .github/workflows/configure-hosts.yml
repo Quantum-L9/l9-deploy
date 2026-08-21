@@ -152,23 +152,34 @@ jobs:
           test "$(jq -er '.plan_digest' configuration-plan.current.json)" = "$APPROVED_PLAN_DIGEST"
           echo "limit=$(jq -er '.target.limit' configuration-plan.current.json)" >> "$GITHUB_OUTPUT"
       - name: Check configuration
+        env:
+          TARGET_PLAYBOOK: ${{ inputs.playbook }}
+          TARGET_LIMIT: ${{ steps.verify-plan.outputs.limit }}
         run: >-
           uv run l9-deploy config check
-          --playbook "ansible/playbooks/${{ inputs.playbook }}.yml"
+          --playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"
           --inventory ansible/inventories/generated/hosts.yml
-          --limit "${{ steps.verify-plan.outputs.limit }}"
+          --limit "$TARGET_LIMIT"
           --json
       - name: Apply configuration
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          APPROVED_PLAN_DIGEST: ${{ needs.plan.outputs.plan-digest }}
+          APPROVAL_RUN_ID: ${{ github.run_id }}
+          CONFIG_REQUEST_ID: "config-${{ github.run_id }}"
+          CONFIG_REQUESTER: ${{ github.actor }}
+          TARGET_PLAYBOOK: ${{ inputs.playbook }}
+          TARGET_LIMIT: ${{ steps.verify-plan.outputs.limit }}
         run: >-
           uv run l9-deploy config apply
-          --environment "${{ inputs.environment }}"
-          --expected-plan-digest "${{ needs.plan.outputs.plan-digest }}"
+          --environment "$TARGET_ENVIRONMENT"
+          --expected-plan-digest "$APPROVED_PLAN_DIGEST"
           --approval-receipt artifacts/approval/approval-receipt.json
           --approval-history artifacts/approval/approval-history.json
-          --approval-run-id "${{ github.run_id }}"
-          --request-id "config-${{ github.run_id }}"
-          --requester "${{ github.actor }}"
-          --playbook "ansible/playbooks/${{ inputs.playbook }}.yml"
+          --approval-run-id "$APPROVAL_RUN_ID"
+          --request-id "$CONFIG_REQUEST_ID"
+          --requester "$CONFIG_REQUESTER"
+          --playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"
           --inventory ansible/inventories/generated/hosts.yml
-          --limit "${{ steps.verify-plan.outputs.limit }}"
+          --limit "$TARGET_LIMIT"
           --json

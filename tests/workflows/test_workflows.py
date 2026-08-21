@@ -166,8 +166,34 @@ def test_configure_hosts_binds_approval_to_generated_plan() -> None:
     assert "Build deterministic configuration plan" in text
     assert "Recompute and verify approved configuration plan" in text
     assert "plan-digest: ${{ needs.plan.outputs.plan-digest }}" in text
-    assert '--expected-plan-digest "${{ needs.plan.outputs.plan-digest }}"' in text
-    assert text.count('--limit "${{ steps.verify-plan.outputs.limit }}"') == 2
+
+    configure = workflow["jobs"]["configure"]
+    assert isinstance(configure, dict)
+    steps = configure["steps"]
+    assert isinstance(steps, list)
+    named_steps = {
+        step.get("name"): step
+        for step in steps
+        if isinstance(step, dict) and isinstance(step.get("name"), str)
+    }
+    check = named_steps["Check configuration"]
+    apply = named_steps["Apply configuration"]
+    for step in (check, apply):
+        run = str(step["run"])
+        assert "${{" not in run
+        env = step.get("env")
+        assert isinstance(env, dict)
+        assert env["TARGET_PLAYBOOK"] == "${{ inputs.playbook }}"
+        assert env["TARGET_LIMIT"] == "${{ steps.verify-plan.outputs.limit }}"
+        assert '--playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"' in run
+        assert '--limit "$TARGET_LIMIT"' in run
+
+    apply_env = apply["env"]
+    assert isinstance(apply_env, dict)
+    assert apply_env["APPROVED_PLAN_DIGEST"] == "${{ needs.plan.outputs.plan-digest }}"
+    assert apply_env["CONFIG_REQUESTER"] == "${{ github.actor }}"
+    assert '--expected-plan-digest "$APPROVED_PLAN_DIGEST"' in str(apply["run"])
+    assert '--requester "$CONFIG_REQUESTER"' in str(apply["run"])
 
 
 def test_workflow_inventory_covers_every_workflow() -> None:
