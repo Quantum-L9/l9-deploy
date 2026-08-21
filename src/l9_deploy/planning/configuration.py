@@ -16,9 +16,10 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import yaml
+from pydantic import JsonValue
 
 from ..canonical import file_sha256, sha256_digest
 from ..errors import AuthorizationError, ContractError
@@ -41,28 +42,31 @@ def _relative(root: Path, path: Path) -> str:
     return path.relative_to(root).as_posix()
 
 
-def _fleet_document(path: Path) -> dict[str, Any]:
-    value = yaml.safe_load(path.read_text(encoding="utf-8"))
+def _fleet_document(path: Path) -> dict[str, JsonValue]:
+    value: object = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
         raise ContractError("fleet inventory must be an object")
     servers = value.get("servers")
     if not isinstance(servers, list):
         raise ContractError("fleet inventory must contain servers")
-    return value
+    return cast(dict[str, JsonValue], value)
 
 
 def _resolve_limit(
-    fleet: dict[str, Any],
+    fleet: dict[str, JsonValue],
     environment: str,
     server_id: str,
     allow_environment_wide: bool,
 ) -> tuple[str, str | None, bool]:
+    servers = fleet.get("servers")
+    if not isinstance(servers, list):
+        raise ContractError("fleet inventory must contain servers")
     if server_id:
         if not _SERVER_ID.fullmatch(server_id):
             raise ContractError("invalid server-id")
         matches = [
             server
-            for server in fleet["servers"]
+            for server in servers
             if isinstance(server, dict) and server.get("id") == server_id
         ]
         if len(matches) != 1:
@@ -87,7 +91,7 @@ def build_configuration_plan(
     environment: str,
     server_id: str = "",
     allow_environment_wide: bool = False,
-) -> dict[str, Any]:
+) -> dict[str, JsonValue]:
     root = repository_root.resolve()
     if not _FULL_SHA.fullmatch(repository_revision):
         raise ContractError("repository revision must be a full lowercase Git SHA")
@@ -105,7 +109,7 @@ def build_configuration_plan(
         allow_environment_wide,
     )
 
-    document: dict[str, Any] = {
+    document: dict[str, JsonValue] = {
         "format": "l9.configuration-plan/v1",
         "repository_revision": repository_revision,
         "environment": environment,
