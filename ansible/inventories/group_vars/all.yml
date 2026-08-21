@@ -19,5 +19,5 @@ l9_allowed_public_ports: [80, 443]
 l9_runner_version: "2.334.0"
 l9_runner_labels: "l9-deployment,hetzner-private"
 l9_runner_repository: "Quantum-L9/l9-deploy"
-l9_caddy_version: "2.11.3"
+l9_caddy_version: "2.11.4"
 l9_unattended_reboot_time: "03:30"
