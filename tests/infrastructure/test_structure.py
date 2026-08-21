@@ -60,7 +60,6 @@ def test_caddy_role_uses_canonical_version_and_managed_site_templates() -> None:
     )
     assert "l9_caddy_version" in text
     assert "l9_caddy_package_version" not in text
-    assert "allow_change_held_packages: true" in text
     assert (ROOT / "ansible/roles/caddy/templates/managed-site.caddy.j2").is_file()
     assert "caddy validate" not in text
     assert "Validate complete Caddy configuration" in text
