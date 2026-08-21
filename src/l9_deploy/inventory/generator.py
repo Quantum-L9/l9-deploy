@@ -68,22 +68,21 @@ def _caddy_sites_by_server(
         container_port = runtime.get("container_port")
 
         for environment, config in public_environments:
+            coordinate = f"{project['id']}:{environment}"
             hostnames = tuple(str(item) for item in config["public_hostnames"])
             if not ingress.get("enabled"):
-                raise ContractError(
-                    f"fleet exposes public hostnames for disabled ingress: {project['id']}:{environment}"
-                )
+                raise ContractError(f"fleet exposes public hostnames for disabled ingress: {coordinate}")
             if ingress.get("tls") != "automatic":
                 raise ContractError(
-                    f"fleet-managed Caddy ingress requires tls=automatic: {project['id']}:{environment}"
+                    f"fleet-managed Caddy ingress requires tls=automatic: {coordinate}"
                 )
             if not set(hostnames).issubset(profile_hostname_set):
                 raise ContractError(
-                    f"fleet public hostnames drift from deployment profile: {project['id']}:{environment}"
+                    f"fleet public hostnames drift from deployment profile: {coordinate}"
                 )
             if not isinstance(container_port, int) or not 1 <= container_port <= 65535:
                 raise ContractError(
-                    f"public ingress requires a valid container port: {project['id']}:{environment}"
+                    f"public ingress requires a valid container port: {coordinate}"
                 )
             for hostname in hostnames:
                 if not _HOSTNAME.fullmatch(hostname):

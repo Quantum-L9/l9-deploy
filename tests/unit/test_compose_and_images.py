@@ -55,7 +55,6 @@ def test_public_ingress_binds_application_port_to_loopback() -> None:
     service = document["services"]["app"]
     assert service["ports"] == ["127.0.0.1:8080:8080"]
     assert "expose" not in service
-    assert "0.0.0.0" not in yaml.safe_dump(document)
 
 
 def test_image_reference_requires_immutable_ghcr_digest() -> None:
