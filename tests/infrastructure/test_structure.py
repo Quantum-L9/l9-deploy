@@ -51,16 +51,19 @@ def test_runner_is_repository_scoped_in_defaults() -> None:
 
 def test_caddy_role_uses_canonical_version_and_managed_site_templates() -> None:
     tasks_path = ROOT / "ansible/roles/caddy/tasks/main.yml"
+    template_root = ROOT / "ansible/roles/caddy/templates"
+    caddyfile_path = template_root / "Caddyfile.j2"
+    managed_site_path = template_root / "managed-site.caddy.j2"
     tasks = yaml.safe_load(tasks_path.read_text(encoding="utf-8"))
     assert isinstance(tasks, list)
     assert tasks
     text = tasks_path.read_text(encoding="utf-8")
-    base = (ROOT / "ansible/roles/caddy/templates/Caddyfile.j2").read_text(
-        encoding="utf-8"
-    )
+    base = caddyfile_path.read_text(encoding="utf-8")
     assert "l9_caddy_version" in text
     assert "l9_caddy_package_version" not in text
-    assert (ROOT / "ansible/roles/caddy/templates/managed-site.caddy.j2").is_file()
+    assert "allow_change_held_packages: true" in text
+    assert caddyfile_path.is_file()
+    assert managed_site_path.is_file()
     assert "caddy validate" not in text
     assert "Validate complete Caddy configuration" in text
     assert "/etc/caddy/sites" in text
