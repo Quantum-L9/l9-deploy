@@ -19,9 +19,11 @@ import pytest
 import yaml
 
 from l9_deploy.errors import ContractError
-from l9_deploy.inventory.generator import generate_ansible_inventory
+from l9_deploy.inventory.generator import _is_valid_public_hostname, generate_ansible_inventory
 from l9_deploy.inventory.loader import load_fleet
 from l9_deploy.logging import JsonFormatter, configure_logging
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_inventory_generation_is_deterministic_private_and_role_grouped(
@@ -47,6 +49,45 @@ def test_inventory_generation_is_deterministic_private_and_role_grouped(
     children = first["all"]["children"]
     application_hosts = children["application"]["hosts"]
     assert application_hosts["seo-staging-01"]["l9_environment"] == "staging"
+    assert application_hosts["seo-staging-01"]["l9_lifecycle"] == "managed"
+
+
+def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(tmp_path: Path) -> None:
+    fleet = yaml.safe_load((ROOT / "fleet/registry.yaml").read_text(encoding="utf-8"))
+    output = tmp_path / "hosts.yml"
+    inventory = generate_ansible_inventory(fleet, output, repository_root=ROOT)
+    host = inventory["all"]["children"]["application"]["hosts"]["c1"]
+    assert host["ansible_host"] == "46.62.243.82"
+    assert host["ansible_user"] == "root"
+    assert host["l9_lifecycle"] == "adopted"
+    assert host["l9_caddy_sites"] == []
+
+    project = next(item for item in fleet["projects"] if item["id"] == "l9-cognitive-runtime")
+    assert project["environments"]["staging"]["server_ids"] == ["c1"]
+    assert project["environments"]["staging"]["public_hostnames"] == [
+        "mcp-staging.quantumaipartners.com"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("hostname", "expected"),
+    [
+        ("mcp-staging.quantumaipartners.com", True),
+        ("a-b.example.com", True),
+        ("localhost", False),
+        ("Upper.example.com", False),
+        ("-edge.example.com", False),
+        ("edge-.example.com", False),
+        ("edge..example.com", False),
+        ("edge_example.com", False),
+        (f"{'a' * 64}.example.com", False),
+        (f"{'a' * 250}.com", False),
+    ],
+)
+def test_public_hostname_validation_is_bounded_and_deterministic(
+    hostname: str, expected: bool
+) -> None:
+    assert _is_valid_public_hostname(hostname) is expected
 
 
 def test_fleet_loader_validates_schema_and_rejects_non_object(

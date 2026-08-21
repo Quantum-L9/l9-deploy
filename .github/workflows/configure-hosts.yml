@@ -18,15 +18,68 @@ on:
         type: choice
         required: true
         options: [bootstrap, harden, configure-runner, configure-runtime, configure-backups, verify]
-      expected-plan-digest:
+      server-id:
+        description: Exact registered server to configure. Leave empty only for an intentional environment-wide run.
         type: string
+        required: false
+        default: ""
+      allow-environment-wide:
+        description: Explicitly authorize configuration across the selected environment when server-id is empty.
+        type: boolean
         required: true
+        default: false
 permissions:
   contents: read
   actions: read
 jobs:
+  plan:
+    name: plan
+    runs-on: ubuntu-latest
+    outputs:
+      plan-digest: ${{ steps.plan.outputs.plan-digest }}
+      limit: ${{ steps.plan.outputs.limit }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
+      - run: uv sync --all-extras --frozen --no-install-project --no-build
+      - run: uv run --no-sync --no-build python scripts/generate-inventory.py
+      - id: plan
+        name: Build deterministic configuration plan
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          TARGET_PLAYBOOK: ${{ inputs.playbook }}
+          TARGET_SERVER_ID: ${{ inputs.server-id }}
+          ALLOW_ENVIRONMENT_WIDE: ${{ inputs.allow-environment-wide }}
+        run: |
+          set -euo pipefail
+          umask 027
+          args=(
+            --repository-revision "$GITHUB_SHA"
+            --playbook "$TARGET_PLAYBOOK"
+            --environment "$TARGET_ENVIRONMENT"
+          )
+          if [ -n "$TARGET_SERVER_ID" ]; then
+            args+=(--server-id "$TARGET_SERVER_ID")
+          fi
+          if [ "$ALLOW_ENVIRONMENT_WIDE" = true ]; then
+            args+=(--allow-environment-wide)
+          fi
+          uv run --no-sync --no-build python scripts/prepare-configuration-plan.py "${args[@]}" > configuration-plan.json
+          {
+            echo "plan-digest=$(jq -er '.plan_digest' configuration-plan.json)"
+            echo "limit=$(jq -er '.target.limit' configuration-plan.json)"
+          } >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: configuration-plan-${{ github.run_id }}
+          path: configuration-plan.json
+          if-no-files-found: error
+          retention-days: 90
   authorize:
     name: authorize
+    needs: plan
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
@@ -34,13 +87,13 @@ jobs:
         with:
           persist-credentials: false
       - run: python3 -m pip install --disable-pip-version-check uv==0.11.14
-      - run: uv sync --all-extras --frozen
+      - run: uv sync --all-extras --frozen --no-install-project --no-build
       - uses: ./.github/actions/collect-approval
         with:
           request-id: config-${{ github.run_id }}
           requester: ${{ github.actor }}
           environment: ${{ inputs.environment }}
-          plan-digest: ${{ inputs.expected-plan-digest }}
+          plan-digest: ${{ needs.plan.outputs.plan-digest }}
           job-name: authorize
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -49,37 +102,82 @@ jobs:
           if-no-files-found: error
           retention-days: 90
   configure:
-    needs: authorize
+    needs: [plan, authorize]
     runs-on: [self-hosted, l9-deployment, hetzner-private]
     concurrency: config-${{ inputs.environment }}
+    env:
+      PYTHONPATH: src
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           persist-credentials: false
-      - run: uv sync --all-extras --frozen
+      - run: uv sync --all-extras --frozen --no-install-project --no-build
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: configuration-plan-${{ github.run_id }}
+          path: artifacts/configuration-plan
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: configuration-approval-${{ github.run_id }}
           path: artifacts/approval
-      - run: uv run python scripts/generate-inventory.py
+      - run: uv run --no-sync --no-build python scripts/generate-inventory.py
+      - id: verify-plan
+        name: Recompute and verify approved configuration plan
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          TARGET_PLAYBOOK: ${{ inputs.playbook }}
+          TARGET_SERVER_ID: ${{ inputs.server-id }}
+          ALLOW_ENVIRONMENT_WIDE: ${{ inputs.allow-environment-wide }}
+          APPROVED_PLAN_DIGEST: ${{ needs.plan.outputs.plan-digest }}
+        run: |
+          set -euo pipefail
+          umask 027
+          args=(
+            --repository-revision "$GITHUB_SHA"
+            --playbook "$TARGET_PLAYBOOK"
+            --environment "$TARGET_ENVIRONMENT"
+          )
+          if [ -n "$TARGET_SERVER_ID" ]; then
+            args+=(--server-id "$TARGET_SERVER_ID")
+          fi
+          if [ "$ALLOW_ENVIRONMENT_WIDE" = true ]; then
+            args+=(--allow-environment-wide)
+          fi
+          uv run --no-sync --no-build python scripts/prepare-configuration-plan.py "${args[@]}" > configuration-plan.current.json
+          cmp --silent \
+            artifacts/configuration-plan/configuration-plan.json \
+            configuration-plan.current.json
+          test "$(jq -er '.plan_digest' configuration-plan.current.json)" = "$APPROVED_PLAN_DIGEST"
+          echo "limit=$(jq -er '.target.limit' configuration-plan.current.json)" >> "$GITHUB_OUTPUT"
       - name: Check configuration
+        env:
+          TARGET_PLAYBOOK: ${{ inputs.playbook }}
+          TARGET_LIMIT: ${{ steps.verify-plan.outputs.limit }}
         run: >-
-          uv run l9-deploy config check
-          --playbook "ansible/playbooks/${{ inputs.playbook }}.yml"
+          uv run --no-sync --no-build python -m l9_deploy.cli config check
+          --playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"
           --inventory ansible/inventories/generated/hosts.yml
-          --limit "${{ inputs.environment }}"
+          --limit "$TARGET_LIMIT"
           --json
       - name: Apply configuration
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          APPROVED_PLAN_DIGEST: ${{ needs.plan.outputs.plan-digest }}
+          APPROVAL_RUN_ID: ${{ github.run_id }}
+          CONFIG_REQUEST_ID: "config-${{ github.run_id }}"
+          CONFIG_REQUESTER: ${{ github.actor }}
+          TARGET_PLAYBOOK: ${{ inputs.playbook }}
+          TARGET_LIMIT: ${{ steps.verify-plan.outputs.limit }}
         run: >-
-          uv run l9-deploy config apply
-          --environment "${{ inputs.environment }}"
-          --expected-plan-digest "${{ inputs.expected-plan-digest }}"
+          uv run --no-sync --no-build python -m l9_deploy.cli config apply
+          --environment "$TARGET_ENVIRONMENT"
+          --expected-plan-digest "$APPROVED_PLAN_DIGEST"
           --approval-receipt artifacts/approval/approval-receipt.json
           --approval-history artifacts/approval/approval-history.json
-          --approval-run-id "${{ github.run_id }}"
-          --request-id "config-${{ github.run_id }}"
-          --requester "${{ github.actor }}"
-          --playbook "ansible/playbooks/${{ inputs.playbook }}.yml"
+          --approval-run-id "$APPROVAL_RUN_ID"
+          --request-id "$CONFIG_REQUEST_ID"
+          --requester "$CONFIG_REQUESTER"
+          --playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"
           --inventory ansible/inventories/generated/hosts.yml
-          --limit "${{ inputs.environment }}"
+          --limit "$TARGET_LIMIT"
           --json

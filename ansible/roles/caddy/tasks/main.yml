@@ -9,15 +9,109 @@
 # owner: platform
 # status: active
 # --- /L9_META ---
+- name: Refuse Caddy ownership on adopted hosts
+  ansible.builtin.assert:
+    that:
+      - (l9_lifecycle | default('managed')) == 'managed'
+    fail_msg: >-
+      Adopted hosts retain their existing edge configuration; l9-deploy must not
+      overwrite /etc/caddy/Caddyfile or reset /etc/caddy/sites.
+
 - name: Require pinned Caddy package version
-  ansible.builtin.assert: {that: [l9_caddy_package_version is defined], fail_msg: "Set l9_caddy_package_version to the exact apt package version approved for this fleet."}
+  ansible.builtin.assert:
+    that:
+      - l9_caddy_version is defined
+      - l9_caddy_version | string | length > 0
+    fail_msg: "Set l9_caddy_version to the exact apt package version approved for this fleet."
+
+- name: Ensure apt keyring directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    owner: root
+    group: root
+    # APT requires Signed-By keyrings to be traversable/readable by the _apt user.
+    mode: "0755" # NOSONAR
+
 - name: Install Caddy repository key
-  ansible.builtin.get_url: {url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key, dest: /etc/apt/keyrings/caddy-stable.asc, mode: "0644"}
+  ansible.builtin.get_url:
+    url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+    dest: /etc/apt/keyrings/caddy-stable.asc
+    owner: root
+    group: root
+    # This is a public verification key; APT requires it to be readable by _apt.
+    mode: "0644" # NOSONAR
+
 - name: Configure Caddy repository
-  ansible.builtin.apt_repository: {repo: "deb [signed-by=/etc/apt/keyrings/caddy-stable.asc] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main", state: present}
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/caddy-stable.asc] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main"
+    state: present
+
 - name: Install pinned Caddy
-  ansible.builtin.apt: {name: "caddy={{ l9_caddy_package_version }}", state: present, update_cache: true}
+  ansible.builtin.apt:
+    name: "caddy={{ l9_caddy_version }}"
+    state: present
+    update_cache: true
+    allow_change_held_packages: true
+
 - name: Hold Caddy version
-  ansible.builtin.dpkg_selections: {name: caddy, selection: hold}
-- name: Enable Caddy
-  ansible.builtin.service: {name: caddy, state: started, enabled: true}
+  ansible.builtin.dpkg_selections:
+    name: caddy
+    selection: hold
+
+- name: Reset L9-managed Caddy sites
+  ansible.builtin.file:
+    path: /etc/caddy/sites
+    state: absent
+
+- name: Create L9-managed Caddy sites directory
+  ansible.builtin.file:
+    path: /etc/caddy/sites
+    state: directory
+    owner: root
+    group: caddy
+    mode: "0750"
+
+- name: Install L9 Caddy base configuration
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+    owner: root
+    group: caddy
+    mode: "0640"
+
+- name: Keep the managed import valid when no routes exist
+  ansible.builtin.copy:
+    content: "# L9 managed Caddy site set is intentionally empty.\n"
+    dest: /etc/caddy/sites/00-empty.caddy
+    owner: root
+    group: caddy
+    mode: "0640"
+
+- name: Render L9-managed Caddy routes
+  ansible.builtin.template:
+    src: managed-site.caddy.j2
+    dest: "/etc/caddy/sites/l9-{{ item.project_id }}-{{ item.environment }}-{{ item.hostname }}.caddy"
+    owner: root
+    group: caddy
+    mode: "0640"
+  loop: "{{ l9_caddy_sites | default([]) }}"
+  loop_control:
+    label: "{{ item.hostname }} -> {{ item.upstream }}"
+
+- name: Validate complete Caddy configuration
+  ansible.builtin.command:
+    argv:
+      - caddy
+      - validate
+      - --config
+      - /etc/caddy/Caddyfile
+      - --adapter
+      - caddyfile
+  changed_when: false
+
+- name: Enable and restart Caddy with validated routes
+  ansible.builtin.service:
+    name: caddy
+    state: restarted
+    enabled: true

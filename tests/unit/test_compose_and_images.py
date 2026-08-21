@@ -14,6 +14,8 @@ status: active
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 import yaml
 
@@ -21,6 +23,8 @@ from l9_deploy.contracts.models import DeploymentProfile
 from l9_deploy.errors import ContractError
 from l9_deploy.execution.compose import render_compose
 from l9_deploy.execution.images import require_digest_ref
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_compose_uses_runtime_digest_variable(profile) -> None:  # type: ignore[no-untyped-def]
@@ -32,6 +36,23 @@ def test_compose_uses_runtime_digest_variable(profile) -> None:  # type: ignore[
     assert document["services"]["app"]["env_file"] == [
         "${L9_RUNTIME_ENV_FILE:?L9_RUNTIME_ENV_FILE is required}"
     ]
+
+
+def test_public_ingress_binds_application_port_to_loopback() -> None:
+    profile_document = yaml.safe_load(
+        (ROOT / "integrations/consumers/l9-cognitive-runtime.deployment.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    typed_profile = DeploymentProfile.model_validate(profile_document)
+    image = "ghcr.io/quantum-l9/l9-cognitive-runtime@sha256:" + "a" * 64
+    runtime_env = (
+        "/srv/l9/projects/l9-cognitive-runtime/staging/releases/" + "b" * 64 + "/runtime.env"
+    )
+    document = yaml.safe_load(render_compose(typed_profile, image, "staging", runtime_env))
+    service = document["services"]["app"]
+    assert service["ports"] == ["127.0.0.1:8080:8080"]
+    assert "expose" not in service
 
 
 def test_image_reference_requires_immutable_ghcr_digest() -> None:

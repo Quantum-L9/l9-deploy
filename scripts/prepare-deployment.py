@@ -24,6 +24,7 @@ add_repository_src()
 
 from l9_deploy.contracts.loader import load_document  # noqa: E402
 from l9_deploy.contracts.validator import SchemaRegistry  # noqa: E402
+from l9_deploy.errors import ContractError  # noqa: E402
 from l9_deploy.inventory.loader import load_fleet  # noqa: E402
 from l9_deploy.inventory.resolver import resolve_target  # noqa: E402
 from l9_deploy.planning.planner import build_plan  # noqa: E402
@@ -44,6 +45,20 @@ def write_output(name: str, value: str) -> None:
             handle.write(f"{name}={value}\n")
     else:
         sys.stdout.write(f"{name}={value}\n")
+
+
+def deployment_base_url(verified, target_address: str | None) -> str:  # type: ignore[no-untyped-def]
+    ingress = verified.profile.network.public_ingress
+    public_hostnames = verified.environment.public_hostnames
+    if ingress.enabled and public_hostnames:
+        if ingress.tls not in {"automatic", "external"}:
+            raise ContractError("public ingress deployment health requires TLS")
+        return f"https://{min(public_hostnames)}"
+    port = verified.profile.runtime.container_port
+    if port and target_address:
+        # Managed private-service health stays on the private east-west fleet network.
+        return f"http://{target_address}:{port}"  # NOSONAR
+    return ""
 
 
 def main() -> int:
@@ -79,9 +94,8 @@ def main() -> int:
     environment = plan.environment
     infisical_environment = secrets.environment_mapping[environment]
     target = resolve_target(verified.fleet, verified.project, environment)
-    private_ip = target.servers[0].private_ip
-    port = verified.profile.runtime.container_port
-    base_url = f"http://{private_ip}:{port}" if port else ""
+    target_address = target.servers[0].connection_address
+    base_url = deployment_base_url(verified, target_address)
     write_output("environment", environment)
     write_output("project_id", plan.project_id)
     write_output("plan_digest", plan.plan_digest)

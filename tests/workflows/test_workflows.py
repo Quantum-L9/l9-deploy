@@ -152,6 +152,71 @@ def test_deploy_dispatch_preserves_minimum_approved_wiring() -> None:
     assert "--approval-history" in runs
 
 
+def test_configure_hosts_binds_approval_to_generated_plan() -> None:
+    path = ROOT / ".github/workflows/configure-hosts.yml"
+    workflow = load_workflow(path)
+    triggers = workflow.get("on", workflow.get(True))
+    assert isinstance(triggers, dict)
+    inputs = triggers["workflow_dispatch"]["inputs"]
+    assert "server-id" in inputs
+    assert "allow-environment-wide" in inputs
+    assert "expected-plan-digest" not in inputs
+
+    text = path.read_text(encoding="utf-8")
+    assert "Build deterministic configuration plan" in text
+    assert "Recompute and verify approved configuration plan" in text
+    assert "plan-digest: ${{ needs.plan.outputs.plan-digest }}" in text
+
+    configure = workflow["jobs"]["configure"]
+    assert isinstance(configure, dict)
+    steps = configure["steps"]
+    assert isinstance(steps, list)
+    named_steps = {
+        step.get("name"): step
+        for step in steps
+        if isinstance(step, dict) and isinstance(step.get("name"), str)
+    }
+    plan_steps = workflow["jobs"]["plan"]["steps"]
+    assert isinstance(plan_steps, list)
+    plan = next(
+        step
+        for step in plan_steps
+        if isinstance(step, dict) and step.get("name") == "Build deterministic configuration plan"
+    )
+    verify = named_steps["Recompute and verify approved configuration plan"]
+    assert "--output" not in str(plan["run"])
+    assert "--output" not in str(verify["run"])
+    assert "--fleet" not in str(plan["run"])
+    assert "--fleet" not in str(verify["run"])
+    assert "--inventory" not in str(plan["run"])
+    assert "--inventory" not in str(verify["run"])
+    assert '--playbook "$TARGET_PLAYBOOK"' in str(plan["run"])
+    assert '--playbook "$TARGET_PLAYBOOK"' in str(verify["run"])
+    assert "> configuration-plan.json" in str(plan["run"])
+    assert "> configuration-plan.current.json" in str(verify["run"])
+    assert "umask 027" in str(plan["run"])
+    assert "umask 027" in str(verify["run"])
+
+    check = named_steps["Check configuration"]
+    apply = named_steps["Apply configuration"]
+    for step in (check, apply):
+        run = str(step["run"])
+        assert "${{" not in run
+        env = step.get("env")
+        assert isinstance(env, dict)
+        assert env["TARGET_PLAYBOOK"] == "${{ inputs.playbook }}"
+        assert env["TARGET_LIMIT"] == "${{ steps.verify-plan.outputs.limit }}"
+        assert '--playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"' in run
+        assert '--limit "$TARGET_LIMIT"' in run
+
+    apply_env = apply["env"]
+    assert isinstance(apply_env, dict)
+    assert apply_env["APPROVED_PLAN_DIGEST"] == "${{ needs.plan.outputs.plan-digest }}"
+    assert apply_env["CONFIG_REQUESTER"] == "${{ github.actor }}"
+    assert '--expected-plan-digest "$APPROVED_PLAN_DIGEST"' in str(apply["run"])
+    assert '--requester "$CONFIG_REQUESTER"' in str(apply["run"])
+
+
 def test_workflow_inventory_covers_every_workflow() -> None:
     inventory = (ROOT / "docs/operations/workflow-inventory.md").read_text(encoding="utf-8")
     workflow_names = {path.name for path in (ROOT / ".github/workflows").glob("*.yml")}

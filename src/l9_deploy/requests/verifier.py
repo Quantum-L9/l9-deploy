@@ -31,6 +31,25 @@ def _source_ref_allowed(ref: str, patterns: tuple[str, ...]) -> bool:
     return any(fnmatch.fnmatchcase(ref, pattern) for pattern in patterns)
 
 
+def _verify_public_ingress_alignment(
+    profile: DeploymentProfile,
+    fleet_hostnames: tuple[str, ...],
+) -> None:
+    ingress = profile.network.public_ingress
+    profile_hostnames = set(ingress.hostnames)
+    registered_hostnames = set(fleet_hostnames)
+    if not profile_hostnames and not registered_hostnames:
+        return
+    if not ingress.enabled:
+        raise AuthorizationError("fleet public hostnames require enabled public ingress")
+    if profile.runtime.container_port is None:
+        raise AuthorizationError("public ingress requires a container port")
+    if not registered_hostnames:
+        raise AuthorizationError("public ingress hostnames are not registered in the fleet")
+    if not registered_hostnames.issubset(profile_hostnames):
+        raise AuthorizationError("fleet public hostnames do not match deployment profile")
+
+
 def verify_request(
     request_document: dict[str, object],
     fleet_document: FleetInventory | dict[str, object],
@@ -71,6 +90,7 @@ def verify_request(
         raise AuthorizationError("deployment profile digest mismatch")
     if request.profile.path != project.profile_path:
         raise AuthorizationError("deployment profile path does not match fleet registration")
+    _verify_public_ingress_alignment(profile, project_environment.public_hostnames)
 
     verify_canonical_release_evidence(
         request,

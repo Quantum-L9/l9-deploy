@@ -15,6 +15,42 @@
   "$id": "https://schemas.quantum-l9.invalid/l9/server-profile/v1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "lifecycle": {
+            "const": "adopted"
+          }
+        },
+        "required": [
+          "lifecycle"
+        ]
+      },
+      "then": {
+        "properties": {
+          "public_ip": {
+            "format": "ipv4",
+            "type": "string"
+          }
+        },
+        "required": [
+          "public_ip"
+        ]
+      },
+      "else": {
+        "properties": {
+          "private_ip": {
+            "format": "ipv4",
+            "type": "string"
+          }
+        },
+        "required": [
+          "private_ip"
+        ]
+      }
+    }
+  ],
   "properties": {
     "conformance": {
       "additionalProperties": false,
@@ -49,9 +85,20 @@
       },
       "type": "object"
     },
+    "lifecycle": {
+      "default": "managed",
+      "enum": [
+        "managed",
+        "adopted"
+      ],
+      "type": "string"
+    },
     "private_ip": {
       "format": "ipv4",
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "provider": {
       "const": "hetzner"
@@ -106,7 +153,6 @@
     "id",
     "environment",
     "provider",
-    "private_ip",
     "ssh",
     "roles",
     "conformance"
