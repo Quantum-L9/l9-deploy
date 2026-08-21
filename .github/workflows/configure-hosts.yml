@@ -57,9 +57,7 @@ jobs:
           umask 027
           args=(
             --repository-revision "$GITHUB_SHA"
-            --fleet fleet/registry.yaml
-            --playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"
-            --inventory ansible/inventories/generated/hosts.yml
+            --playbook "$TARGET_PLAYBOOK"
             --environment "$TARGET_ENVIRONMENT"
           )
           if [ -n "$TARGET_SERVER_ID" ]; then
@@ -134,9 +132,7 @@ jobs:
           umask 027
           args=(
             --repository-revision "$GITHUB_SHA"
-            --fleet fleet/registry.yaml
-            --playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"
-            --inventory ansible/inventories/generated/hosts.yml
+            --playbook "$TARGET_PLAYBOOK"
             --environment "$TARGET_ENVIRONMENT"
           )
           if [ -n "$TARGET_SERVER_ID" ]; then

@@ -26,26 +26,32 @@ add_repository_src()
 
 from l9_deploy.planning.configuration import build_configuration_plan  # noqa: E402
 
+_PLAYBOOK_PATHS = {
+    "bootstrap": Path("ansible/playbooks/bootstrap.yml"),
+    "harden": Path("ansible/playbooks/harden.yml"),
+    "configure-runner": Path("ansible/playbooks/configure-runner.yml"),
+    "configure-runtime": Path("ansible/playbooks/configure-runtime.yml"),
+    "configure-backups": Path("ansible/playbooks/configure-backups.yml"),
+    "verify": Path("ansible/playbooks/verify.yml"),
+}
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--repository-revision", required=True)
-    parser.add_argument("--fleet", type=Path, default=Path("fleet/registry.yaml"))
-    parser.add_argument("--playbook", type=Path, required=True)
-    parser.add_argument("--inventory", type=Path, required=True)
+    parser.add_argument("--playbook", choices=tuple(_PLAYBOOK_PATHS), required=True)
     parser.add_argument("--environment", required=True)
     parser.add_argument("--server-id", default="")
     parser.add_argument("--allow-environment-wide", action="store_true")
     args = parser.parse_args()
 
-    root = args.root.resolve()
+    root = Path.cwd().resolve()
     plan = build_configuration_plan(
         repository_root=root,
         repository_revision=args.repository_revision,
-        fleet_path=(root / args.fleet),
-        playbook_path=(root / args.playbook),
-        inventory_path=(root / args.inventory),
+        fleet_path=root / "fleet/registry.yaml",
+        playbook_path=root / _PLAYBOOK_PATHS[args.playbook],
+        inventory_path=root / "ansible/inventories/generated/hosts.yml",
         environment=args.environment,
         server_id=args.server_id,
         allow_environment_wide=args.allow_environment_wide,

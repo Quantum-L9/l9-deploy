@@ -186,6 +186,12 @@ def test_configure_hosts_binds_approval_to_generated_plan() -> None:
     verify = named_steps["Recompute and verify approved configuration plan"]
     assert "--output" not in str(plan["run"])
     assert "--output" not in str(verify["run"])
+    assert "--fleet" not in str(plan["run"])
+    assert "--fleet" not in str(verify["run"])
+    assert "--inventory" not in str(plan["run"])
+    assert "--inventory" not in str(verify["run"])
+    assert '--playbook "$TARGET_PLAYBOOK"' in str(plan["run"])
+    assert '--playbook "$TARGET_PLAYBOOK"' in str(verify["run"])
     assert "> configuration-plan.json" in str(plan["run"])
     assert "> configuration-plan.current.json" in str(verify["run"])
     assert "umask 027" in str(plan["run"])
