@@ -71,7 +71,9 @@ def _caddy_sites_by_server(
             coordinate = f"{project['id']}:{environment}"
             hostnames = tuple(str(item) for item in config["public_hostnames"])
             if not ingress.get("enabled"):
-                raise ContractError(f"fleet exposes public hostnames for disabled ingress: {coordinate}")
+                raise ContractError(
+                    f"fleet exposes public hostnames for disabled ingress: {coordinate}"
+                )
             if ingress.get("tls") != "automatic":
                 raise ContractError(
                     f"fleet-managed Caddy ingress requires tls=automatic: {coordinate}"
