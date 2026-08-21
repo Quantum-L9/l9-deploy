@@ -83,9 +83,7 @@ def _caddy_sites_by_server(
                     f"fleet public hostnames drift from deployment profile: {coordinate}"
                 )
             if not isinstance(container_port, int) or not 1 <= container_port <= 65535:
-                raise ContractError(
-                    f"public ingress requires a valid container port: {coordinate}"
-                )
+                raise ContractError(f"public ingress requires a valid container port: {coordinate}")
             for hostname in hostnames:
                 if not _HOSTNAME.fullmatch(hostname):
                     raise ContractError(f"invalid public hostname: {hostname}")

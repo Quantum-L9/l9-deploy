@@ -32,7 +32,7 @@ jobs:
           semgrep==1.100.0
           git+https://github.com/Quantum-L9/l9-ci-sdk.git@5843cfb61f330432559110ecd3f5312d4731a366
       - run: uv run ruff check .
-      - run: uv run ruff format --diff .
+      - run: uv run ruff format --check .
       - run: uv run mypy src/l9_deploy
       - run: >-
           uv run pytest

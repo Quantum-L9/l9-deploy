@@ -47,9 +47,7 @@ def test_public_ingress_binds_application_port_to_loopback() -> None:
     typed_profile = DeploymentProfile.model_validate(profile_document)
     image = "ghcr.io/quantum-l9/l9-cognitive-runtime@sha256:" + "a" * 64
     runtime_env = (
-        "/srv/l9/projects/l9-cognitive-runtime/staging/releases/"
-        + "b" * 64
-        + "/runtime.env"
+        "/srv/l9/projects/l9-cognitive-runtime/staging/releases/" + "b" * 64 + "/runtime.env"
     )
     document = yaml.safe_load(render_compose(typed_profile, image, "staging", runtime_env))
     service = document["services"]["app"]

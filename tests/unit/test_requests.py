@@ -85,9 +85,7 @@ def test_request_verifier_rejects_public_hostname_drift(
     request = copy.deepcopy(deployment_context["request"])
     request["profile"]["digest"] = file_sha256(profile_path)
     fleet = copy.deepcopy(deployment_context["fleet"])
-    fleet["projects"][0]["environments"]["staging"]["public_hostnames"] = [
-        "wrong.example.com"
-    ]
+    fleet["projects"][0]["environments"]["staging"]["public_hostnames"] = ["wrong.example.com"]
     with pytest.raises(AuthorizationError, match="public hostnames"):
         verify_request(
             request,
