@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from _bootstrap import add_repository_src
@@ -52,7 +53,7 @@ def main() -> int:
         allow_environment_wide=args.allow_environment_wide,
     )
     atomic_write_json(args.output, plan, mode=0o640)
-    print(json.dumps(plan, indent=2, sort_keys=True))
+    sys.stdout.write(json.dumps(plan, indent=2, sort_keys=True) + "\n")
     return 0
 
 
