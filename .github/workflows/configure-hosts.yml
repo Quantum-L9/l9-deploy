@@ -54,13 +54,13 @@ jobs:
           ALLOW_ENVIRONMENT_WIDE: ${{ inputs.allow-environment-wide }}
         run: |
           set -euo pipefail
+          umask 027
           args=(
             --repository-revision "$GITHUB_SHA"
             --fleet fleet/registry.yaml
             --playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"
             --inventory ansible/inventories/generated/hosts.yml
             --environment "$TARGET_ENVIRONMENT"
-            --output configuration-plan.json
           )
           if [ -n "$TARGET_SERVER_ID" ]; then
             args+=(--server-id "$TARGET_SERVER_ID")
@@ -68,7 +68,7 @@ jobs:
           if [ "$ALLOW_ENVIRONMENT_WIDE" = true ]; then
             args+=(--allow-environment-wide)
           fi
-          uv run python scripts/prepare-configuration-plan.py "${args[@]}"
+          uv run python scripts/prepare-configuration-plan.py "${args[@]}" > configuration-plan.json
           {
             echo "plan-digest=$(jq -er '.plan_digest' configuration-plan.json)"
             echo "limit=$(jq -er '.target.limit' configuration-plan.json)"
@@ -131,13 +131,13 @@ jobs:
           APPROVED_PLAN_DIGEST: ${{ needs.plan.outputs.plan-digest }}
         run: |
           set -euo pipefail
+          umask 027
           args=(
             --repository-revision "$GITHUB_SHA"
             --fleet fleet/registry.yaml
             --playbook "ansible/playbooks/${TARGET_PLAYBOOK}.yml"
             --inventory ansible/inventories/generated/hosts.yml
             --environment "$TARGET_ENVIRONMENT"
-            --output configuration-plan.current.json
           )
           if [ -n "$TARGET_SERVER_ID" ]; then
             args+=(--server-id "$TARGET_SERVER_ID")
@@ -145,7 +145,7 @@ jobs:
           if [ "$ALLOW_ENVIRONMENT_WIDE" = true ]; then
             args+=(--allow-environment-wide)
           fi
-          uv run python scripts/prepare-configuration-plan.py "${args[@]}"
+          uv run python scripts/prepare-configuration-plan.py "${args[@]}" > configuration-plan.current.json
           cmp --silent \
             artifacts/configuration-plan/configuration-plan.json \
             configuration-plan.current.json

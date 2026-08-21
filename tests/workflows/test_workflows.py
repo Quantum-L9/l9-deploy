@@ -176,6 +176,21 @@ def test_configure_hosts_binds_approval_to_generated_plan() -> None:
         for step in steps
         if isinstance(step, dict) and isinstance(step.get("name"), str)
     }
+    plan_steps = workflow["jobs"]["plan"]["steps"]
+    assert isinstance(plan_steps, list)
+    plan = next(
+        step
+        for step in plan_steps
+        if isinstance(step, dict) and step.get("name") == "Build deterministic configuration plan"
+    )
+    verify = named_steps["Recompute and verify approved configuration plan"]
+    assert "--output" not in str(plan["run"])
+    assert "--output" not in str(verify["run"])
+    assert "> configuration-plan.json" in str(plan["run"])
+    assert "> configuration-plan.current.json" in str(verify["run"])
+    assert "umask 027" in str(plan["run"])
+    assert "umask 027" in str(verify["run"])
+
     check = named_steps["Check configuration"]
     apply = named_steps["Apply configuration"]
     for step in (check, apply):

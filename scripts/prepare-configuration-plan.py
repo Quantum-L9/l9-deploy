@@ -24,7 +24,6 @@ from _bootstrap import add_repository_src
 
 add_repository_src()
 
-from l9_deploy.canonical import atomic_write_json  # noqa: E402
 from l9_deploy.planning.configuration import build_configuration_plan  # noqa: E402
 
 
@@ -38,7 +37,6 @@ def main() -> int:
     parser.add_argument("--environment", required=True)
     parser.add_argument("--server-id", default="")
     parser.add_argument("--allow-environment-wide", action="store_true")
-    parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
     root = args.root.resolve()
@@ -52,7 +50,6 @@ def main() -> int:
         server_id=args.server_id,
         allow_environment_wide=args.allow_environment_wide,
     )
-    atomic_write_json(args.output, plan, mode=0o640)
     sys.stdout.write(json.dumps(plan, indent=2, sort_keys=True) + "\n")
     return 0
 
