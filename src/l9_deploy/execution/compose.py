@@ -47,7 +47,12 @@ def render_compose(
         raise ContractError("Compose runtime environment must be release-owned")
     service["env_file"] = ["${L9_RUNTIME_ENV_FILE:?L9_RUNTIME_ENV_FILE is required}"]
     if runtime.container_port:
-        service["expose"] = [runtime.container_port]
+        ingress = profile.network.public_ingress
+        if ingress.enabled and ingress.hostnames:
+            port = runtime.container_port
+            service["ports"] = [f"127.0.0.1:{port}:{port}"]
+        else:
+            service["expose"] = [runtime.container_port]
     volumes: list[JsonValue] = []
     for item in runtime.volumes:
         suffix = ":ro" if item.read_only else ""
@@ -64,6 +69,8 @@ def render_compose(
     rendered = yaml.safe_dump(document, sort_keys=False)
     if "/var/run/docker.sock" in rendered:
         raise ContractError("Docker socket mounts are prohibited")
+    if "0.0.0.0:" in rendered:
+        raise ContractError("Public application ports must not bind all host interfaces")
     return rendered
 
 

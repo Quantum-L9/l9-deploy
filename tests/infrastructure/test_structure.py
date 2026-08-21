@@ -41,5 +41,23 @@ def test_runner_is_repository_scoped_in_defaults() -> None:
     defaults = yaml.safe_load(
         (ROOT / "ansible/roles/github_runner/defaults/main.yml").read_text(encoding="utf-8")
     )
-    assert defaults["l9_runner_repository"] == "Quantum-L9/l9-deployment-platform"
+    group_vars = yaml.safe_load(
+        (ROOT / "ansible/inventories/group_vars/all.yml").read_text(encoding="utf-8")
+    )
+    assert defaults["l9_runner_repository"] == "Quantum-L9/l9-deploy"
+    assert group_vars["l9_runner_repository"] == "Quantum-L9/l9-deploy"
     assert "public" not in defaults["l9_runner_labels"]
+
+
+def test_caddy_role_uses_canonical_version_and_managed_site_templates() -> None:
+    tasks_path = ROOT / "ansible/roles/caddy/tasks/main.yml"
+    tasks = yaml.safe_load(tasks_path.read_text(encoding="utf-8"))
+    assert isinstance(tasks, list)
+    assert tasks
+    text = tasks_path.read_text(encoding="utf-8")
+    assert "l9_caddy_version" in text
+    assert "l9_caddy_package_version" not in text
+    assert (ROOT / "ansible/roles/caddy/templates/Caddyfile.j2").is_file()
+    assert (ROOT / "ansible/roles/caddy/templates/managed-site.caddy.j2").is_file()
+    assert "caddy validate" not in text
+    assert "Validate complete Caddy configuration" in text

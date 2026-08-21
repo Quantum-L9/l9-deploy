@@ -10,9 +10,12 @@ status: active
 from __future__ import annotations
 
 import copy
+from pathlib import Path
 
 import pytest
+import yaml
 
+from l9_deploy.canonical import file_sha256
 from l9_deploy.errors import AuthorizationError, ContractError
 from l9_deploy.requests.parser import parse_repository_dispatch
 from l9_deploy.requests.verifier import verify_request
@@ -60,6 +63,37 @@ def test_request_verifier_rejects_profile_drift(deployment_context, schema_regis
             deployment_context["fleet"],
             schema_registry,
             deployment_context["root"],
+            evidence_root=deployment_context["evidence_root"],
+            bundle_validator=deployment_context["bundle_validator"],
+        )
+
+
+def test_request_verifier_rejects_public_hostname_drift(
+    deployment_context, schema_registry
+) -> None:  # type: ignore[no-untyped-def]
+    root = deployment_context["root"]
+    assert isinstance(root, Path)
+    profile_path = root / "profiles/seo-bot.yaml"
+    profile = yaml.safe_load(profile_path.read_text(encoding="utf-8"))
+    profile["network"]["public_ingress"] = {
+        "enabled": True,
+        "hostnames": ["mcp.example.com"],
+        "tls": "automatic",
+    }
+    profile_path.write_text(yaml.safe_dump(profile, sort_keys=False), encoding="utf-8")
+
+    request = copy.deepcopy(deployment_context["request"])
+    request["profile"]["digest"] = file_sha256(profile_path)
+    fleet = copy.deepcopy(deployment_context["fleet"])
+    fleet["projects"][0]["environments"]["staging"]["public_hostnames"] = [
+        "wrong.example.com"
+    ]
+    with pytest.raises(AuthorizationError, match="public hostnames"):
+        verify_request(
+            request,
+            fleet,
+            schema_registry,
+            root,
             evidence_root=deployment_context["evidence_root"],
             bundle_validator=deployment_context["bundle_validator"],
         )

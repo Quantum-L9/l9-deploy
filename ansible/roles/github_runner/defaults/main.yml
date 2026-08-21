@@ -12,7 +12,7 @@
 ---
 l9_runner_version: "2.334.0"
 l9_runner_sha256: ""
-l9_runner_repository: "Quantum-L9/l9-deployment-platform"
+l9_runner_repository: "Quantum-L9/l9-deploy"
 l9_runner_labels: "l9-deployment,hetzner-private"
 l9_runner_name: "{{ inventory_hostname }}"
 l9_runner_work_directory: "_work"
