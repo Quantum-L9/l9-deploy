@@ -18,6 +18,16 @@ on:
         type: choice
         required: true
         options: [bootstrap, harden, configure-runner, configure-runtime, configure-backups, verify]
+      server-id:
+        description: Exact registered server to configure. Leave empty only for an intentional environment-wide run.
+        type: string
+        required: false
+        default: ""
+      allow-environment-wide:
+        description: Explicitly authorize configuration across the selected environment when server-id is empty.
+        type: boolean
+        required: true
+        default: false
       expected-plan-digest:
         type: string
         required: true
@@ -62,12 +72,51 @@ jobs:
           name: configuration-approval-${{ github.run_id }}
           path: artifacts/approval
       - run: uv run python scripts/generate-inventory.py
+      - id: target
+        name: Resolve bounded configuration target
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          TARGET_SERVER_ID: ${{ inputs.server-id }}
+          ALLOW_ENVIRONMENT_WIDE: ${{ inputs.allow-environment-wide }}
+        run: |
+          set -euo pipefail
+          uv run python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          import yaml
+
+          environment = os.environ["TARGET_ENVIRONMENT"].strip()
+          server_id = os.environ["TARGET_SERVER_ID"].strip()
+          allow_environment_wide = os.environ["ALLOW_ENVIRONMENT_WIDE"].strip().lower() == "true"
+
+          if server_id:
+              if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", server_id):
+                  raise SystemExit("invalid server-id")
+              fleet = yaml.safe_load(Path("fleet/registry.yaml").read_text(encoding="utf-8"))
+              matches = [server for server in fleet["servers"] if server["id"] == server_id]
+              if len(matches) != 1:
+                  raise SystemExit("server-id is not uniquely registered in fleet/registry.yaml")
+              if matches[0]["environment"] != environment:
+                  raise SystemExit("server-id does not belong to the selected environment")
+              limit = server_id
+          else:
+              if not allow_environment_wide:
+                  raise SystemExit(
+                      "environment-wide configuration requires allow-environment-wide=true"
+                  )
+              limit = environment
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"limit={limit}\n")
+          PY
       - name: Check configuration
         run: >-
           uv run l9-deploy config check
           --playbook "ansible/playbooks/${{ inputs.playbook }}.yml"
           --inventory ansible/inventories/generated/hosts.yml
-          --limit "${{ inputs.environment }}"
+          --limit "${{ steps.target.outputs.limit }}"
           --json
       - name: Apply configuration
         run: >-
@@ -81,5 +130,5 @@ jobs:
           --requester "${{ github.actor }}"
           --playbook "ansible/playbooks/${{ inputs.playbook }}.yml"
           --inventory ansible/inventories/generated/hosts.yml
-          --limit "${{ inputs.environment }}"
+          --limit "${{ steps.target.outputs.limit }}"
           --json

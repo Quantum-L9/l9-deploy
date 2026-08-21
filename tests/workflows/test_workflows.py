@@ -152,6 +152,16 @@ def test_deploy_dispatch_preserves_minimum_approved_wiring() -> None:
     assert "--approval-history" in runs
 
 
+def test_configure_hosts_requires_explicit_mutation_scope() -> None:
+    text = (ROOT / ".github/workflows/configure-hosts.yml").read_text(encoding="utf-8")
+    assert "server-id:" in text
+    assert "allow-environment-wide:" in text
+    assert "Resolve bounded configuration target" in text
+    assert "server-id does not belong to the selected environment" in text
+    assert "environment-wide configuration requires allow-environment-wide=true" in text
+    assert text.count('--limit "${{ steps.target.outputs.limit }}"') == 2
+
+
 def test_workflow_inventory_covers_every_workflow() -> None:
     inventory = (ROOT / "docs/operations/workflow-inventory.md").read_text(encoding="utf-8")
     workflow_names = {path.name for path in (ROOT / ".github/workflows").glob("*.yml")}
