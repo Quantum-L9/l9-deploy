@@ -14,7 +14,6 @@ status: active
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from typing import Any
 
@@ -23,10 +22,23 @@ import yaml
 from ..canonical import atomic_write_text
 from ..errors import ContractError
 
-_HOSTNAME = re.compile(
-    r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
-    r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
-)
+_HOSTNAME_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789-")
+
+
+def _is_valid_public_hostname(hostname: str) -> bool:
+    if not 1 <= len(hostname) <= 253 or hostname != hostname.lower():
+        return False
+    labels = hostname.split(".")
+    if len(labels) < 2:
+        return False
+    for label in labels:
+        if not 1 <= len(label) <= 63:
+            return False
+        if label[0] == "-" or label[-1] == "-":
+            return False
+        if any(character not in _HOSTNAME_CHARS for character in label):
+            return False
+    return True
 
 
 def _load_profile(root: Path, profile_path: str) -> dict[str, Any]:
@@ -85,7 +97,7 @@ def _caddy_sites_by_server(
             if not isinstance(container_port, int) or not 1 <= container_port <= 65535:
                 raise ContractError(f"public ingress requires a valid container port: {coordinate}")
             for hostname in hostnames:
-                if not _HOSTNAME.fullmatch(hostname):
+                if not _is_valid_public_hostname(hostname):
                     raise ContractError(f"invalid public hostname: {hostname}")
                 for server_id in sorted(config["server_ids"]):
                     claimed = seen.setdefault(server_id, set())

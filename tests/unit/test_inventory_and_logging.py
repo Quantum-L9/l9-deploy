@@ -19,7 +19,7 @@ import pytest
 import yaml
 
 from l9_deploy.errors import ContractError
-from l9_deploy.inventory.generator import generate_ansible_inventory
+from l9_deploy.inventory.generator import _is_valid_public_hostname, generate_ansible_inventory
 from l9_deploy.inventory.loader import load_fleet
 from l9_deploy.logging import JsonFormatter, configure_logging
 
@@ -65,6 +65,27 @@ def test_cognitive_runtime_ingress_is_derived_from_fleet_and_profile(tmp_path: P
             "upstream": "127.0.0.1:8080",
         }
     ]
+
+
+@pytest.mark.parametrize(
+    ("hostname", "expected"),
+    [
+        ("mcp-staging.quantumaipartners.com", True),
+        ("a-b.example.com", True),
+        ("localhost", False),
+        ("Upper.example.com", False),
+        ("-edge.example.com", False),
+        ("edge-.example.com", False),
+        ("edge..example.com", False),
+        ("edge_example.com", False),
+        (f"{'a' * 64}.example.com", False),
+        (f"{'a' * 250}.com", False),
+    ],
+)
+def test_public_hostname_validation_is_bounded_and_deterministic(
+    hostname: str, expected: bool
+) -> None:
+    assert _is_valid_public_hostname(hostname) is expected
 
 
 def test_fleet_loader_validates_schema_and_rejects_non_object(
