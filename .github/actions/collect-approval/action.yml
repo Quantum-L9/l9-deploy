@@ -40,7 +40,7 @@ runs:
         gh api "$api_path" > "$OUTPUT_DIRECTORY/approval-history.json"
         gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs" > "$OUTPUT_DIRECTORY/jobs.json"
         job_id=$(jq -er --arg name "$JOB_NAME" '.jobs[] | select(.name == $name) | .id' "$OUTPUT_DIRECTORY/jobs.json" | head -n1)
-        uv run python scripts/collect-github-approval.py \
+        uv run --no-sync python scripts/collect-github-approval.py \
           --approval-history "$OUTPUT_DIRECTORY/approval-history.json" \
           --request-id "$REQUEST_ID" \
           --requester "$REQUESTER" \

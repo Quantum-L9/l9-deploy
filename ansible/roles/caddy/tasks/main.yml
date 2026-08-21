@@ -30,7 +30,8 @@
     state: directory
     owner: root
     group: root
-    mode: "0755"
+    # APT requires Signed-By keyrings to be traversable/readable by the _apt user.
+    mode: "0755" # NOSONAR
 
 - name: Install Caddy repository key
   ansible.builtin.get_url:
@@ -38,7 +39,8 @@
     dest: /etc/apt/keyrings/caddy-stable.asc
     owner: root
     group: root
-    mode: "0644"
+    # This is a public verification key; APT requires it to be readable by _apt.
+    mode: "0644" # NOSONAR
 
 - name: Configure Caddy repository
   ansible.builtin.apt_repository:
@@ -76,7 +78,7 @@
     dest: /etc/caddy/Caddyfile
     owner: root
     group: caddy
-    mode: "0644"
+    mode: "0640"
 
 - name: Keep the managed import valid when no routes exist
   ansible.builtin.copy:
