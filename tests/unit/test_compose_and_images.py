@@ -55,6 +55,28 @@ def test_public_ingress_binds_application_port_to_loopback() -> None:
     assert "expose" not in service
 
 
+def test_cognitive_runtime_compose_requires_auth_and_keeps_vault_env_file() -> None:
+    profile_document = yaml.safe_load(
+        (ROOT / "integrations/consumers/l9-cognitive-runtime.deployment.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    typed_profile = DeploymentProfile.model_validate(profile_document)
+    image = "ghcr.io/quantum-l9/l9-cognitive-runtime@sha256:" + "a" * 64
+    runtime_env = (
+        "/srv/l9/projects/l9-cognitive-runtime/staging/releases/" + "b" * 64 + "/runtime.env"
+    )
+    document = yaml.safe_load(render_compose(typed_profile, image, "staging", runtime_env))
+    service = document["services"]["app"]
+
+    assert service["environment"]["L9_REQUIRE_AUTH"] == "true"
+    assert (
+        service["environment"]["L9_MCP_RESOURCE_URL"]
+        == "https://mcp-staging.quantumaipartners.com/v1/mcp"
+    )
+    assert service["env_file"] == ["${L9_RUNTIME_ENV_FILE:?L9_RUNTIME_ENV_FILE is required}"]
+
+
 def test_image_reference_requires_immutable_ghcr_digest() -> None:
     require_digest_ref("ghcr.io/quantum-l9/seo-bot@sha256:" + "a" * 64)
     with pytest.raises(ContractError):
