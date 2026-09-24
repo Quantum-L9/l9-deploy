@@ -71,3 +71,27 @@ def test_caddy_role_uses_canonical_version_and_managed_site_templates() -> None:
     assert "owner: root" in text
     assert "import sites/*.caddy" in base
     assert "/srv/l9/caddy" not in base
+
+
+def test_opentofu_installer_uses_supported_version_flag() -> None:
+    text = (ROOT / "scripts/install-opentofu.sh").read_text(encoding="utf-8")
+    assert '--opentofu-version "$version"' in text
+    assert '--version "$version"' not in text
+
+
+def test_runner_recovery_scripts_use_canonical_sha_input() -> None:
+    bootstrap = (ROOT / "scripts/bootstrap-runner.sh").read_text(encoding="utf-8")
+    rotate = (ROOT / "scripts/rotate-runner.sh").read_text(encoding="utf-8")
+    for text in (bootstrap, rotate):
+        assert "L9_RUNNER_SHA256" in text
+        assert "l9_runner_sha256=$L9_RUNNER_SHA256" in text
+        assert "L9_RUNNER_ARCHIVE_SHA256" not in text
+        assert "l9_runner_archive_sha256" not in text
+
+
+def test_runner_role_fails_closed_on_wrong_repository_scope() -> None:
+    text = (ROOT / "ansible/roles/github_runner/tasks/main.yml").read_text(encoding="utf-8")
+    assert "Read configured runner repository scope" in text
+    assert "Validate configured runner repository scope" in text
+    assert ".gitHubUrl" in text
+    assert '"https://github.com/" ~ l9_runner_repository' in text

@@ -13,7 +13,15 @@
 set -euo pipefail
 
 inventory=${1:-ansible/inventories/generated/hosts.yml}
+: "${L9_RUNNER_REGISTRATION_TOKEN:?fresh repository-scoped runner registration token required}"
+: "${L9_RUNNER_SHA256:?runner archive SHA-256 required}"
+
 ansible-playbook -i "$inventory" ansible/playbooks/bootstrap.yml --limit management
 ansible-playbook -i "$inventory" ansible/playbooks/harden.yml --limit management
-ansible-playbook -i "$inventory" ansible/playbooks/configure-runner.yml --limit management
+ansible-playbook \
+  -i "$inventory" \
+  ansible/playbooks/configure-runner.yml \
+  --limit management \
+  -e "l9_runner_registration_token=$L9_RUNNER_REGISTRATION_TOKEN" \
+  -e "l9_runner_sha256=$L9_RUNNER_SHA256"
 ansible-playbook -i "$inventory" ansible/playbooks/verify.yml --limit management

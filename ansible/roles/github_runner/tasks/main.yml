@@ -35,6 +35,17 @@
   ansible.builtin.command: "./config.sh --unattended --replace --url https://github.com/{{ l9_runner_repository }} --token {{ l9_runner_registration_token }} --name {{ l9_runner_name }} --labels {{ l9_runner_labels }} --work {{ l9_runner_work_directory }}"
   args: {chdir: /opt/actions-runner, creates: /opt/actions-runner/.runner}
   no_log: true
+- name: Read configured runner repository scope
+  ansible.builtin.slurp:
+    src: /opt/actions-runner/.runner
+  register: l9_runner_settings
+  no_log: true
+- name: Validate configured runner repository scope
+  ansible.builtin.assert:
+    that:
+      - (l9_runner_settings.content | b64decode | from_json).gitHubUrl == "https://github.com/" ~ l9_runner_repository
+    fail_msg: Existing runner registration does not match the canonical repository; rotate the runner before continuing.
+  no_log: true
 - name: Install runner service
   ansible.builtin.command: ./svc.sh install actions
   args: {chdir: /opt/actions-runner, creates: /etc/systemd/system/actions.runner.*.service}
