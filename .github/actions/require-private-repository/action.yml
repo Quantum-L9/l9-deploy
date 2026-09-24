@@ -1,0 +1,24 @@
+# --- L9_META ---
+# l9_schema: 1
+# origin: l9-deployment-platform
+# layer: [ci, authorization]
+# tags: [L9_CONTRACT, private-control-plane]
+# owner: platform
+# status: active
+# --- /L9_META ---
+name: Require private control repository
+description: Fail closed unless the workflow is executing in the canonical private l9-deploy repository.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        L9_REPOSITORY: ${{ github.repository }}
+        L9_REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+      run: |
+        set -euo pipefail
+        test "$L9_REPOSITORY" = "Quantum-L9/l9-deploy"
+        if [ "$L9_REPOSITORY_PRIVATE" != "true" ]; then
+          echo "l9-deploy mutation requires private GitHub repository visibility" >&2
+          exit 1
+        fi

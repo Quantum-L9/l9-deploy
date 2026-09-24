@@ -224,3 +224,16 @@ def test_workflow_inventory_covers_every_workflow() -> None:
     assert documented == workflow_names
     assert "No workflow is classified obsolete" in inventory
     assert "No new scanner, linter, or CI framework" in inventory
+
+
+def test_mutating_workflows_require_private_control_repository() -> None:
+    mutating = {
+        "configure-hosts.yml",
+        "deploy-dispatch.yml",
+        "provision-apply.yml",
+        "rollback.yml",
+        "runner-maintenance.yml",
+    }
+    for name in mutating:
+        text = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
+        assert "./.github/actions/require-private-repository" in text
