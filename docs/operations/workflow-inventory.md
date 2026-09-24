@@ -1,7 +1,6 @@
-<!--
---- L9_META ---
+<!-- L9_META
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer:
 - documentation
 tags:
@@ -9,47 +8,38 @@ tags:
 - deployment-platform
 owner: platform
 status: active
---- /L9_META ---
--->
-# Minimum Functional Workflow Inventory
+/L9_META -->
+# Workflow Inventory
 
-Phase 3 keeps only deployment wiring and its existing operational prerequisites in scope. It does not add scanners, linters, or a generalized CI framework.
+| Workflow | Role | OIDC |
+|---|---|---|
+| `validate.yml` | Repository-native source, contract, workflow, metadata, identity, and alignment validation. | None |
+| `release.yml` | Builds the deterministic repository source release on version tags. | None |
+| `deploy-dispatch.yml` | Validates bounded release requests, records approval, materializes runtime secrets, verifies provenance, deploys. | `deploy` only |
+| `deploy-manual.yml` | Operator entrypoint that emits the governed repository dispatch. | None |
+| `promote.yml` | Promotes a validated request between governed environments. | None |
+| `rollback.yml` | Approved runtime rollback. | None |
+| `backup-verify.yml` | Backup/restore verification. | None |
+| `drift-detect.yml` | Scheduled and manual OpenTofu drift plans. | `plan` only |
+| `fleet-conformance.yml` | Scheduled and manual host/fleet conformance on the dedicated runner. | None |
+| `configure-hosts.yml` | Deterministic Ansible configuration plan, approval, check, and apply. | None |
+| `provision-plan.yml` | Creates immutable OpenTofu plan artifacts. | `plan` only |
+| `provision-apply.yml` | Approved exact-plan infrastructure apply. | `apply` only |
+| `runner-maintenance.yml` | Approved runner reconciliation when the runner is already available. | None |
 
-| Workflow | Disposition | Functional role | OIDC policy |
-|---|---|---|---|
-| `deploy-dispatch.yml` | Deployment-required | Validates an immutable release request, collects protected approval, materializes runtime secrets, verifies provenance, and executes the exact approved plan. | Only `deploy` may request `id-token: write`. |
-| `deploy-manual.yml` | Deployment-required | Produces the governed repository dispatch that enters `deploy-dispatch.yml`. | No OIDC. |
-| `promote.yml` | Deployment-required | Promotes an already validated deployment request between governed environments. | No OIDC. |
-| `rollback.yml` | Deployment-required | Collects protected incident approval and invokes rollback on the private runner. | No OIDC. |
-| `backup-verify.yml` | Deployment-required safeguard | Verifies recovery artifacts required by the deployment recovery path. | No OIDC. |
-| `drift-detect.yml` | Deployment-required safeguard | Uses short-lived infrastructure credentials to detect environment drift. | Only `plan` may request `id-token: write`. |
-| `fleet-conformance.yml` | Deployment-required safeguard | Verifies private fleet conformance and emits evidence. | No OIDC. |
-| `configure-hosts.yml` | Provisioning-related | Applies approved host configuration through Ansible. | No OIDC; the workflow does not exchange identity. |
-| `provision-plan.yml` | Provisioning-related | Materializes short-lived infrastructure credentials and creates an immutable OpenTofu plan. | Only `plan` may request `id-token: write`. |
-| `provision-apply.yml` | Provisioning-related | Collects protected approval, materializes short-lived credentials, and applies the exact approved OpenTofu plan. | Only `apply` may request `id-token: write`; `authorize` cannot. |
-| `runner-maintenance.yml` | Provisioning-related | Reconciles the repository-scoped private runner after protected approval. | No OIDC; credentials come from explicit repository secrets. |
-| `release.yml` | Deferred CI/release | Builds and validates release artifacts. It remains unchanged in Phase 3. | No OIDC. |
-| `validate.yml` | Deferred generalized CI | Runs the existing repository validation stack. No new scanner, linter, or CI framework is introduced in Phase 3. | No OIDC. |
+## Release ownership
 
-## Required deployment chain
+`l9-ci-core`, not this repository, owns consumer image release orchestration and dispatch
+construction. `l9-deploy` receives and verifies the bounded deployment request.
 
-`deploy-manual` or an authorized external producer emits `l9.release.requested.v1` -> `deploy-dispatch.validate` validates and binds immutable evidence -> `deploy-dispatch.authorize` records protected approval -> `deploy-dispatch.deploy` alone receives OIDC, renders `runtime.env`, verifies provenance, and executes the exact approved plan.
+## OIDC invariant
 
-## Security invariants
+Workflow-level OIDC is forbidden. A job may request `id-token: write` only when that same job uses
+the approved Infisical exchange. The allowlist is exactly:
 
-- Workflow-level `id-token: write` is prohibited.
-- A job may request `id-token: write` only when that same job invokes `scripts/infisical-oidc-env.sh`.
-- Approval jobs never receive OIDC permission.
-- Deployment secret materialization remains downstream of both validation and protected approval.
-- Scanner and linter expansion is outside Phase 3.
-- No workflow is classified obsolete at this phase.
+- `deploy-dispatch.yml/deploy`
+- `drift-detect.yml/plan`
+- `provision-plan.yml/plan`
+- `provision-apply.yml/apply`
 
-## Enforced OIDC allowlist
-
-The validator rejects workflow-scoped OIDC, OIDC on approval jobs, token permission without an
-approved Infisical consumer, and an Infisical consumer without job-scoped token permission. The exact
-allowlist is `deploy-dispatch.yml/deploy`, `drift-detect.yml/plan`,
-`provision-plan.yml/plan`, and `provision-apply.yml/apply`.
-
-The canonical GitHub repository claim is `Quantum-L9/l9-deploy`. External claim-policy behavior is
-validated only in the protected staging lifecycle.
+The canonical GitHub repository claim is `Quantum-L9/l9-deploy`.
