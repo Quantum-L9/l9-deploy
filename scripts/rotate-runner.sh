@@ -13,7 +13,7 @@
 set -euo pipefail
 
 : "${L9_RUNNER_REGISTRATION_TOKEN:?fresh runner registration token required}"
-: "${L9_RUNNER_ARCHIVE_SHA256:?runner archive SHA-256 required}"
+: "${L9_RUNNER_SHA256:?runner archive SHA-256 required}"
 ansible-playbook \
   -i ansible/inventories/generated/hosts.yml \
   ansible/playbooks/configure-runner.yml \

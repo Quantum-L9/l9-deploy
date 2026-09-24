@@ -23,5 +23,5 @@ chmod 0700 "$tmp/install-opentofu.sh"
 "$tmp/install-opentofu.sh" \
   --install-method standalone \
   --install-path "$HOME/.local/bin" \
-  --version "$version"
+  --opentofu-version "$version"
 "$HOME/.local/bin/tofu" version | grep -F "OpenTofu v$version" >/dev/null
