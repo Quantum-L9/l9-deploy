@@ -43,3 +43,9 @@ the approved Infisical exchange. The allowlist is exactly:
 - `provision-apply.yml/apply`
 
 The canonical GitHub repository claim is `Quantum-L9/l9-deploy`.
+
+
+## Scope note
+
+No workflow is classified obsolete by this inventory. No new scanner, linter, or CI framework is
+introduced here; validation changes must remain owned by the repository and central CI contracts.
