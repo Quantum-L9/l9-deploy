@@ -1,6 +1,6 @@
 <!-- L9_META
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer:
 - repository
 tags:
@@ -11,119 +11,74 @@ status: active
 /L9_META -->
 # Security
 
-## Security boundary
+## Boundary
 
-This repository can provision infrastructure and mutate production systems. Treat its
-workflows, schemas, runner, OpenTofu state, Ansible roles, approval evidence, and receipt
-ledger as high-blast-radius assets.
+This repository can provision infrastructure and mutate production systems. Its workflows, schemas,
+runner, OpenTofu state, Ansible roles, approval evidence, and receipt ledger are high-blast-radius
+assets.
 
 ## Mandatory controls
 
-- The repository is private.
-- The self-hosted runner is repository scoped and cannot execute public pull-request code.
+- GitHub repository visibility must be private before production use.
+- The self-hosted runner must be repository-scoped to `Quantum-L9/l9-deploy`.
+- Public pull-request code must never execute on the deployment runner.
 - Mutating workflows use protected environments and independent approval evidence.
-- The requester cannot approve the same mutation.
-- Canonical CI evidence is consumed, not recreated.
-- OCI images are deployed by digest only.
-- GitHub Actions are pinned to immutable SHAs or governed Quantum-L9 major interfaces.
-- Secrets come from Infisical through workload identity where supported.
-- Target hosts are reached through Hetzner private networking.
-- Canonical receipts are create-only and hash chained.
-- Durable contract serialization preserves wire names and rejects runtime-only field names.
-- Repository archives are deterministic and verified against exact source bytes and modes.
-- Logs and evidence are redacted before persistence, including explicit secret environment values.
-- Missing GitHub repository context is an authorization failure.
-- Infisical environment rendering rejects invalid names, duplicates, CR/LF, and NUL bytes.
-- Subprocess timeouts terminate process groups and drain pipes.
-- HTTP health probes reject non-HTTP schemes.
-- Canonical JSON rejects non-finite numbers.
-- Infrastructure apply uses the exact approved plan artifact.
+- Requester and approver identities must differ.
+- Canonical CI evidence is consumed, not reconstructed.
+- OCI images are deployed by immutable digest.
+- Secrets come from Infisical through job-scoped workload identity where supported.
+- Infrastructure apply consumes the exact approved OpenTofu plan artifact.
+- Canonical receipts are create-only and hash-chained.
+- Logs and evidence are redacted before persistence.
+- Missing or mismatched repository, approval, identity, or evidence context fails closed.
+
+Repository visibility is an external GitHub setting. Source validation can document and guard the
+required posture, but it cannot make a public repository private. Operators must verify the actual
+GitHub setting before production authorization.
+
+## Identity
+
+The sole live repository identity is `Quantum-L9/l9-deploy`. It is used by OIDC claims, runner
+scope, approval receipts, repository guards, dispatch, release receipts, interface registration, and
+new source releases. The retired identity is not accepted on those surfaces.
 
 ## Approval integrity
 
-The approval collector queries GitHub's workflow-run approval history and preserves the raw
-response. The approval receipt contains its digest and the verifier rechecks reviewer,
-requester, environment, plan, run, and timestamp. A locally written `approved: true` document
-without matching approval history is rejected.
+The collector queries GitHub workflow-run approval history and preserves the raw response. The
+receipt binds requester, reviewer, environment, plan digest, repository, run, attempt, job, workflow
+reference, timestamp, and approval-history digest. A locally authored `approved: true` document is
+not sufficient.
 
-## Evidence integrity
+## OIDC
 
-The release request must reference:
+Workflow-level `id-token: write` is forbidden. Job-scoped OIDC is allowed only on the four approved
+Infisical consumers listed in `ARCHITECTURE.md`. Approval and validation jobs may not mint tokens.
 
-- a valid canonical finding bundle,
-- an external CI gate binding,
-- a status-free image binding,
-- the exact source workflow run,
-- the exact source commit and ref,
-- the exact image digest,
-- SBOM and provenance references.
-
-Any digest or source mismatch fails closed.
+External Infisical claim policy must positively accept the canonical repository claim and reject
+legacy or unrelated claims before production use.
 
 ## Runner hardening
 
-The deployment runner must not host applications, databases, or general CI. Restrict outbound
-and inbound traffic, rotate registration material, remove workspace residue after jobs, and
-rebuild the host rather than manually repairing configuration drift.
+The deployment runner must not host application workloads, databases, or general CI. Registration
+material is short-lived. The configured runner repository must equal
+`https://github.com/Quantum-L9/l9-deploy`. Required custom labels are
+`l9-deployment,hetzner-private`. If the runner is offline, repair it through the out-of-band
+bootstrap path rather than pretending the self-hosted maintenance workflow can execute.
 
-## Receipt and audit security
+## Evidence and receipts
 
-Never edit canonical ledger entries or receipts. The latest pointer is non-authoritative.
-Back up the full ledger directory with retention and restore testing. A ledger verification
-failure is an incident, not a formatting problem.
+Release requests bind source revision, CI evidence, image digest, SBOM/provenance references, and
+profile digest. Receipts are content-addressed and the latest pointer is non-authoritative. A ledger
+verification failure is an incident.
 
-## Break-glass access
+## Secrets and subprocesses
 
-Break-glass access must be time bounded, attributable, and followed by reconciliation through
-OpenTofu and Ansible. Record the incident, commands, affected hosts, resulting state, and the
-follow-up receipt. Do not normalize emergency manual state as the new baseline without review.
+Infisical exports are hostile boundary data. Keys must be unique and POSIX-compatible; values must be
+single-line and NUL-free. Runtime env files are mode `0600`, release-owned, never uploaded as
+artifacts, and never edited in place. Subprocess output is redacted using pattern rules plus explicit
+secret environment values. Timeouts terminate process groups.
 
-## Reporting
+## Break glass
 
-Report vulnerabilities through the private GitHub Security Advisory process for the affected
-Quantum-L9 repository. Do not disclose runner credentials, infrastructure state, approval
-history, secrets, host addresses, or production receipts in public issues.
-
-## Boundary data handling
-
-Durable wire contracts accept only their published field names. Runtime aliases are narrowly
-limited to the `schema_id` to `schema` identity mapping and are enforced by AST policy. Evidence
-records are redacted, hashed, and validated against their published schema before use.
-
-Infisical exports are treated as hostile boundary data. Each item must be an object with a unique
-POSIX-compatible environment key and a single-line, NUL-free string value. Captured subprocess
-output is redacted using both pattern rules and explicit secret values supplied to the command.
-
-
-## Repository release supply-chain controls
-
-Source releases are built outside the repository tree from a frozen, validated inventory. The
-platform rejects mutable or self-contaminating release inputs, including build directories,
-coverage databases, coverage reports, caches, nested archives, symlinks, unsafe paths, and stale
-checksums.
-
-The detached repository release receipt binds repository identity, version, exact archive name,
-archive SHA-256, byte size, member count, source manifest SHA-256, and reproducible timestamp. A
-receipt digest mismatch, archive rename, source manifest drift, member mismatch, mode drift, or
-non-uniform timestamp is a release-blocking integrity failure.
-
-## Job-scoped OIDC policy
-
-The repository claim used by GitHub OIDC policy is `Quantum-L9/l9-deploy`. Workflow-level
-`id-token: write` is forbidden. The only jobs permitted to request it are:
-
-- `deploy-dispatch.yml` / `deploy`
-- `drift-detect.yml` / `plan`
-- `provision-plan.yml` / `plan`
-- `provision-apply.yml` / `apply`
-
-Every permitted job must actually exchange the token through the approved Infisical path. Approval
-and validation jobs must not request identity tokens. External Infisical claim restrictions remain a
-Phase 6 validation dependency and must be tested with positive and negative exchanges.
-
-## Runtime secret retention
-
-Release-owned `runtime.env` files contain secret material and are mode `0600`. They are never logged,
-attached as workflow artifacts, copied into receipts, or treated as generated evidence. Cleanup may
-remove only validated stale digest-addressed release directories and must retain the active and
-rollback releases. Operators must not edit historical env files in place.
+Break-glass access is time-bounded, attributable, and followed by reconciliation through OpenTofu and
+Ansible. Emergency manual state is not automatically the new desired state.

@@ -1,24 +1,27 @@
 <!-- L9_META
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer:
-- repository
+- documentation
+- architecture
 tags:
 - L9_META
 - deployment-platform
 owner: platform
 status: active
 /L9_META -->
-# Control-plane boundaries
+# Control-plane Boundaries
 
-The platform owns server provisioning, host reconciliation, approved release deployment, health
-verification, rollback, and deployment receipts. It consumes CI evidence but does not normalize
-scanner output or reconstruct CI findings. Consumer repositories own application code, Dockerfiles,
-health behavior, migration commands, and `.l9/deployment.yaml`. The organization `.github`
-repository owns public interface discovery and starter projections. `l9-ci-core` owns public release
-orchestration and the bounded broker call. `l9-ci-sdk` owns canonical CI evidence.
+`l9-deploy` owns server provisioning, host reconciliation, approved release deployment, health
+verification, rollback, and deployment receipts. It consumes canonical CI evidence and does not
+normalize scanner output or reconstruct CI findings.
 
-The deployment repository is private. Its self-hosted runner is repository-scoped and never executes
-consumer pull-request code. A public consumer can only submit a versioned request containing a full
-source SHA, exact image digest, exact profile digest, and evidence references. The private receiver
-revalidates every field against its fleet registry before mutation.
+Consumer repositories own application source, Dockerfiles, health behavior, migration commands, and
+their deployment profile. `l9-ci-core` owns release orchestration and bounded dispatch.
+`l9-ci-sdk` owns canonical CI evidence. `Quantum-L9/.github` owns organization-level public
+interface discovery.
+
+The security contract requires the deployment repository to be private. The self-hosted runner is
+repository-scoped to `Quantum-L9/l9-deploy` and must never execute consumer pull-request code.
+A consumer communicates only through versioned, validated release requests containing exact source,
+image, profile, and evidence identity.

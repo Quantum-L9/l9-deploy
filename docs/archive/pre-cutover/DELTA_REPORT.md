@@ -1,3 +1,5 @@
+<!-- Archived pre-cutover audit evidence. Not current readiness evidence. -->
+
 <!-- L9_META
 l9_schema: 1
 origin: l9-deployment-platform

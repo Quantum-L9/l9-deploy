@@ -1,8 +1,9 @@
 <!-- L9_META
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer:
-- repository
+- documentation
+- runbook
 tags:
 - L9_META
 - deployment-platform
@@ -11,8 +12,13 @@ status: active
 /L9_META -->
 # Onboard Consumer
 
-Render an adoption kit, commit `.l9/deployment.yaml` and the thin release workflow in the consumer, add the project and environment placement to `fleet/registry.yaml`, merge the public `l9-ci-core` release kernel, register it in `Quantum-L9/.github`, and validate a staging release before production.
+1. Author and validate the consumer-owned `.l9/deployment.yaml`.
+2. Use the release interface authorized by the current `l9-ci-core` release plane; do not copy
+   release orchestration into the consumer or `l9-deploy`.
+3. Register the project, canonical profile path, allowed source refs, and target servers in
+   `fleet/registry.yaml`.
+4. Confirm image repository, health, migration, backup, secret, and ingress policies.
+5. Prove staging release and rollback before production authorization.
 
-## Evidence to retain
-
-Retain the source SHA, plan digest, image digest, approval receipt, command output, resulting receipt, and operator identity.
+Retain the consumer source SHA, profile digest, release evidence artifact, image digest, deployment
+request, plan digest, approval evidence, deployment receipt, and staging rollback evidence.

@@ -1,29 +1,33 @@
 <!-- L9_META
 l9_schema: 1
-origin: l9-deployment-platform
-layer: [repository, validation]
-tags: [L9_META, deployment-platform, unknowns]
+origin: l9-deploy
+layer:
+- validation
+tags:
+- L9_META
+- unknown-register
 owner: platform
 status: active
 /L9_META -->
 # Unknown Register
 
-No unresolved local source, contract, test, documentation, or packaging defect remains from this
-consolidation.
+Only unresolved evidence capable of changing operational readiness belongs here.
 
-## External acceptance Unknowns
+- **EXT-001 GitHub visibility:** repository policy requires private visibility. The actual external
+  setting must be verified private before production authorization.
+- **EXT-002 OIDC claim policy:** positive exchange for `Quantum-L9/l9-deploy` and negative rejection
+  of the retired repository identity have not been established by repository source alone.
+- **EXT-003 Runner availability:** the dedicated runner must be proven online, repository-scoped to
+  `Quantum-L9/l9-deploy`, and labeled `l9-deployment,hetzner-private`.
+- **EXT-004 Infrastructure execution:** current management, staging, and production OpenTofu
+  plan/drift evidence is required.
+- **EXT-005 Fleet conformance:** one current successful conformance run is required after runner
+  recovery.
+- **EXT-006 Staging transaction:** one current immutable-digest deployment with health evidence is
+  required.
+- **EXT-007 Rollback rehearsal:** rollback of the staged release, including release-owned
+  configuration, must be proven.
+- **EXT-008 Recovery:** required backup verification and restore testing must be proven for stateful
+  consumers before production use.
 
-| ID | Unknown | Evidence required to resolve | Owner |
-|---|---|---|---|
-| EXT-001 | GitHub protected-environment approval behavior | Real run proving reviewer identity, requester separation, and approval verification | Platform |
-| EXT-002 | GHCR publication and provenance | Published digest, SBOM, provenance, and remote attestation verification | Platform |
-| EXT-003 | OpenTofu provider and backend behavior | Reviewed plan, locked remote state, exact-plan apply, and infrastructure receipt | Infrastructure |
-| EXT-004 | Ansible host idempotency | First apply, no-change second apply, and host-conformance report | Infrastructure |
-| EXT-005 | Dedicated runner isolation | Repository-scoped registration, labels, network controls, cleanup, and public-PR denial | Platform |
-| EXT-006 | Infisical workload identity | OIDC authentication and least-privilege retrieval without persisted credentials | Security |
-| EXT-007 | Staging transaction | Real digest deployment, probes, receipt, ledger verification, and observed rollback | Platform |
-| EXT-008 | Stateful backup and restore | Verified backup, isolated restore, integrity result, and migration recovery decision | Data owner |
-| EXT-009 | Canonical Python 3.12 CI toolchain | Frozen sync, Ruff, strict mypy, Semgrep normalization, tests, and package build | Platform |
-| EXT-010 | Fleet capacity and recovery objectives | Approved sizing, RTO, RPO, retention, monitoring, and alert routing per workload | Operator |
-
-These are external validation gates. They remain `UNKNOWN` or `BLOCKED` until direct evidence exists.
+Historical validation reports do not resolve these Unknowns.
