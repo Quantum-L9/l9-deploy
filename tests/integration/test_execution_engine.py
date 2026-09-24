@@ -107,17 +107,17 @@ def approval(
         "approved_at": approved_at,
         "authorization_method": "github_protected_environment_review",
         "workflow": {
-            "repository": "Quantum-L9/l9-deployment-platform",
+            "repository": "Quantum-L9/l9-deploy",
             "run_id": run_id,
             "run_attempt": 1,
             "job_id": 777,
             "workflow_ref": (
-                "Quantum-L9/l9-deployment-platform/.github/workflows/"
+                "Quantum-L9/l9-deploy/.github/workflows/"
                 "deploy-dispatch.yml@refs/heads/main"
             ),
             "environment": environment,
             "approval_api_url": (
-                "https://api.github.com/repos/Quantum-L9/l9-deployment-platform/"
+                "https://api.github.com/repos/Quantum-L9/l9-deploy/"
                 f"actions/runs/{run_id}/approvals"
             ),
             "approval_record_digest": file_sha256(history_path),

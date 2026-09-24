@@ -1,6 +1,6 @@
 <!-- L9_META
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer:
 - repository
 tags:
@@ -11,11 +11,13 @@ status: active
 /L9_META -->
 # l9-ci-core integration
 
-`container-release.yml` is the complete proposed reusable kernel for `Quantum-L9/l9-ci-core`.
-It validates the consumer, runs the consumer-owned verification command, builds exactly one OCI
-image, publishes it to GHCR by immutable digest, attaches SBOM and provenance attestations, and
-submits a bounded deployment request to the private deployment control plane.
+`Quantum-L9/l9-ci-core` is the sole owner of container release orchestration and the
+`l9.release.requested.v1` dispatch implementation.
 
-The authoritative copy must be reviewed and merged in `l9-ci-core`, published under its normal
-`@v1` compatibility discipline, and listed in the organization workflow interface registry.
-Consumer repositories remain thin callers and never receive access to the deployment runner.
+This repository keeps only the consumer-side integration contract at
+`.l9/integration-contracts/ci-core.contract.yaml`. It must not carry a copied executable
+container-release workflow because that would create a competing source of truth.
+
+`l9-deploy` consumes the bounded release request, validates canonical CI evidence, and owns
+deployment mutation and receipts. Consumer repositories remain thin callers and never receive
+deployment-runner credentials.

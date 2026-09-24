@@ -1,6 +1,6 @@
 # --- L9_META ---
 # l9_schema: 1
-# origin: l9-deployment-platform
+# origin: l9-deploy
 # layer:
 # - repository
 # tags:
@@ -36,3 +36,10 @@ policy:
   unknown_major: reject
   additional_properties: reject_unless_schema_allows
   consumer_ref: v1
+
+persisted_legacy_identifiers:
+  opentofu_state_prefix:
+    value: l9-deployment-platform
+    classification: persisted_storage_namespace
+    accepted_as_repository_identity: false
+    migration_required_before_rename: true

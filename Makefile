@@ -1,6 +1,6 @@
 # --- L9_META ---
 # l9_schema: 1
-# origin: l9-deployment-platform
+# origin: l9-deploy
 # layer:
 # - repository
 # tags:
@@ -67,9 +67,9 @@ release-pack-check:
 
 release-prepare: release-artifacts release-pack-check
 
-ARCHIVE ?= ../l9-deployment-platform.zip
+ARCHIVE ?= ../l9-deploy.zip
 RECEIPT ?= $(ARCHIVE:.zip=.receipt.json)
-DIST_DIR ?= ../l9-deployment-platform-dist
+DIST_DIR ?= ../l9-deploy-dist
 release-archive: release-prepare
 	PYTHONDONTWRITEBYTECODE=1 uv run python scripts/build-release-archive.py --output "$(ARCHIVE)" --receipt "$(RECEIPT)"
 	PYTHONDONTWRITEBYTECODE=1 uv run python scripts/validate-release-pack.py --archive "$(ARCHIVE)" --receipt "$(RECEIPT)"

@@ -46,6 +46,7 @@ jobs:
       - run: uv run python scripts/verify-l9-meta.py
       - run: uv run python scripts/fast-contract-scan.py
       - run: uv run python scripts/validate-alignment.py
+      - run: uv run python scripts/validate-repository-identity.py
       - run: uv run bash scripts/run-l9-contract-gates.sh
       - run: bash -n scripts/*.sh
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

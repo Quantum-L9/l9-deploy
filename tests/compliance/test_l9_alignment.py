@@ -1,7 +1,7 @@
 """
 --- L9_META ---
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer: [tests, compliance]
 tags: [L9_TEST, alignment, trust-boundary]
 owner: platform
@@ -43,15 +43,15 @@ def test_no_self_issued_approval_path_remains(repo_root: Path) -> None:
     assert "collect-github-approval.py" in combined
 
 
-def test_external_gate_and_status_free_artifact_binding(repo_root: Path) -> None:
-    workflow = (repo_root / "integrations/l9-ci-core/container-release.yml").read_text(
-        encoding="utf-8"
+def test_ci_core_is_contract_only_in_l9_deploy(repo_root: Path) -> None:
+    contract = yaml.safe_load(
+        (repo_root / ".l9/integration-contracts/ci-core.contract.yaml").read_text(
+            encoding="utf-8"
+        )
     )
-    assert "ci-gate-binding.json" in workflow
-    assert "l9.release-artifact-binding/v1" in workflow
-    assert "l9.ci-release-receipt/v1" not in workflow
-    binding_fragment = workflow.split("l9.release-artifact-binding/v1", maxsplit=1)[1]
-    assert 'status:"PASS"' not in binding_fragment
+    assert contract["producer"] == "Quantum-L9/l9-ci-core"
+    assert contract["consumer"] == "Quantum-L9/l9-deploy"
+    assert not (repo_root / "integrations/l9-ci-core/container-release.yml").exists()
 
 
 def test_transport_classification_is_explicit(repo_root: Path) -> None:

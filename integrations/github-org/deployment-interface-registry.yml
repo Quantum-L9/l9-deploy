@@ -1,6 +1,6 @@
 # --- L9_META ---
 # l9_schema: 1
-# origin: l9-deployment-platform
+# origin: l9-deploy
 # layer:
 # - repository
 # tags:
@@ -10,7 +10,7 @@
 # status: active
 # --- /L9_META ---
 schema_version: "1.0"
-provider: Quantum-L9/l9-deployment-platform
+provider: Quantum-L9/l9-deploy
 compatibility_ref: v1
 interfaces:
   - name: release-request
