@@ -73,7 +73,7 @@ def test_release_version_is_consistent() -> None:
     package_version = re.search(r'^version = "([^"]+)"$', pyproject, re.MULTILINE)
     runtime_version = re.search(r'^__version__ = "([^"]+)"$', runtime, re.MULTILINE)
     lock_version = re.search(
-        r'name = "l9-deployment-platform"\nversion = "([^"]+)"',
+        r'name = "l9-deploy"\nversion = "([^"]+)"',
         lockfile,
     )
     changelog_version = re.search(r"^## ([0-9]+\.[0-9]+\.[0-9]+) -", changelog, re.MULTILINE)
