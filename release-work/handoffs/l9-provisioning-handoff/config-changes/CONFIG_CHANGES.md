@@ -1,6 +1,6 @@
 <!-- L9_META
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer:
 - repository
 tags:
@@ -19,7 +19,7 @@ The self-hosted runner must attach to the repo that hosts the provision
 workflows. Edit `ansible/inventories/group_vars/all.yml`:
 ```yaml
 # before
-l9_runner_repository: "Quantum-L9/l9-deployment-platform"
+l9_runner_repository: "Quantum-L9/l9-deploy"
 # after
 l9_runner_repository: "Quantum-L9/l9-deploy"
 ```
