@@ -45,9 +45,7 @@ def test_no_self_issued_approval_path_remains(repo_root: Path) -> None:
 
 def test_ci_core_is_contract_only_in_l9_deploy(repo_root: Path) -> None:
     contract = yaml.safe_load(
-        (repo_root / ".l9/integration-contracts/ci-core.contract.yaml").read_text(
-            encoding="utf-8"
-        )
+        (repo_root / ".l9/integration-contracts/ci-core.contract.yaml").read_text(encoding="utf-8")
     )
     assert contract["producer"] == "Quantum-L9/l9-ci-core"
     assert contract["consumer"] == "Quantum-L9/l9-deploy"

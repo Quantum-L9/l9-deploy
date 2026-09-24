@@ -61,13 +61,11 @@ def _approval_document() -> dict[str, Any]:
             "run_attempt": 1,
             "job_id": 456,
             "workflow_ref": (
-                "Quantum-L9/l9-deploy/.github/workflows/"
-                "deploy-dispatch.yml@refs/heads/main"
+                "Quantum-L9/l9-deploy/.github/workflows/deploy-dispatch.yml@refs/heads/main"
             ),
             "environment": "production",
             "approval_api_url": (
-                "https://api.github.com/repos/Quantum-L9/l9-deploy/"
-                "actions/runs/123/approvals"
+                "https://api.github.com/repos/Quantum-L9/l9-deploy/actions/runs/123/approvals"
             ),
             "approval_record_digest": "sha256:" + "b" * 64,
         },

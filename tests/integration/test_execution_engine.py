@@ -112,8 +112,7 @@ def approval(
             "run_attempt": 1,
             "job_id": 777,
             "workflow_ref": (
-                "Quantum-L9/l9-deploy/.github/workflows/"
-                "deploy-dispatch.yml@refs/heads/main"
+                "Quantum-L9/l9-deploy/.github/workflows/deploy-dispatch.yml@refs/heads/main"
             ),
             "environment": environment,
             "approval_api_url": (

@@ -51,13 +51,11 @@ def approval_documents(tmp_path: Path) -> tuple[dict[str, object], Path]:
             "run_attempt": 1,
             "job_id": 456,
             "workflow_ref": (
-                "Quantum-L9/l9-deploy/.github/workflows/"
-                "deploy-dispatch.yml@refs/heads/main"
+                "Quantum-L9/l9-deploy/.github/workflows/deploy-dispatch.yml@refs/heads/main"
             ),
             "environment": "production",
             "approval_api_url": (
-                "https://api.github.com/repos/Quantum-L9/l9-deploy/"
-                "actions/runs/123/approvals"
+                "https://api.github.com/repos/Quantum-L9/l9-deploy/actions/runs/123/approvals"
             ),
             "approval_record_digest": file_sha256(history_path),
         },
