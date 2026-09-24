@@ -116,8 +116,7 @@ def approval(
             ),
             "environment": environment,
             "approval_api_url": (
-                "https://api.github.com/repos/Quantum-L9/l9-deploy/"
-                f"actions/runs/{run_id}/approvals"
+                f"https://api.github.com/repos/Quantum-L9/l9-deploy/actions/runs/{run_id}/approvals"
             ),
             "approval_record_digest": file_sha256(history_path),
         },
