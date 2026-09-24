@@ -2,7 +2,7 @@
 """
 --- L9_META ---
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer: [repository, release-tooling]
 tags: [L9_META, deployment-platform, release-validation]
 owner: platform
@@ -49,7 +49,7 @@ REQUIRED_ARTIFACTS = {
     "TRACEABILITY_MAP.yaml",
     "checksums.sha256",
 }
-CANONICAL_ROOT = "l9-deployment-platform"
+CANONICAL_ROOT = "l9-deploy"
 
 
 def parse_args() -> argparse.Namespace:
@@ -81,7 +81,7 @@ def _version(root: Path) -> str:
             re.MULTILINE,
         ),
         "lock": re.search(
-            r'name = "l9-deployment-platform"\nversion = "([^"]+)"',
+            r'name = "l9-deploy"\nversion = "([^"]+)"',
             (root / "uv.lock").read_text(encoding="utf-8"),
         ),
         "changelog": re.search(

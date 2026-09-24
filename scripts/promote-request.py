@@ -2,7 +2,7 @@
 """
 --- L9_META ---
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer:
 - repository
 tags:
@@ -64,7 +64,7 @@ def main() -> int:
     )
     promoted["target"]["environment"] = "production"
     promoted["requested_at"] = datetime.now(UTC).isoformat()
-    promoted["requested_by"] = "l9-deployment-platform/promote"
+    promoted["requested_by"] = "l9-deploy/promote"
 
     SchemaRegistry(args.schemas).validate(promoted, "deployment-request")
     args.output.parent.mkdir(parents=True, exist_ok=True)

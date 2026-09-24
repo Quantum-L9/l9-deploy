@@ -2,7 +2,7 @@
 """
 --- L9_META ---
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer: [repository, release-tooling]
 tags: [L9_META, deployment-platform, manifest, checksums]
 owner: platform
@@ -83,7 +83,7 @@ def _write_final_tree(root: Path, paths: list[str]) -> None:
     lines = [
         "<!-- L9_META",
         "l9_schema: 1",
-        "origin: l9-deployment-platform",
+        "origin: l9-deploy",
         "layer: [repository]",
         "tags: [L9_META, deployment-platform, final-tree]",
         "owner: platform",
@@ -92,7 +92,7 @@ def _write_final_tree(root: Path, paths: list[str]) -> None:
         "# Final Repository Tree",
         "",
         "```text",
-        "l9-deployment-platform/",
+        "l9-deploy/",
     ]
     for index, path in enumerate(paths):
         branch = "└──" if index == len(paths) - 1 else "├──"
@@ -138,14 +138,14 @@ def main() -> int:
     manifest = {
         "x-l9-meta": {
             "l9_schema": 1,
-            "origin": "l9-deployment-platform",
+            "origin": "l9-deploy",
             "layer": ["repository"],
             "tags": ["L9_META", "deployment-platform"],
             "owner": "platform",
             "status": "active",
         },
         "schema": "l9.repository-manifest/v1",
-        "repository": "Quantum-L9/l9-deployment-platform",
+        "repository": "Quantum-L9/l9-deploy",
         "version": version,
         "generated_at": generated_at,
         "file_count": len(entries),
@@ -182,7 +182,7 @@ def main() -> int:
     lines = [
         "<!-- L9_META",
         "l9_schema: 1",
-        "origin: l9-deployment-platform",
+        "origin: l9-deploy",
         "layer: [repository]",
         "tags: [L9_META, deployment-platform, manifest]",
         "owner: platform",
@@ -192,7 +192,7 @@ def main() -> int:
         "",
         "## Summary",
         "",
-        "- Repository: `Quantum-L9/l9-deployment-platform`",
+        "- Repository: `Quantum-L9/l9-deploy`",
         f"- Version: `{version}`",
         f"- Manifested files: **{len(entries)}**",
         f"- Manifested bytes: **{manifest['total_size_bytes']}**",

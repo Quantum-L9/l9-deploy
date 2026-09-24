@@ -2,7 +2,7 @@
 """
 --- L9_META ---
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer: [repository, release-tooling]
 tags: [L9_META, deployment-platform, deterministic-archive]
 owner: platform
@@ -33,7 +33,7 @@ from l9_deploy.canonical import atomic_write_json, file_sha256, sha256_digest  #
 from l9_deploy.contracts.models import RepositoryReleaseReceipt  # noqa: E402
 from l9_deploy.release_inventory import release_files  # noqa: E402
 
-CANONICAL_ROOT = "l9-deployment-platform"
+CANONICAL_ROOT = "l9-deploy"
 ZIP_EPOCH = 315532800  # 1980-01-01T00:00:00Z, the earliest portable ZIP timestamp.
 
 
@@ -108,7 +108,7 @@ def create_release_receipt(
 ) -> RepositoryReleaseReceipt:
     payload: dict[str, object] = {
         "schema": "l9.repository-release-receipt/v1",
-        "repository": "Quantum-L9/l9-deployment-platform",
+        "repository": "Quantum-L9/l9-deploy",
         "version": _version(root),
         "archive_name": archive.name,
         "archive_sha256": file_sha256(archive),

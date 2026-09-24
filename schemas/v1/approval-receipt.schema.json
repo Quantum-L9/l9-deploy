@@ -60,7 +60,7 @@
       "additionalProperties": false,
       "properties": {
         "repository": {
-          "const": "Quantum-L9/l9-deployment-platform"
+          "const": "Quantum-L9/l9-deploy"
         },
         "run_id": {
           "type": "integer",
