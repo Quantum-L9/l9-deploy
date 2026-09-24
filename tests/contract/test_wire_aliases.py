@@ -56,18 +56,16 @@ def _approval_document() -> dict[str, Any]:
         "approved_at": "2026-07-21T12:00:01Z",
         "authorization_method": "github_protected_environment_review",
         "workflow": {
-            "repository": "Quantum-L9/l9-deployment-platform",
+            "repository": "Quantum-L9/l9-deploy",
             "run_id": 123,
             "run_attempt": 1,
             "job_id": 456,
             "workflow_ref": (
-                "Quantum-L9/l9-deployment-platform/.github/workflows/"
-                "deploy-dispatch.yml@refs/heads/main"
+                "Quantum-L9/l9-deploy/.github/workflows/deploy-dispatch.yml@refs/heads/main"
             ),
             "environment": "production",
             "approval_api_url": (
-                "https://api.github.com/repos/Quantum-L9/l9-deployment-platform/"
-                "actions/runs/123/approvals"
+                "https://api.github.com/repos/Quantum-L9/l9-deploy/actions/runs/123/approvals"
             ),
             "approval_record_digest": "sha256:" + "b" * 64,
         },
@@ -128,7 +126,7 @@ def _wire_documents(
         },
         RepositoryReleaseReceipt: {
             "schema": "l9.repository-release-receipt/v1",
-            "repository": "Quantum-L9/l9-deployment-platform",
+            "repository": "Quantum-L9/l9-deploy",
             "version": "0.1.5",
             "archive_name": "l9-deployment-platform-v0.1.5.zip",
             "archive_sha256": "sha256:" + "d" * 64,

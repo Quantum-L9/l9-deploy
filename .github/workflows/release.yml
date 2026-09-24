@@ -1,6 +1,6 @@
 # --- L9_META ---
 # l9_schema: 1
-# origin: l9-deployment-platform
+# origin: l9-deploy
 # layer:
 # - repository
 # tags:
@@ -31,26 +31,26 @@ jobs:
         run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
       - run: make release-prepare
       - name: Create detached release directory
-        run: mkdir -p "${{ runner.temp }}/l9-deployment-platform-release"
+        run: mkdir -p "${{ runner.temp }}/l9-deploy-release"
       - name: Build Python distributions outside the validated source tree
         run: >-
           uv build
-          --out-dir "${{ runner.temp }}/l9-deployment-platform-release"
+          --out-dir "${{ runner.temp }}/l9-deploy-release"
       - name: Build deterministic repository archive and detached receipt
         run: >-
           uv run python scripts/build-release-archive.py
-          --output "${{ runner.temp }}/l9-deployment-platform-release/l9-deployment-platform-${{ github.ref_name }}.zip"
-          --receipt "${{ runner.temp }}/l9-deployment-platform-release/l9-deployment-platform-${{ github.ref_name }}.receipt.json"
+          --output "${{ runner.temp }}/l9-deploy-release/l9-deploy-${{ github.ref_name }}.zip"
+          --receipt "${{ runner.temp }}/l9-deploy-release/l9-deploy-${{ github.ref_name }}.receipt.json"
       - name: Verify archive, source parity, and receipt binding
         run: >-
           uv run python scripts/validate-release-pack.py
-          --archive "${{ runner.temp }}/l9-deployment-platform-release/l9-deployment-platform-${{ github.ref_name }}.zip"
-          --receipt "${{ runner.temp }}/l9-deployment-platform-release/l9-deployment-platform-${{ github.ref_name }}.receipt.json"
+          --archive "${{ runner.temp }}/l9-deploy-release/l9-deploy-${{ github.ref_name }}.zip"
+          --receipt "${{ runner.temp }}/l9-deploy-release/l9-deploy-${{ github.ref_name }}.receipt.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-distribution-${{ github.ref_name }}
           path: |
-            ${{ runner.temp }}/l9-deployment-platform-release/*
+            ${{ runner.temp }}/l9-deploy-release/*
             MANIFEST.json
             MANIFEST.md
             checksums.sha256

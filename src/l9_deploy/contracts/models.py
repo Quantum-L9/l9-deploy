@@ -386,7 +386,7 @@ class DeploymentPlan(FrozenModel):
 
 
 class ApprovalWorkflowEvidence(FrozenModel):
-    repository: Literal["Quantum-L9/l9-deployment-platform"]
+    repository: Literal["Quantum-L9/l9-deploy"]
     run_id: int = Field(ge=1)
     run_attempt: int = Field(ge=1)
     job_id: int = Field(ge=1)
@@ -480,7 +480,7 @@ class RepositoryReleaseReceipt(FrozenModel):
     """Detached receipt binding one deterministic source archive to its manifest."""
 
     schema_id: Literal["l9.repository-release-receipt/v1"] = Field(alias="schema")
-    repository: Literal["Quantum-L9/l9-deployment-platform"]
+    repository: Literal["Quantum-L9/l9-deploy"]
     version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$")
     archive_name: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*\.zip$")
     archive_sha256: Sha256Digest

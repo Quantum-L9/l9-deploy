@@ -2,7 +2,7 @@
 """
 --- L9_META ---
 l9_schema: 1
-origin: l9-deployment-platform
+origin: l9-deploy
 layer: [governance, validation]
 tags: [L9_CONTRACT, recursive-alignment]
 owner: platform
@@ -116,17 +116,14 @@ def transport_findings() -> list[str]:
 
 def trust_boundary_findings() -> list[str]:
     findings: list[str] = []
-    release = (ROOT / "integrations/l9-ci-core/container-release.yml").read_text(encoding="utf-8")
-    for required in (
-        "ci-gate-binding.json",
-        "finding-bundle.json",
-        "l9-ci bundle validate",
-        "l9.release-artifact-binding/v1",
-    ):
-        if required not in release:
-            findings.append(f"container release integration missing {required}")
-    if "l9.ci-release-receipt/v1" in release:
-        findings.append("container release integration reconstructs a CI release receipt")
+    contract_path = ROOT / ".l9" / "integration-contracts" / "ci-core.contract.yaml"
+    contract = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
+    if contract.get("producer") != "Quantum-L9/l9-ci-core":
+        findings.append("ci-core contract producer must be Quantum-L9/l9-ci-core")
+    if contract.get("consumer") != "Quantum-L9/l9-deploy":
+        findings.append("ci-core contract consumer must be Quantum-L9/l9-deploy")
+    if (ROOT / "integrations" / "l9-ci-core" / "container-release.yml").exists():
+        findings.append("l9-deploy must not carry l9-ci-core executable release orchestration")
     mutating = {
         "configure-hosts.yml",
         "deploy-dispatch.yml",

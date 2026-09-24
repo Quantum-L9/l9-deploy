@@ -115,7 +115,7 @@ def main() -> int:
                 if required not in text:
                     errors.append(f"{path}: validation workflow lacks coverage gate {required}")
         if path.name == "release.yml":
-            detached_root = "${{ runner.temp }}/l9-deployment-platform-release"
+            detached_root = "${{ runner.temp }}/l9-deploy-release"
             if detached_root not in text:
                 errors.append(
                     f"{path}: release outputs must use the detached runner temp directory"

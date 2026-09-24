@@ -84,7 +84,7 @@ def verify_approval_receipt(
     requester: str,
     environment: str,
     plan_digest: str,
-    expected_repository: str = "Quantum-L9/l9-deployment-platform",
+    expected_repository: str = "Quantum-L9/l9-deploy",
     expected_run_id: int | None = None,
 ) -> ApprovalReceipt:
     receipt_document = _object(receipt_path)

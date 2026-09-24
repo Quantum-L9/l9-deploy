@@ -45,7 +45,7 @@ def test_github_repository_guard_fails_closed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("GITHUB_REPOSITORY", "Quantum-L9/other")
     with pytest.raises(AuthorizationError, match="Quantum-L9/other"):
         github.require_private_control_repository()
-    monkeypatch.setenv("GITHUB_REPOSITORY", "Quantum-L9/l9-deployment-platform")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "Quantum-L9/l9-deploy")
     github.require_private_control_repository()
 
 

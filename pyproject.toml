@@ -1,6 +1,6 @@
 # --- L9_META ---
 # l9_schema: 1
-# origin: l9-deployment-platform
+# origin: l9-deploy
 # layer:
 # - repository
 # tags:
@@ -14,7 +14,7 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "l9-deployment-platform"
+name = "l9-deploy"
 version = "0.1.5"
 description = "Private, evidence-bearing provisioning and deployment control plane for Quantum-L9"
 readme = "README.md"

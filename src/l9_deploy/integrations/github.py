@@ -37,7 +37,7 @@ def request_from_github_event(path: Path | None = None) -> dict[str, Any]:
     return parse_repository_dispatch(load_github_event(path))
 
 
-def require_private_control_repository(expected: str = "Quantum-L9/l9-deployment-platform") -> None:
+def require_private_control_repository(expected: str = "Quantum-L9/l9-deploy") -> None:
     actual = os.environ.get("GITHUB_REPOSITORY")
     if actual != expected:
         observed = actual or "<unset>"

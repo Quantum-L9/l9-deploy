@@ -73,7 +73,7 @@ def test_validation_workflow_enforces_coverage_floor() -> None:
 
 def test_release_workflow_uses_detached_outputs_and_receipt_binding() -> None:
     text = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
-    assert "${{ runner.temp }}/l9-deployment-platform-release" in text
+    assert "${{ runner.temp }}/l9-deploy-release" in text
     assert text.count("--receipt") >= 2
     assert "--out-dir" in text
     assert "PYTHONDONTWRITEBYTECODE" in text
