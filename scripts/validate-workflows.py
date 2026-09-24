@@ -131,6 +131,8 @@ def main() -> int:
             if "PYTHONDONTWRITEBYTECODE" not in text:
                 errors.append(f"{path}: release workflow must suppress source-tree bytecode")
         if path.name in mutating_workflows:
+            if "./.github/actions/require-private-repository" not in text:
+                errors.append(f"{path}: mutating workflow lacks private-repository guard")
             if "collect-approval" not in text or "approval-history.json" not in text:
                 errors.append(f"{path}: mutating workflow lacks independent approval evidence")
             forbidden_approver = "--approved-by " + '"${{ github.actor }}"'
