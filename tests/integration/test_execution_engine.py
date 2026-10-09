@@ -26,7 +26,7 @@ import yaml
 
 from l9_deploy import cli
 from l9_deploy.canonical import file_sha256, sha256_digest
-from l9_deploy.contracts.models import DeploymentPlan, ReleaseState
+from l9_deploy.contracts.models import DeploymentPlan, HealthProbe, ReleaseState
 from l9_deploy.errors import AuthorizationError, ContractError, ExecutionError
 from l9_deploy.evidence.ledger import ReceiptLedger
 from l9_deploy.execution.engine import execute_plan
@@ -142,6 +142,7 @@ def execute(
     tmp_path: Path,
     store: IdempotencyStore | None = None,
     sleep=None,
+    base_url: str | None = None,
 ):  # type: ignore[no-untyped-def]
     approval_path, history_path = approval(
         tmp_path,
@@ -165,6 +166,7 @@ def execute(
         lock_root=tmp_path / "locks",
         idempotency_store=store or IdempotencyStore(tmp_path / "idempotency.json"),
         request_digest="sha256:" + "e" * 64,
+        base_url=base_url,
         runtime_env_file=runtime_env,
         sleep=sleep if sleep is not None else (lambda _seconds: None),
     )
@@ -872,16 +874,33 @@ def _latest_receipt(tmp_path: Path) -> dict[str, Any]:
 def test_direct_execution_cannot_bypass_required_service_qualification(
     deployment_context, schema_registry, tmp_path: Path
 ) -> None:  # type: ignore[no-untyped-def]
-    # B1, B2, B9: the plan was built from a sound profile, but the engine is
-    # handed an unqualifiable one. It refuses before approval, idempotency,
-    # ledger, or any host command.
+    # B1, B2, B9, and C4-C6: the plan was built from a sound profile, but the
+    # engine is handed an unqualifiable one. It refuses before approval,
+    # idempotency, ledger, or any host command. The incomplete probe shapes are
+    # caught by the profile schema pass; the http probe passes that schema and
+    # is refused by the same qualification the planner applies.
     plan = build_plan(
         verified(deployment_context, schema_registry), created_at="2026-07-21T12:00:01Z"
     )
+
+    def required(probe: dict[str, Any]) -> dict[str, Any]:
+        return {"postgres": {"mode": "external", "required": True, "probe": probe}}
+
     cases = {
         "mode-none": {"cache": {"mode": "none", "required": True}},
         "no-probe-external": {"postgres": {"mode": "external", "required": True}},
         "no-probe-fleet": {"redis": {"mode": "managed_on_fleet", "required": True}},
+        "command-missing": required({"type": "command", "timeout_seconds": 5}),
+        "command-empty": required({"type": "command", "command": [], "timeout_seconds": 5}),
+        "database-missing": required({"type": "database", "timeout_seconds": 5}),
+        "tcp-no-port": required({"type": "tcp", "host": "db.internal", "timeout_seconds": 5}),
+        "tcp-bad-port": required(
+            {"type": "tcp", "host": "db.internal", "port": 0, "timeout_seconds": 5}
+        ),
+        "http-no-path": required({"type": "http", "expected_status": 200, "timeout_seconds": 5}),
+        "http-app-routed": required(
+            {"type": "http", "path": "/health", "expected_status": 200, "timeout_seconds": 5}
+        ),
     }
     for label, services in cases.items():
         context = {**deployment_context, "profile": dict(deployment_context["profile"])}
@@ -899,6 +918,45 @@ def test_direct_execution_cannot_bypass_required_service_qualification(
         assert not (tmp_path / label / "idempotency.json").exists()
         assert not (tmp_path / label / "receipts").exists()
         assert not (tmp_path / label / "remote" / "srv").exists()
+
+
+def test_required_service_probe_never_receives_the_application_base_url(
+    deployment_context, schema_registry, tmp_path: Path, monkeypatch
+) -> None:  # type: ignore[no-untyped-def]
+    # R1 / C2 at execution, defense in depth behind qualification: even if an
+    # http service probe reached the health step, the engine hands it no base
+    # URL. The runner then refuses for lack of an origin instead of contacting
+    # the application; nothing listens on the supplied base_url, so a routed
+    # request would have failed with a connection error, not this message.
+    from l9_deploy.execution import engine as engine_module
+
+    plan = build_plan(
+        verified(deployment_context, schema_registry), created_at="2026-07-21T12:00:01Z"
+    )
+    http_probe = HealthProbe(type="http", path="/health", expected_status=200, timeout_seconds=1)
+    monkeypatch.setattr(
+        engine_module, "required_service_probes", lambda _profile: (("postgres", http_probe),)
+    )
+    executor = FakeExecutor(tmp_path / "remote", plan.image_ref)
+    with pytest.raises(
+        ExecutionError,
+        match=(
+            "required service postgres readiness probe failed: health probe failed "
+            "after 1 attempts: HTTP probe requires base_url"
+        ),
+    ):
+        execute(
+            plan=plan,
+            deployment_context=deployment_context,
+            executor=executor,
+            tmp_path=tmp_path,
+            base_url="http://127.0.0.1:9",
+        )
+    executed = _executed(executor)
+    assert ["app-ready"] not in executed
+    assert ["docker", "image", "prune", "-f"] not in executed
+    assert not (tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json").exists()
+    assert _latest_receipt(tmp_path)["status"] == "FAIL"
 
 
 def test_required_service_probes_run_between_startup_and_promotion(
@@ -1127,18 +1185,29 @@ def _approved_plan_with_steps(plan, kinds: list[str]):  # type: ignore[no-untype
 @pytest.mark.parametrize(
     "kinds",
     [
+        # Codex P2 on #37: health omitted, misplaced, or duplicated while promote exists.
         ["verify", "pull", "render", "deploy", "promote", "cleanup"],
         ["verify", "pull", "render", "health", "deploy", "promote", "cleanup"],
         ["verify", "pull", "render", "deploy", "health", "health", "promote", "cleanup"],
         ["verify", "pull", "render", "health", "deploy", "health", "promote", "cleanup"],
+        ["verify", "pull", "render", "deploy", "promote", "health", "cleanup"],
+        # R3 / C7: deploy and health but no promote would otherwise finish as PASS.
+        ["verify", "pull", "render", "deploy", "health", "cleanup"],
+        # R3 / C8: no health and no promote, or no deploy at all.
+        ["verify", "pull", "render", "deploy", "cleanup"],
+        ["verify", "pull", "render", "health", "promote", "cleanup"],
+        # R3 / C9: duplicate promote or duplicate deploy.
+        ["verify", "pull", "render", "deploy", "health", "promote", "promote", "cleanup"],
+        ["verify", "pull", "render", "deploy", "deploy", "health", "promote", "cleanup"],
     ],
 )
-def test_approved_plan_cannot_promote_without_health_gate_after_deploy(
+def test_approved_plan_cannot_pass_without_one_complete_deploy_health_promote_transaction(
     deployment_context, schema_registry, tmp_path: Path, kinds: list[str]
 ) -> None:  # type: ignore[no-untyped-def]
-    # Codex P2 on #37: a content-bound, approved plan that omits, duplicates, or
-    # misplaces the health step would otherwise reach promote without the
-    # startup / required-service / post-deploy gate. Refused before side effects.
+    # A content-bound, approved plan is not proof of a complete transaction. Any
+    # plan that omits, duplicates, or misorders deploy / health / promote is
+    # refused before approval, idempotency, ledger, or any host command, so it
+    # can neither promote an unqualified release nor return a PASS receipt.
     plan = build_plan(
         _reverify_with_profile(deployment_context, schema_registry, _service_declarations),
         created_at="2026-07-21T12:00:01Z",
@@ -1146,13 +1215,16 @@ def test_approved_plan_cannot_promote_without_health_gate_after_deploy(
     forged = _approved_plan_with_steps(plan, kinds)
     schema_registry.validate(forged.model_dump(mode="json", by_alias=True), "deployment-plan")
     executor = FakeExecutor(tmp_path / "remote", forged.image_ref)
-    with pytest.raises(ExecutionError, match="one health gate between deploy and promote"):
+    with pytest.raises(
+        ExecutionError, match="exactly one deploy, one health gate, and one promote step"
+    ):
         execute(
             plan=forged, deployment_context=deployment_context, executor=executor, tmp_path=tmp_path
         )
     assert executor.commands == []
     assert not (tmp_path / "idempotency.json").exists()
     assert not (tmp_path / "receipts").exists()
+    assert not (tmp_path / "remote" / "srv").exists()
 
 
 def test_promotion_requires_the_health_gate_to_have_passed(

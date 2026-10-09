@@ -59,29 +59,33 @@ class Executor(Protocol):
     def write_text(self, path: Path, text: str, mode: int = 0o600) -> None: ...
 
 
+_LIFECYCLE_PHASES = ("deploy", "health", "promote")
+_TRANSACTION_SHAPE = (
+    "plan must carry exactly one deploy, one health gate, and one promote step in that order"
+)
+
+
 def _require_health_gate_order(plan: DeploymentPlan) -> None:
-    """Refuse a plan that could promote without the health gate after deploy.
+    """Refuse a plan that is not one complete deployment transaction.
 
     The contract model does not constrain step presence or order, so a direct
-    caller could hand over an approved plan with no ``health`` step, or one placed
-    before ``deploy``. Readiness (startup, required services, post-deploy) runs
-    only inside that step, so any plan that promotes must carry exactly one
-    health step strictly between its deploy and promote steps.
+    caller could hand over an approved, digest-bound plan with no ``health``
+    step, one placed before ``deploy``, or no ``promote`` at all. Readiness
+    (startup, required services, post-deploy) runs only inside the health step,
+    and a PASS receipt means a qualified release was promoted; so every
+    executable plan must carry exactly one ``deploy``, exactly one ``health``
+    strictly after it, and exactly one ``promote`` strictly after that. A plan
+    that merely runs some steps and stops is not a deployment and must not be
+    able to manufacture a PASS.
     """
-    kinds = [step.kind for step in plan.steps]
-    if "promote" not in kinds:
-        return
-    promote_index = kinds.index("promote")
-    health_indexes = [index for index, kind in enumerate(kinds) if kind == "health"]
-    deploy_indexes = [index for index, kind in enumerate(kinds) if kind == "deploy"]
-    if (
-        len(health_indexes) != 1
-        or not deploy_indexes
-        or not (max(deploy_indexes) < health_indexes[0] < promote_index)
-    ):
-        raise ExecutionError(
-            "plan cannot promote without one health gate between deploy and promote"
-        )
+    kinds: list[str] = [step.kind for step in plan.steps]
+    counts = {phase: kinds.count(phase) for phase in _LIFECYCLE_PHASES}
+    incomplete = [phase for phase in _LIFECYCLE_PHASES if counts[phase] != 1]
+    if incomplete:
+        found = ", ".join(f"{phase}={counts[phase]}" for phase in incomplete)
+        raise ExecutionError(f"{_TRANSACTION_SHAPE}; found {found}")
+    if not (kinds.index("deploy") < kinds.index("health") < kinds.index("promote")):
+        raise ExecutionError(f"{_TRANSACTION_SHAPE}; health must follow deploy and precede promote")
 
 
 def _run_classified_probe(
@@ -320,11 +324,15 @@ def execute_plan(
                     )
                     services: list[JsonValue] = []
                     for service_name, service_probe in service_probes:
+                        # A dependency probe names its own target (tcp host/port,
+                        # or a command on the host). The application's base URL
+                        # is never handed to it, so a service claim can never be
+                        # satisfied by the application answering for it.
                         outcome = _run_classified_probe(
                             f"required service {service_name} readiness probe",
                             service_probe,
                             executor=executor,
-                            base_url=base_url,
+                            base_url=None,
                         )
                         services.append(
                             {

@@ -149,6 +149,132 @@ def test_required_service_probes_are_name_ordered_and_exact(
     ]
 
 
+def _profile_with_probe(deployment_context, probe: dict[str, Any]) -> DeploymentProfile:  # type: ignore[no-untyped-def]
+    """Type the fixture profile directly (no schema pass) with one required service probe."""
+    document = copy.deepcopy(deployment_context["profile"])
+    document["services"] = {"postgres": {"mode": "external", "required": True, "probe": probe}}
+    return DeploymentProfile.model_validate(document)
+
+
+@pytest.mark.parametrize(
+    ("probe", "message"),
+    [
+        # R2 / C4: command and database probes need an executable argument vector.
+        ({"type": "command", "timeout_seconds": 5}, "command readiness probe needs a non-empty"),
+        (
+            {"type": "command", "command": [], "timeout_seconds": 5},
+            "command readiness probe needs a non-empty",
+        ),
+        (
+            {"type": "command", "command": [" "], "timeout_seconds": 5},
+            "command readiness probe needs a non-empty",
+        ),
+        ({"type": "database", "timeout_seconds": 5}, "database readiness probe needs a non-empty"),
+        # R2 / C5: tcp probes need a usable host and port.
+        ({"type": "tcp", "timeout_seconds": 5}, "tcp readiness probe needs a host and a port"),
+        (
+            {"type": "tcp", "host": "", "port": 5432, "timeout_seconds": 5},
+            "tcp readiness probe needs a host and a port",
+        ),
+        (
+            {"type": "tcp", "host": "db.internal", "timeout_seconds": 5},
+            "tcp readiness probe needs a host and a port",
+        ),
+        (
+            {"type": "tcp", "host": "db.internal", "port": 0, "timeout_seconds": 5},
+            "tcp readiness probe port 0 is not a usable port",
+        ),
+        (
+            {"type": "tcp", "host": "db.internal", "port": 70000, "timeout_seconds": 5},
+            "tcp readiness probe port 70000 is not a usable port",
+        ),
+        # R1 / C6: an http probe would target the application, never the dependency.
+        (
+            {"type": "http", "path": "/ready", "expected_status": 200, "timeout_seconds": 5},
+            "declares an http readiness probe",
+        ),
+        ({"type": "http", "timeout_seconds": 5}, "declares an http readiness probe"),
+    ],
+)
+def test_required_service_probe_must_be_executable_by_the_generic_runner(
+    deployment_context, probe: dict[str, Any], message: str
+) -> None:  # type: ignore[no-untyped-def]
+    # R2 (and R1 for http): a type-valid probe the runner could not execute, or
+    # whose target would be the application rather than the dependency, is
+    # refused at qualification, before build_plan can produce an approvable plan.
+    profile = _profile_with_probe(deployment_context, probe)
+    with pytest.raises(ContractError, match=f"required service postgres {message}"):
+        required_service_probes(profile)
+
+
+def test_plan_refuses_http_required_service_probe_that_passes_the_schema(
+    deployment_context, schema_registry
+) -> None:  # type: ignore[no-untyped-def]
+    # R1 / C2 at planning: the probe schema accepts an http probe with a path and
+    # status, but the only HTTP origin the platform knows is the application's
+    # base URL, so an application 200 would be recorded as dependency readiness.
+    # The sealed, schema-valid profile is refused before a plan exists.
+    verified = verified_with_services(
+        deployment_context,
+        schema_registry,
+        {
+            "postgres": {
+                "mode": "external",
+                "required": True,
+                "probe": {
+                    "type": "http",
+                    "path": "/health",
+                    "expected_status": 200,
+                    "timeout_seconds": 5,
+                },
+            }
+        },
+    )
+    with pytest.raises(
+        ContractError, match="http probes are issued against the application's own base URL"
+    ):
+        build_plan(verified, created_at="2026-07-21T12:01:00Z")
+
+
+def test_tcp_command_and_database_service_probes_qualify_through_the_sealed_path(
+    deployment_context, schema_registry
+) -> None:  # type: ignore[no-untyped-def]
+    # C3: probes that name their own target remain executable and reach a plan.
+    verified = verified_with_services(
+        deployment_context,
+        schema_registry,
+        {
+            "postgres": {
+                "mode": "managed_on_fleet",
+                "required": True,
+                "probe": {"type": "tcp", "host": "10.90.10.20", "port": 5432, "timeout_seconds": 5},
+            },
+            "redis": {
+                "mode": "external",
+                "required": True,
+                "probe": _probe("redis-cli", "-h", "10.90.10.21", "ping"),
+            },
+            "ledger": {
+                "mode": "external",
+                "required": True,
+                "probe": {
+                    "type": "database",
+                    "command": ["pg_isready", "-h", "10.90.10.20"],
+                    "timeout_seconds": 5,
+                },
+            },
+        },
+    )
+    qualified = required_service_probes(verified.profile)
+    assert [(name, probe.type) for name, probe in qualified] == [
+        ("ledger", "database"),
+        ("postgres", "tcp"),
+        ("redis", "command"),
+    ]
+    plan = build_plan(verified, created_at="2026-07-21T12:01:00Z")
+    assert [step.kind for step in plan.steps].count("health") == 1
+
+
 def test_service_declarations_do_not_change_plan_shape(deployment_context, schema_registry) -> None:  # type: ignore[no-untyped-def]
     # The plan carries no service metadata; the declaration is bound by the
     # sealed profile digest the plan already carries.
