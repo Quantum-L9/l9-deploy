@@ -48,7 +48,7 @@ from .inventory.generator import generate_ansible_inventory
 from .inventory.loader import load_fleet
 from .inventory.resolver import resolve_target
 from .logging import configure_logging
-from .planning.planner import build_plan
+from .planning.planner import build_plan, verify_plan_digest
 from .redaction import redact
 from .requests.idempotency import IdempotencyStore
 from .requests.verifier import (
@@ -277,6 +277,9 @@ def cmd_deploy(args: argparse.Namespace) -> dict[str, Any]:
         raise AuthorizationError("command environment does not match plan")
     if plan.plan_digest != args.expected_plan_digest:
         raise AuthorizationError("expected plan digest does not match plan")
+    # Bind the approved digest string to this document's content before any
+    # field of it (profile_digest included) is trusted.
+    verify_plan_digest(plan)
     fleet = load_fleet(Path(args.fleet), reg)
     project = next(
         (item for item in _fleet_items(fleet, "projects") if item["id"] == plan.project_id),

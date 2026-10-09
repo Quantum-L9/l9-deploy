@@ -28,6 +28,10 @@ status: active
   absence, drift, or tampering fails closed before backup, pull, render, migration,
   Compose, or promotion. `request validate`, `request inspect`, and `plan` take the
   same `--profile-root`.
+- `plan_digest` is now content-bound: `build_plan` computes it over the plan's canonical
+  wire form, so `plan.json` reproduces its own digest, and both `l9-deploy deploy` and the
+  execution engine recompute it before trusting any plan field (`profile_digest` included).
+  A plan edited around an unchanged digest string is refused before approval is consulted.
 - Request, profile, plan, and receipt contract shapes are unchanged.
 
 ## 0.1.5 - 2026-07-22

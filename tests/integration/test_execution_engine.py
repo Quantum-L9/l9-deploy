@@ -32,7 +32,7 @@ from l9_deploy.evidence.ledger import ReceiptLedger
 from l9_deploy.execution.engine import execute_plan
 from l9_deploy.execution.promotion import write_runtime_state
 from l9_deploy.execution.releases import bind_release_runtime_env
-from l9_deploy.planning.planner import build_plan
+from l9_deploy.planning.planner import build_plan, plan_digest_of
 from l9_deploy.requests.idempotency import IdempotencyStore
 from l9_deploy.requests.verifier import verify_request
 from l9_deploy.subprocesses import CommandResult
@@ -403,7 +403,7 @@ def test_receipt_publication_failure_restores_state(
 
 
 def test_candidate_release_identity_cannot_collide_with_active_release(
-    deployment_context, schema_registry, tmp_path: Path
+    deployment_context, schema_registry, tmp_path: Path, monkeypatch
 ) -> None:  # type: ignore[no-untyped-def]
     verified_request = verified(deployment_context, schema_registry)
     initial_plan = build_plan(verified_request, created_at="2026-07-21T12:00:01Z")
@@ -420,6 +420,12 @@ def test_candidate_release_identity_cannot_collide_with_active_release(
     plan = initial_plan.model_copy(update={"previous_release": previous})
     executor = FakeExecutor(tmp_path / "remote", plan.image_ref)
 
+    # A plan that names itself as its own previous release can only be forged:
+    # the content-bound digest check rejects it first. Stub that check so the
+    # collision guard behind it stays exercised as defense in depth.
+    from l9_deploy.execution import engine as engine_module
+
+    monkeypatch.setattr(engine_module, "verify_plan_digest", lambda _plan: None)
     with pytest.raises(ExecutionError, match="collides with the active release"):
         execute(
             plan=plan,
@@ -646,11 +652,13 @@ def test_validate_to_execute_handoff_consumes_only_sealed_profile_bytes(
     assert outputs["project_id"] == plan["project_id"] == "seo-bot"
     assert plan["profile_digest"] == deployment_context["request"]["profile"]["digest"]
     assert plan["profile_digest"] == file_sha256(source_profile)
+    # The plan is deterministic and its digest is content-bound: rebuilding from the
+    # same verified request reproduces it, and plan.json reproduces its own digest.
     expected_plan = build_plan(
         verified(deployment_context, schema_registry), created_at=plan["created_at"]
     ).model_dump(mode="json", by_alias=True)
-    for key in ("steps", "target_servers", "project_id", "image_ref", "source_commit_sha"):
-        assert plan[key] == expected_plan[key]
+    assert plan == expected_plan
+    assert plan_digest_of(plan) == plan["plan_digest"]
 
     # Stage 2 (artifact boundary): the validate job uploads request, plan and
     # the profile root; the deploy job downloads them under artifacts/deployment.
@@ -748,6 +756,21 @@ def test_validate_to_execute_handoff_consumes_only_sealed_profile_bytes(
     )
     assert "expected plan digest does not match plan" in capsys.readouterr().err
     assert len(executors) == 1
+
+    # Stage 6: edit the sealed artifact consistently. The sealed profile now holds
+    # the mutated bytes and plan.json's profile_digest is rewritten to match them,
+    # while the approved plan_digest string is left untouched. The digest string is
+    # not trusted on its own: the plan content no longer hashes to it.
+    assert file_sha256(sealed_profile) != plan["profile_digest"]
+    forged = dict(plan)
+    forged["profile_digest"] = file_sha256(sealed_profile)
+    (artifact_root / "plan.json").write_text(
+        json.dumps(forged, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    assert run("forged-plan", sealed_root) == AuthorizationError.exit_code
+    assert "plan digest does not match plan content" in capsys.readouterr().err
+    assert len(executors) == 1
+    assert not (tmp_path / "forged-plan" / "ledger").exists()
 
 
 def test_prepare_deployment_fails_closed_on_source_substitution(
