@@ -51,7 +51,11 @@ from .logging import configure_logging
 from .planning.planner import build_plan
 from .redaction import redact
 from .requests.idempotency import IdempotencyStore
-from .requests.verifier import request_digest, verify_request
+from .requests.verifier import (
+    request_digest,
+    resolve_registered_profile,
+    verify_request,
+)
 
 Handler = Callable[[argparse.Namespace], Any]
 
@@ -130,7 +134,7 @@ def _request_context(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str
         request,
         fleet,
         reg,
-        repository_root(args),
+        Path(args.profile_root),
         evidence_root=Path(args.evidence_root),
     )
     return request, fleet, verified
@@ -230,14 +234,49 @@ def _target_executor(
     return RemoteExecutor(_host_from_server(server), timeout=args.timeout)
 
 
+def _sealed_profile(
+    args: argparse.Namespace,
+    reg: SchemaRegistry,
+    plan: DeploymentPlan,
+    project: dict[str, Any],
+) -> DeploymentProfile:
+    """Load the profile bytes sealed with the approved plan, or refuse.
+
+    The plan is not permission to read a platform-local profile. The deploy
+    stage only accepts the document materialized under ``--profile-root`` at the
+    fleet-registered relative path, and only when its byte digest equals the
+    ``profile_digest`` the plan (and therefore the approval) was computed over.
+    Any absence, drift, or identity mismatch fails here, before the executor is
+    even constructed.
+    """
+    profile_path = resolve_registered_profile(Path(args.profile_root), str(project["profile_path"]))
+    if file_sha256(profile_path) != plan.profile_digest:
+        raise AuthorizationError(
+            "sealed deployment profile does not match the approved plan profile digest"
+        )
+    profile_document = object_document(profile_path)
+    reg.validate(profile_document, "deployment-profile")
+    profile = DeploymentProfile.model_validate(profile_document)
+    if profile.project.id != plan.project_id:
+        raise AuthorizationError("sealed deployment profile project id does not match plan")
+    if profile.project.repository != str(project["repository"]):
+        raise AuthorizationError(
+            "sealed deployment profile repository does not match fleet registration"
+        )
+    if not plan.image_ref.startswith(profile.artifact.image + "@"):
+        raise AuthorizationError("plan image is not allowed by the sealed deployment profile")
+    return profile
+
+
 def cmd_deploy(args: argparse.Namespace) -> dict[str, Any]:
-    root = repository_root(args)
     reg = registry(args)
     plan_document = object_document(Path(args.plan))
     reg.validate(plan_document, "deployment-plan")
     plan = DeploymentPlan.model_validate(plan_document)
     if plan.environment != args.environment:
         raise AuthorizationError("command environment does not match plan")
+    if plan.plan_digest != args.expected_plan_digest:
+        raise AuthorizationError("expected plan digest does not match plan")
     fleet = load_fleet(Path(args.fleet), reg)
     project = next(
         (item for item in _fleet_items(fleet, "projects") if item["id"] == plan.project_id),
@@ -245,9 +284,7 @@ def cmd_deploy(args: argparse.Namespace) -> dict[str, Any]:
     )
     if not isinstance(project, dict):
         raise ContractError("plan project is not present in fleet")
-    profile_document = object_document(root / str(project["profile_path"]))
-    reg.validate(profile_document, "deployment-profile")
-    profile = DeploymentProfile.model_validate(profile_document)
+    profile = _sealed_profile(args, reg, plan, project)
     executor = _target_executor(args, fleet, project, args.environment, mutation=True)
     idempotency = IdempotencyStore(Path(args.idempotency_store))
     latest_pointer = Path(args.output or "receipts/latest/deployment.json")
@@ -638,6 +675,18 @@ def add_mutation(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--receipt-ledger-root", default="receipts/ledger")
 
 
+def add_profile_root(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--profile-root",
+        required=True,
+        help=(
+            "directory holding the consumer deployment profile materialized from the exact "
+            "source repository and commit; the fleet-registered relative path is resolved "
+            "inside it and never inside this checkout"
+        ),
+    )
+
+
 def add_adopted_host_mutation(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--allow-adopted-host-mutation",
@@ -673,15 +722,18 @@ def build_parser() -> argparse.ArgumentParser:
         p = leaf(rs, name, handler, f"{name} a release request")
         p.add_argument("--request", required=True)
         p.add_argument("--fleet", default="fleet/registry.yaml")
+        add_profile_root(p)
     p = leaf(top, "plan", cmd_plan, "create a deterministic deployment plan")
     p.add_argument("--request", required=True)
     p.add_argument("--fleet", default="fleet/registry.yaml")
+    add_profile_root(p)
     p.add_argument("--previous-state")
     p = leaf(top, "deploy", cmd_deploy, "execute an approved deployment plan")
     add_mutation(p)
     add_adopted_host_mutation(p)
     p.add_argument("--plan", required=True)
     p.add_argument("--fleet", default="fleet/registry.yaml")
+    add_profile_root(p)
     p.add_argument("--runtime-env-file")
     p.add_argument("--base-url")
     p.add_argument("--idempotency-store", default="state/runtime/idempotency.json")

@@ -152,6 +152,67 @@ def test_deploy_dispatch_preserves_minimum_approved_wiring() -> None:
     assert "--approval-history" in runs
 
 
+def test_deploy_dispatch_seals_the_consumer_profile_from_validate_to_deploy() -> None:
+    workflow = load_workflow(ROOT / ".github/workflows/deploy-dispatch.yml")
+    jobs = workflow["jobs"]
+    validate_steps = jobs["validate"]["steps"]
+    assert isinstance(validate_steps, list)
+    named = [str(step.get("name") or step.get("id") or step.get("uses")) for step in validate_steps]
+    evidence_index = named.index("Download immutable source-run evidence")
+    resolve_index = named.index("Resolve immutable consumer deployment profile")
+    metadata_index = named.index("metadata")
+    assert evidence_index < resolve_index < metadata_index
+
+    resolve = validate_steps[resolve_index]
+    assert resolve["env"] == {"GH_TOKEN": "${{ secrets.DEPLOYMENT_EVIDENCE_READ_TOKEN }}"}
+    resolve_run = str(resolve["run"])
+    # Exact source coordinates from the request itself, never a floating ref.
+    assert "jq -er '.source.repository' request.json" in resolve_run
+    assert "jq -er '.source.commit_sha' request.json" in resolve_run
+    assert "jq -er '.profile.path' request.json" in resolve_run
+    assert "grep -Eq '^[a-f0-9]{40}$'" in resolve_run
+    assert '"repos/$source_repo/contents/$profile_path?ref=$commit_sha"' in resolve_run
+    # Only a regular file at the requested path, with its Git object id re-derived
+    # from the decoded bytes, is sealed.
+    assert "test \"$(jq -r '.type' profile-object.json)\" = file" in resolve_run
+    assert 'test "$(jq -r \'.path\' profile-object.json)" = "$profile_path"' in resolve_run
+    assert "git hash-object" in resolve_run
+    assert 'sealed="artifacts/deployment-profile/$profile_path"' in resolve_run
+
+    metadata = validate_steps[metadata_index]
+    assert "--profile-root artifacts/deployment-profile" in str(metadata["run"])
+
+    upload = next(
+        step
+        for step in validate_steps
+        if str(step.get("uses", "")).startswith("actions/upload-artifact@")
+    )
+    assert upload["with"]["name"] == "validated-deployment-${{ github.run_id }}"
+    uploaded = str(upload["with"]["path"]).split()
+    assert "plan.json" in uploaded
+    assert "artifacts/deployment-profile" in uploaded
+    assert upload["with"]["include-hidden-files"] is True
+
+    deploy_steps = jobs["deploy"]["steps"]
+    assert isinstance(deploy_steps, list)
+    deploy_runs = "\n".join(str(step.get("run", "")) for step in deploy_steps)
+    assert "--profile-root artifacts/deployment/artifacts/deployment-profile" in deploy_runs
+    # The private runner consumes sealed bytes only; it never resolves source.
+    assert "gh api" not in deploy_runs
+    assert "/contents/" not in deploy_runs
+    assert "gh run download" not in deploy_runs
+    downloads = [
+        step
+        for step in deploy_steps
+        if str(step.get("uses", "")).startswith("actions/download-artifact@")
+    ]
+    for download in downloads:
+        assert download["with"]["name"] in {
+            "validated-deployment-${{ github.run_id }}",
+            "deployment-approval-${{ github.run_id }}",
+        }
+
+
 def test_configure_hosts_binds_approval_to_generated_plan() -> None:
     path = ROOT / ".github/workflows/configure-hosts.yml"
     workflow = load_workflow(path)

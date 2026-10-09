@@ -11,16 +11,23 @@ status: active
 
 from __future__ import annotations
 
+import functools
 import json
+import os
+import shutil
+import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 
+from l9_deploy import cli
 from l9_deploy.canonical import file_sha256, sha256_digest
 from l9_deploy.contracts.models import ReleaseState
-from l9_deploy.errors import ExecutionError
+from l9_deploy.errors import AuthorizationError, ContractError, ExecutionError
 from l9_deploy.evidence.ledger import ReceiptLedger
 from l9_deploy.execution.engine import execute_plan
 from l9_deploy.execution.promotion import write_runtime_state
@@ -500,3 +507,277 @@ def test_idempotency_finalization_failure_is_recoverable_without_rollback(
     committed = store.get(plan.request_id)
     assert committed is not None
     assert committed.status == "COMPLETE"
+
+
+def _prepare_deployment(
+    deployment_context: dict[str, Any],
+    repo_root: Path,
+    tmp_path: Path,
+    profile_root: Path,
+) -> tuple[Path, Path, dict[str, str], subprocess.CompletedProcess[str]]:
+    """Run the real validate-stage preflight exactly as deploy-dispatch does."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    request_path = tmp_path / "request.json"
+    request_path.write_text(
+        json.dumps(deployment_context["request"], indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    fleet_path = tmp_path / "fleet.yaml"
+    fleet_path.write_text(
+        yaml.safe_dump(deployment_context["fleet"], sort_keys=False), encoding="utf-8"
+    )
+    plan_path = tmp_path / "plan.json"
+    github_output = tmp_path / "github-output.txt"
+    # The canonical bundle validator is the external l9-ci CLI; the preflight
+    # fails closed without it, so the handoff test provides a stand-in on PATH.
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir(exist_ok=True)
+    stub = fake_bin / "l9-ci"
+    stub.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    stub.chmod(0o755)
+    env = {
+        **os.environ,
+        "PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}",
+        "GITHUB_OUTPUT": str(github_output),
+    }
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/prepare-deployment.py",
+            "--request",
+            str(request_path),
+            "--evidence-root",
+            str(deployment_context["evidence_root"]),
+            "--profile-root",
+            str(profile_root),
+            "--fleet",
+            str(fleet_path),
+            "--plan",
+            str(plan_path),
+            "--root",
+            str(repo_root),
+        ],
+        cwd=repo_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    outputs: dict[str, str] = {}
+    if github_output.exists():
+        for line in github_output.read_text(encoding="utf-8").splitlines():
+            key, _, value = line.partition("=")
+            outputs[key] = value
+    return plan_path, fleet_path, outputs, result
+
+
+def _deploy_arguments(
+    *,
+    repo_root: Path,
+    tmp_path: Path,
+    plan_path: Path,
+    fleet_path: Path,
+    profile_root: Path,
+    plan: dict[str, Any],
+    run_name: str,
+    expected_plan_digest: str | None = None,
+) -> list[str]:
+    (tmp_path / run_name).mkdir(parents=True, exist_ok=True)
+    approval_path, history_path = approval(
+        tmp_path / run_name,
+        request_id=plan["request_id"],
+        requester=plan["requested_by"],
+        environment=plan["environment"],
+        plan_digest=plan["plan_digest"],
+    )
+    runtime_env = tmp_path / run_name / "runtime.env"
+    runtime_env.write_text("SAFE_VALUE=1\n", encoding="utf-8")
+    return [
+        "deploy",
+        "--root",
+        str(repo_root),
+        "--plan",
+        str(plan_path),
+        "--profile-root",
+        str(profile_root),
+        "--fleet",
+        str(fleet_path),
+        "--environment",
+        plan["environment"],
+        "--expected-plan-digest",
+        expected_plan_digest or plan["plan_digest"],
+        "--approval-receipt",
+        str(approval_path),
+        "--approval-history",
+        str(history_path),
+        "--approval-run-id",
+        "555",
+        "--runtime-env-file",
+        str(runtime_env),
+        "--idempotency-store",
+        str(tmp_path / run_name / "idempotency.json"),
+        "--lock-root",
+        str(tmp_path / run_name / "locks"),
+        "--receipt-ledger-root",
+        str(tmp_path / run_name / "ledger"),
+        "--output",
+        str(tmp_path / run_name / "latest/deployment.json"),
+        "--local-executor-root",
+        str(tmp_path / run_name / "remote"),
+        "--json",
+    ]
+
+
+def test_validate_to_execute_handoff_consumes_only_sealed_profile_bytes(
+    deployment_context, schema_registry, repo_root: Path, tmp_path: Path, monkeypatch, capsys
+) -> None:  # type: ignore[no-untyped-def]
+    # Stage 1 (validate job): the consumer profile materialized from the exact
+    # source commit lives under its own root, never under the l9-deploy checkout.
+    source_root = deployment_context["root"]
+    registered_path = deployment_context["fleet"]["projects"][0]["profile_path"]
+    source_profile = source_root / registered_path
+    plan_path, fleet_path, outputs, result = _prepare_deployment(
+        deployment_context, repo_root, tmp_path, source_root
+    )
+    assert result.returncode == 0, result.stderr
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    schema_registry.validate(plan, "deployment-plan")
+    assert outputs["plan_digest"] == plan["plan_digest"]
+    assert outputs["project_id"] == plan["project_id"] == "seo-bot"
+    assert plan["profile_digest"] == deployment_context["request"]["profile"]["digest"]
+    assert plan["profile_digest"] == file_sha256(source_profile)
+    expected_plan = build_plan(
+        verified(deployment_context, schema_registry), created_at=plan["created_at"]
+    ).model_dump(mode="json", by_alias=True)
+    for key in ("steps", "target_servers", "project_id", "image_ref", "source_commit_sha"):
+        assert plan[key] == expected_plan[key]
+
+    # Stage 2 (artifact boundary): the validate job uploads request, plan and
+    # the profile root; the deploy job downloads them under artifacts/deployment.
+    artifact_root = tmp_path / "artifacts" / "deployment"
+    sealed_root = artifact_root / "artifacts" / "deployment-profile"
+    shutil.copytree(
+        source_root / Path(registered_path).parts[0], sealed_root / Path(registered_path).parts[0]
+    )
+    shutil.copy(plan_path, artifact_root / "plan.json")
+    sealed_profile = sealed_root / registered_path
+    assert file_sha256(sealed_profile) == plan["profile_digest"]
+
+    # Stage 3: after validation the consumer source and any platform-local copy
+    # change. The approved execution must not see those bytes.
+    mutated = yaml.safe_load(source_profile.read_text(encoding="utf-8"))
+    mutated["release"]["stabilization_seconds"] = 0
+    source_profile.write_text(yaml.safe_dump(mutated, sort_keys=False), encoding="utf-8")
+    assert file_sha256(source_profile) != plan["profile_digest"]
+
+    executors: list[FakeExecutor] = []
+
+    def fake_target_executor(args, fleet, project, environment, *, mutation=False):  # type: ignore[no-untyped-def]
+        assert mutation is True
+        executor = FakeExecutor(Path(args.local_executor_root), plan["image_ref"])
+        executors.append(executor)
+        return executor
+
+    monkeypatch.setattr(cli, "_target_executor", fake_target_executor)
+    waited: list[float] = []
+    monkeypatch.setattr(cli, "execute_plan", functools.partial(execute_plan, sleep=waited.append))
+
+    def run(run_name: str, profile_root: Path, **overrides: Any) -> int:
+        arguments = _deploy_arguments(
+            repo_root=repo_root,
+            tmp_path=tmp_path,
+            plan_path=artifact_root / "plan.json",
+            fleet_path=fleet_path,
+            profile_root=profile_root,
+            plan=plan,
+            run_name=run_name,
+            **overrides,
+        )
+        capsys.readouterr()
+        return cli.main(arguments)
+
+    # Stage 4 (deploy job): the sealed bytes are the ones the plan was built from.
+    assert run("sealed", sealed_root) == 0
+    receipt = json.loads(capsys.readouterr().out)
+    assert receipt["status"] == "PASS"
+    assert receipt["plan_digest"] == plan["plan_digest"]
+    assert len(executors) == 1
+    compose = [
+        command for command, _ in executors[0].commands if command[:2] == ["docker", "compose"]
+    ]
+    assert compose, "sealed profile execution reached the container step"
+    assert ReceiptLedger(tmp_path / "sealed" / "ledger").verify()["entries"] == 1
+    # The sealed profile's stabilization window (not the mutated source's 0) ran.
+    sealed_stabilization = deployment_context["profile"]["release"]["stabilization_seconds"]
+    assert sealed_stabilization > 0
+    assert waited == [sealed_stabilization]
+    health = next(step for step in receipt["steps"] if step["kind"] == "health")
+    assert health["details"]["stabilization_seconds"] == sealed_stabilization
+
+    # The mutated source tree (the platform-local or consumer file as it is now)
+    # is refused: the plan is not permission to load whatever is on disk.
+    assert run("mutated-source", source_root) == AuthorizationError.exit_code
+    assert "does not match the approved plan profile digest" in capsys.readouterr().err
+    assert len(executors) == 1
+
+    # Stage 5: tamper with the sealed file after approval. Execution refuses before
+    # the executor exists, so no backup, pull, render, migration, compose or
+    # promotion command runs and no receipt is recorded for the attempt.
+    sealed_profile.write_bytes(sealed_profile.read_bytes() + b"\n# tampered after approval\n")
+    assert run("tampered", sealed_root) == AuthorizationError.exit_code
+    assert "does not match the approved plan profile digest" in capsys.readouterr().err
+    assert len(executors) == 1
+    assert not (tmp_path / "tampered" / "ledger").exists()
+    assert not (tmp_path / "tampered" / "idempotency.json").exists()
+
+    # A missing sealed document is an absence, not a cue to look elsewhere.
+    sealed_profile.unlink()
+    assert run("absent", sealed_root) == ContractError.exit_code
+    assert "missing from the profile root" in capsys.readouterr().err
+    assert len(executors) == 1
+
+    # Approval stays bound to the deterministic plan digest.
+    shutil.copy(plan_path, artifact_root / "plan.json")
+    shutil.copytree(
+        source_root / Path(registered_path).parts[0],
+        sealed_root / Path(registered_path).parts[0],
+        dirs_exist_ok=True,
+    )
+    assert run("wrong-digest", sealed_root, expected_plan_digest="sha256:" + "0" * 64) == (
+        AuthorizationError.exit_code
+    )
+    assert "expected plan digest does not match plan" in capsys.readouterr().err
+    assert len(executors) == 1
+
+
+def test_prepare_deployment_fails_closed_on_source_substitution(
+    deployment_context, repo_root: Path, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    # A request whose profile path is not the fleet registration never reaches
+    # the planner, and an empty profile root is never backfilled from the checkout.
+    import copy
+
+    substituted = copy.deepcopy(deployment_context)
+    substituted["request"] = copy.deepcopy(deployment_context["request"])
+    substituted["request"]["profile"]["path"] = "integrations/consumers/seo-bot.deployment.yaml"
+    plan_path, _, outputs, result = _prepare_deployment(
+        substituted, repo_root, tmp_path / "substituted", deployment_context["root"]
+    )
+    assert result.returncode != 0
+    assert "AuthorizationError: deployment profile path does not match fleet registration" in (
+        result.stderr
+    )
+    assert not plan_path.exists()
+    assert outputs == {}
+
+    empty_root = tmp_path / "empty-profile-root"
+    empty_root.mkdir()
+    plan_path, _, outputs, result = _prepare_deployment(
+        deployment_context, repo_root, tmp_path / "empty", empty_root
+    )
+    assert result.returncode != 0
+    assert "ContractError: registered deployment profile is missing from the profile root" in (
+        result.stderr
+    )
+    assert not plan_path.exists()
+    assert outputs == {}
