@@ -11,6 +11,29 @@ status: active
 /L9_META -->
 # Changelog
 
+## Unreleased
+
+### Immutable consumer profile ingestion
+
+- The deployment profile is now consumer-owned source: `deploy-dispatch.yml` resolves
+  `profile.path` from `source.repository` at the exact `source.commit_sha` through the
+  existing read-only evidence transport, verifies the blob against the Git object id,
+  and seals it in the validated-deployment artifact beside the request and plan.
+- `verify_request` and `scripts/prepare-deployment.py` resolve the fleet-registered
+  relative profile path inside an explicit `--profile-root` (symlink- and
+  traversal-confined), check the request digest against those bytes before parsing,
+  and never read a profile from the l9-deploy checkout.
+- `l9-deploy deploy` requires `--profile-root` and reverifies the sealed bytes against
+  `plan.profile_digest`, project, repository, and image before the executor exists;
+  absence, drift, or tampering fails closed before backup, pull, render, migration,
+  Compose, or promotion. `request validate`, `request inspect`, and `plan` take the
+  same `--profile-root`.
+- `plan_digest` is now content-bound: `build_plan` computes it over the plan's canonical
+  wire form, so `plan.json` reproduces its own digest, and both `l9-deploy deploy` and the
+  execution engine recompute it before trusting any plan field (`profile_digest` included).
+  A plan edited around an unchanged digest string is refused before approval is consulted.
+- Request, profile, plan, and receipt contract shapes are unchanged.
+
 ## 0.1.5 - 2026-07-22
 
 ### Source-release integrity

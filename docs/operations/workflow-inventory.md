@@ -17,7 +17,7 @@ Phase 3 keeps only deployment wiring and its existing operational prerequisites 
 
 | Workflow | Disposition | Functional role | OIDC policy |
 |---|---|---|---|
-| `deploy-dispatch.yml` | Deployment-required | Validates an immutable release request, collects protected approval, materializes runtime secrets, verifies provenance, and executes the exact approved plan. | Only `deploy` may request `id-token: write`. |
+| `deploy-dispatch.yml` | Deployment-required | Validates an immutable release request, resolves the consumer-owned deployment profile from the exact source repository and commit the request names and seals it with the plan, collects protected approval, materializes runtime secrets, verifies provenance, and executes the exact approved plan against the sealed profile bytes. | Only `deploy` may request `id-token: write`. |
 | `deploy-manual.yml` | Deployment-required | Produces the governed repository dispatch that enters `deploy-dispatch.yml`. | No OIDC. |
 | `promote.yml` | Deployment-required | Promotes an already validated deployment request between governed environments. | No OIDC. |
 | `rollback.yml` | Deployment-required | Collects protected incident approval and invokes rollback on the private runner. | No OIDC. |

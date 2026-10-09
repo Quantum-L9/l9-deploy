@@ -50,11 +50,40 @@ jobs:
           test "$source_run" = "$(jq -er '.source.run_id' request.json)"
           mkdir -p artifacts/canonical-evidence
           gh run download "$source_run" --repo "$source_repo" --name "$artifact_name" --dir artifacts/canonical-evidence
+      - name: Resolve immutable consumer deployment profile
+        # The profile is consumer-owned. Its bytes come from the exact source
+        # repository at the immutable source commit the request names, through the
+        # same read-only evidence transport, never from this checkout. The blob is
+        # verified against the Git object id GitHub reports for it, then sealed under
+        # artifacts/deployment-profile at the request's own relative path so the
+        # validate, approve, and deploy stages all consume one document.
+        env:
+          GH_TOKEN: ${{ secrets.DEPLOYMENT_EVIDENCE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          source_repo=$(jq -er '.source.repository' request.json)
+          commit_sha=$(jq -er '.source.commit_sha' request.json)
+          profile_path=$(jq -er '.profile.path' request.json)
+          printf '%s\n' "$source_repo" | grep -Eq '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
+          printf '%s\n' "$commit_sha" | grep -Eq '^[a-f0-9]{40}$'
+          printf '%s\n' "$profile_path" | grep -Eq '^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$'
+          case "/$profile_path/" in */../*|*/./*) echo "profile path is not confined" >&2; exit 2 ;; esac
+          gh api --method GET "repos/$source_repo/contents/$profile_path?ref=$commit_sha" > profile-object.json
+          test "$(jq -r 'type' profile-object.json)" = object
+          test "$(jq -r '.type' profile-object.json)" = file
+          test "$(jq -r '.path' profile-object.json)" = "$profile_path"
+          test "$(jq -r '.encoding' profile-object.json)" = base64
+          sealed="artifacts/deployment-profile/$profile_path"
+          mkdir -p "$(dirname "$sealed")"
+          jq -r '.content' profile-object.json | tr -d '\n' | base64 -d > "$sealed"
+          test "$(git hash-object "$sealed")" = "$(jq -r '.sha' profile-object.json)"
+          rm -f profile-object.json
       - id: metadata
         run: >-
           uv run python scripts/prepare-deployment.py
           --request request.json
           --evidence-root artifacts/canonical-evidence
+          --profile-root artifacts/deployment-profile
           --plan plan.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -63,6 +92,11 @@ jobs:
             request.json
             plan.json
             artifacts/canonical-evidence
+            artifacts/deployment-profile
+          # Consumer profiles live under hidden directories (.l9/deployment.yaml);
+          # upload-artifact v4.4+ drops hidden paths unless this is set, which would
+          # strip the sealed profile and leave deploy with nothing to verify.
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 30
   authorize:
@@ -131,6 +165,7 @@ jobs:
         run: >-
           uv run l9-deploy deploy
           --plan artifacts/deployment/plan.json
+          --profile-root artifacts/deployment/artifacts/deployment-profile
           --fleet fleet/registry.yaml
           --environment '${{ needs.validate.outputs.environment }}'
           --expected-plan-digest '${{ needs.validate.outputs.plan-digest }}'

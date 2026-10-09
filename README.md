@@ -60,8 +60,8 @@ See `.l9/transport-classification.yaml`.
 ```bash
 uv sync --all-extras --frozen
 uv run l9-deploy --help
-uv run l9-deploy request validate --request request.json --fleet fleet/registry.yaml --json
-uv run l9-deploy plan --request request.json --fleet fleet/registry.yaml --output plan.json --json
+uv run l9-deploy request validate --request request.json --fleet fleet/registry.yaml --profile-root artifacts/deployment-profile --json
+uv run l9-deploy plan --request request.json --fleet fleet/registry.yaml --profile-root artifacts/deployment-profile --output plan.json --json
 uv run l9-deploy approval verify \
   --environment production \
   --expected-plan-digest sha256:<digest> \

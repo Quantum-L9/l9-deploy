@@ -65,6 +65,16 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--request", required=True, type=Path)
     parser.add_argument("--evidence-root", required=True, type=Path)
+    parser.add_argument(
+        "--profile-root",
+        required=True,
+        type=Path,
+        help=(
+            "directory holding the consumer deployment profile materialized from the "
+            "exact source repository and commit named by the request; the registered "
+            "relative profile path is resolved inside it, never inside this checkout"
+        ),
+    )
     parser.add_argument("--fleet", default=Path("fleet/registry.yaml"), type=Path)
     parser.add_argument("--plan", required=True, type=Path)
     parser.add_argument("--root", default=Path.cwd(), type=Path)
@@ -78,7 +88,7 @@ def main() -> int:
         request,
         fleet,
         registry,
-        root,
+        args.profile_root,
         evidence_root=args.evidence_root,
     )
     plan = build_plan(verified)

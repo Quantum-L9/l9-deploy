@@ -33,6 +33,7 @@ from ..evidence.approval import verify_approval_receipt
 from ..evidence.ledger import ReceiptLedger
 from ..evidence.publisher import publish_receipt
 from ..evidence.receipts import create_deployment_receipt
+from ..planning.planner import verify_plan_digest
 from ..requests.idempotency import IdempotencyStore
 from .backups import create_backup, verify_backup_command
 from .compose import compose_path, render_compose
@@ -90,6 +91,9 @@ def execute_plan(
     )
     if typed_plan.plan_digest != expected_plan_digest:
         raise AuthorizationError("expected plan digest does not match plan")
+    # The approved digest is only meaningful if it still describes this document:
+    # a plan whose fields were edited around an unchanged digest string is refused.
+    verify_plan_digest(typed_plan)
     verify_approval_receipt(
         approval_receipt,
         approval_history,
