@@ -59,6 +59,31 @@ class Executor(Protocol):
     def write_text(self, path: Path, text: str, mode: int = 0o600) -> None: ...
 
 
+def _require_health_gate_order(plan: DeploymentPlan) -> None:
+    """Refuse a plan that could promote without the health gate after deploy.
+
+    The contract model does not constrain step presence or order, so a direct
+    caller could hand over an approved plan with no ``health`` step, or one placed
+    before ``deploy``. Readiness (startup, required services, post-deploy) runs
+    only inside that step, so any plan that promotes must carry exactly one
+    health step strictly between its deploy and promote steps.
+    """
+    kinds = [step.kind for step in plan.steps]
+    if "promote" not in kinds:
+        return
+    promote_index = kinds.index("promote")
+    health_indexes = [index for index, kind in enumerate(kinds) if kind == "health"]
+    deploy_indexes = [index for index, kind in enumerate(kinds) if kind == "deploy"]
+    if (
+        len(health_indexes) != 1
+        or not deploy_indexes
+        or not (max(deploy_indexes) < health_indexes[0] < promote_index)
+    ):
+        raise ExecutionError(
+            "plan cannot promote without one health gate between deploy and promote"
+        )
+
+
 def _run_classified_probe(
     label: str,
     probe: HealthProbe,
@@ -115,6 +140,7 @@ def execute_plan(
     # The approved digest is only meaningful if it still describes this document:
     # a plan whose fields were edited around an unchanged digest string is refused.
     verify_plan_digest(typed_plan)
+    _require_health_gate_order(typed_plan)
     verify_approval_receipt(
         approval_receipt,
         approval_history,
@@ -188,6 +214,7 @@ def execute_plan(
                 "previous release lacks runtime configuration identity; deployment is blocked"
             )
     promoted = False
+    health_gate_passed = False
     try:
         with environment_lock(lock_root, typed_plan.environment):
             require_digest_ref(typed_plan.image_ref)
@@ -330,7 +357,12 @@ def execute_plan(
                         "startup": dict(startup),
                         "services": services,
                     }
+                    health_gate_passed = True
                 elif kind == "promote":
+                    if not health_gate_passed:
+                        raise ExecutionError(
+                            "promotion refused: the health gate has not passed in this transaction"
+                        )
                     details = TypeAdapter(dict[str, JsonValue]).validate_python(
                         promote(
                             executor,

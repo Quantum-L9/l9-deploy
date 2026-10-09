@@ -26,13 +26,13 @@ import yaml
 
 from l9_deploy import cli
 from l9_deploy.canonical import file_sha256, sha256_digest
-from l9_deploy.contracts.models import ReleaseState
+from l9_deploy.contracts.models import DeploymentPlan, ReleaseState
 from l9_deploy.errors import AuthorizationError, ContractError, ExecutionError
 from l9_deploy.evidence.ledger import ReceiptLedger
 from l9_deploy.execution.engine import execute_plan
 from l9_deploy.execution.promotion import write_runtime_state
 from l9_deploy.execution.releases import bind_release_runtime_env
-from l9_deploy.planning.planner import build_plan, plan_digest_of
+from l9_deploy.planning.planner import build_plan, plan_digest_of, verify_plan_digest
 from l9_deploy.requests.idempotency import IdempotencyStore
 from l9_deploy.requests.verifier import verify_request
 from l9_deploy.subprocesses import CommandResult
@@ -1111,3 +1111,68 @@ def test_optional_and_absent_services_are_neither_gated_nor_claimed(
     assert not [c for c in _executed(executor) if c[:1] == ["service-ready"]]
     health = next(step for step in receipt["steps"] if step["kind"] == "health")
     assert health["details"]["services"] == []
+
+
+def _approved_plan_with_steps(plan, kinds: list[str]):  # type: ignore[no-untyped-def]
+    """Re-digest a plan whose steps are reordered or dropped, as a direct caller could."""
+    by_kind = {step.kind: step for step in plan.steps}
+    document = plan.model_dump(mode="json", by_alias=True)
+    document["steps"] = [by_kind[kind].model_dump(mode="json", by_alias=True) for kind in kinds]
+    document["plan_digest"] = plan_digest_of(document)
+    forged = DeploymentPlan.model_validate(document)
+    verify_plan_digest(forged)
+    return forged
+
+
+@pytest.mark.parametrize(
+    "kinds",
+    [
+        ["verify", "pull", "render", "deploy", "promote", "cleanup"],
+        ["verify", "pull", "render", "health", "deploy", "promote", "cleanup"],
+        ["verify", "pull", "render", "deploy", "health", "health", "promote", "cleanup"],
+        ["verify", "pull", "render", "health", "deploy", "health", "promote", "cleanup"],
+    ],
+)
+def test_approved_plan_cannot_promote_without_health_gate_after_deploy(
+    deployment_context, schema_registry, tmp_path: Path, kinds: list[str]
+) -> None:  # type: ignore[no-untyped-def]
+    # Codex P2 on #37: a content-bound, approved plan that omits, duplicates, or
+    # misplaces the health step would otherwise reach promote without the
+    # startup / required-service / post-deploy gate. Refused before side effects.
+    plan = build_plan(
+        _reverify_with_profile(deployment_context, schema_registry, _service_declarations),
+        created_at="2026-07-21T12:00:01Z",
+    )
+    forged = _approved_plan_with_steps(plan, kinds)
+    schema_registry.validate(forged.model_dump(mode="json", by_alias=True), "deployment-plan")
+    executor = FakeExecutor(tmp_path / "remote", forged.image_ref)
+    with pytest.raises(ExecutionError, match="one health gate between deploy and promote"):
+        execute(
+            plan=forged, deployment_context=deployment_context, executor=executor, tmp_path=tmp_path
+        )
+    assert executor.commands == []
+    assert not (tmp_path / "idempotency.json").exists()
+    assert not (tmp_path / "receipts").exists()
+
+
+def test_promotion_requires_the_health_gate_to_have_passed(
+    deployment_context, schema_registry, tmp_path: Path, monkeypatch
+) -> None:  # type: ignore[no-untyped-def]
+    # Defense in depth behind the structural check: even if the order check were
+    # bypassed, promote refuses unless the health step completed in this transaction.
+    from l9_deploy.execution import engine as engine_module
+
+    plan = build_plan(
+        verified(deployment_context, schema_registry), created_at="2026-07-21T12:00:01Z"
+    )
+    forged = _approved_plan_with_steps(
+        plan, ["verify", "pull", "render", "deploy", "promote", "cleanup"]
+    )
+    monkeypatch.setattr(engine_module, "_require_health_gate_order", lambda _plan: None)
+    executor = FakeExecutor(tmp_path / "remote", forged.image_ref)
+    with pytest.raises(ExecutionError, match="health gate has not passed"):
+        execute(
+            plan=forged, deployment_context=deployment_context, executor=executor, tmp_path=tmp_path
+        )
+    assert not (tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json").exists()
+    assert ["docker", "image", "prune", "-f"] not in _executed(executor)

@@ -47,6 +47,10 @@ status: active
   order, then the configured stabilization window once, then `health.post_deploy`; any
   failure raises with the phase named before promotion and takes the existing rollback and
   failure-receipt path. `health.post_deploy` remains the rollback verification probe.
+- `execute_plan` refuses, before any side effect, a plan that could promote without the
+  health gate: whenever a `promote` step is present there must be exactly one `health`
+  step strictly between the last `deploy` step and `promote`. Promotion itself also
+  refuses unless the health step completed in the same transaction.
 - The health `ReceiptStep.details` records `startup` and the ordered `services` results
   beside the existing post-deploy fields. A probe result means exactly what the supplied
   probe checks; it is readiness evidence, not provisioning or lifecycle ownership.
