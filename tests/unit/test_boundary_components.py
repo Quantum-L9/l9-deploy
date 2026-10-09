@@ -234,8 +234,9 @@ def test_health_command_probe_reports_real_nonzero_exit_as_failure(tmp_path: Pat
         interval_seconds=0,
     )
     expected = r"health probe failed after 1 attempts: command failed \(3\)"
+    executor = LocalExecutor(tmp_path)
     with pytest.raises(ExecutionError, match=expected):
-        run_probe(probe, executor=LocalExecutor(tmp_path))
+        run_probe(probe, executor=executor)
 
 
 def test_health_command_probe_and_http_scheme_restriction() -> None:
