@@ -34,6 +34,28 @@ status: active
   A plan edited around an unchanged digest string is refused before approval is consulted.
 - Request, profile, plan, and receipt contract shapes are unchanged.
 
+### Declared service readiness
+
+- `build_plan` qualifies the profile's `services` map before a plan exists: a
+  `required: true` service with `mode: none`, or a required `external` /
+  `managed_on_fleet` service without a typed `probe`, is a contract failure. Optional
+  services are not a gate and are never claimed. The plan shape and digest inputs are
+  unchanged; the declaration is bound by the sealed profile digest.
+- `execute_plan` applies the same qualification before approval, idempotency, or any host
+  command, so a direct caller cannot bypass it. The existing `health` step now runs the
+  profile's `health.startup` probe, then every required service's declared probe in name
+  order, then the configured stabilization window once, then `health.post_deploy`; any
+  failure raises with the phase named before promotion and takes the existing rollback and
+  failure-receipt path. `health.post_deploy` remains the rollback verification probe.
+- The health `ReceiptStep.details` records `startup` and the ordered `services` results
+  beside the existing post-deploy fields. A probe result means exactly what the supplied
+  probe checks; it is readiness evidence, not provisioning or lifecycle ownership.
+- Consumer profiles that declare required services without probes
+  (`integrations/consumers/seo-bot.deployment.yaml`,
+  `integrations/consumers/graphiti-memory.deployment.yaml`,
+  `templates/consumer/stateful-container/.l9/deployment.yaml`) are now blocked at planning
+  until they supply one; they are deliberately not edited here.
+
 ## 0.1.5 - 2026-07-22
 
 ### Source-release integrity

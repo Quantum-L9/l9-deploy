@@ -33,7 +33,7 @@ from ..evidence.approval import verify_approval_receipt
 from ..evidence.ledger import ReceiptLedger
 from ..evidence.publisher import publish_receipt
 from ..evidence.receipts import create_deployment_receipt
-from ..planning.planner import verify_plan_digest
+from ..planning.planner import required_service_probes, verify_plan_digest
 from ..requests.idempotency import IdempotencyStore
 from .backups import create_backup, verify_backup_command
 from .compose import compose_path, render_compose
@@ -57,6 +57,24 @@ LOGGER = logging.getLogger(__name__)
 class Executor(Protocol):
     def run(self, command: Sequence[str], **kwargs: object) -> object: ...
     def write_text(self, path: Path, text: str, mode: int = 0o600) -> None: ...
+
+
+def _run_classified_probe(
+    label: str,
+    probe: HealthProbe,
+    *,
+    executor: Executor,
+    base_url: str | None,
+) -> dict[str, JsonValue]:
+    """Run one typed probe and name the phase on failure.
+
+    The probe result is exactly what ``run_probe`` reports for the supplied
+    contract; the label only classifies which lifecycle gate refused.
+    """
+    try:
+        return run_probe(probe, executor=executor, base_url=base_url)
+    except ExecutionError as exc:
+        raise ExecutionError(f"{label} failed: {exc}") from exc
 
 
 def execute_plan(
@@ -89,6 +107,9 @@ def execute_plan(
         typed_profile.model_dump(mode="json", by_alias=True, exclude_none=True),
         "deployment-profile",
     )
+    # The same qualification the planner applies: a direct caller cannot bypass
+    # it, and it runs before any approval, idempotency, or host side effect.
+    service_probes = required_service_probes(typed_profile)
     if typed_plan.plan_digest != expected_plan_digest:
         raise AuthorizationError("expected plan digest does not match plan")
     # The approved digest is only meaningful if it still describes this document:
@@ -259,6 +280,33 @@ def execute_plan(
                     )
                     details = {}
                 elif kind == "health":
+                    # The candidate has started (deploy step). Startup health first,
+                    # then every required service's declared readiness probe in
+                    # name order, then the stabilization window, then the
+                    # post-deploy probe that also serves rollback verification.
+                    # Any failure here raises before promotion.
+                    startup = _run_classified_probe(
+                        "startup health probe",
+                        typed_profile.health.startup,
+                        executor=executor,
+                        base_url=base_url,
+                    )
+                    services: list[JsonValue] = []
+                    for service_name, service_probe in service_probes:
+                        outcome = _run_classified_probe(
+                            f"required service {service_name} readiness probe",
+                            service_probe,
+                            executor=executor,
+                            base_url=base_url,
+                        )
+                        services.append(
+                            {
+                                "name": service_name,
+                                "mode": typed_profile.services[service_name].mode,
+                                "status": "PASS",
+                                **outcome,
+                            }
+                        )
                     stabilization_seconds = typed_profile.release.stabilization_seconds
                     if stabilization_seconds > 0:
                         LOGGER.info(
@@ -270,12 +318,18 @@ def execute_plan(
                         )
                         sleep(stabilization_seconds)
                     probe = HealthProbe.model_validate(step.details)
-                    details = run_probe(
+                    details = _run_classified_probe(
+                        "post-deploy health probe",
                         probe,
                         executor=executor,
                         base_url=base_url,
                     )
-                    details = {**details, "stabilization_seconds": stabilization_seconds}
+                    details = {
+                        **details,
+                        "stabilization_seconds": stabilization_seconds,
+                        "startup": dict(startup),
+                        "services": services,
+                    }
                 elif kind == "promote":
                     details = TypeAdapter(dict[str, JsonValue]).validate_python(
                         promote(

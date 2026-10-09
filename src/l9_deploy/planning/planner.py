@@ -14,8 +14,15 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from ..canonical import sha256_digest
-from ..contracts.models import DeploymentPlan, PlanStep, ReleaseState, VerifiedRequest
-from ..errors import AuthorizationError
+from ..contracts.models import (
+    DeploymentPlan,
+    DeploymentProfile,
+    HealthProbe,
+    PlanStep,
+    ReleaseState,
+    VerifiedRequest,
+)
+from ..errors import AuthorizationError, ContractError
 from ..inventory.resolver import resolve_target
 from .backups import backup_required
 from .migrations import migration_step
@@ -41,6 +48,42 @@ def verify_plan_digest(plan: DeploymentPlan) -> None:
         raise AuthorizationError("plan digest does not match plan content")
 
 
+def required_service_probes(profile: DeploymentProfile) -> tuple[tuple[str, HealthProbe], ...]:
+    """Qualify the profile's declared service prerequisites for deployment.
+
+    Returns ``(name, probe)`` for every ``required: true`` service in
+    deterministic name order. The consumer owns which services it needs and how
+    their readiness is observed; this platform only checks that a required claim
+    is coherent and observable:
+
+    - ``required: true`` with ``mode: none`` is contradictory and is refused;
+    - ``required: true`` in ``external`` or ``managed_on_fleet`` mode without a
+      typed probe cannot be qualified and is refused (blocked, never assumed);
+    - ``required: false`` services are not a deployment gate and are not
+      returned, so nothing is ever claimed about them.
+
+    A probe is readiness evidence only. It does not provision, own, or render
+    the dependency, and success means exactly what the supplied probe checks.
+    """
+    qualified: list[tuple[str, HealthProbe]] = []
+    for name in sorted(profile.services):
+        service = profile.services[name]
+        if not service.required:
+            continue
+        if service.mode == "none":
+            raise ContractError(
+                f"service {name} is declared required but has mode none; "
+                "a required dependency must be external or managed_on_fleet"
+            )
+        if service.probe is None:
+            raise ContractError(
+                f"required {service.mode} service {name} declares no readiness probe; "
+                "deployment is blocked until the consumer profile supplies one"
+            )
+        qualified.append((name, service.probe))
+    return tuple(qualified)
+
+
 def build_plan(
     verified: VerifiedRequest,
     previous_release: ReleaseState | dict[str, object] | None = None,
@@ -48,6 +91,10 @@ def build_plan(
 ) -> DeploymentPlan:
     request = verified.document
     profile = verified.profile
+    # Preflight: an unqualifiable service declaration never reaches a plan that
+    # could be approved. The plan shape is unchanged; the declaration itself is
+    # already bound by the sealed profile digest the plan carries.
+    required_service_probes(profile)
     target = resolve_target(verified.fleet, verified.project, request.target.environment)
     steps: list[PlanStep] = [
         PlanStep(id="verify", kind="verify", mutating=False, timeout_seconds=120),

@@ -804,3 +804,310 @@ def test_prepare_deployment_fails_closed_on_source_substitution(
     )
     assert not plan_path.exists()
     assert outputs == {}
+
+
+# --- Service readiness (PR-B) -------------------------------------------------
+
+
+def _probe(*command: str) -> dict[str, Any]:
+    return {
+        "type": "command",
+        "command": list(command),
+        "timeout_seconds": 5,
+        "attempts": 1,
+        "interval_seconds": 1,
+    }
+
+
+def _reverify_with_profile(deployment_context, schema_registry, mutate):  # type: ignore[no-untyped-def]
+    """Rewrite the sealed fixture profile, rebind the request digest, and verify."""
+    profile_path = deployment_context["profile_path"]
+    profile = yaml.safe_load(profile_path.read_text(encoding="utf-8"))
+    mutate(profile)
+    profile_path.write_text(yaml.safe_dump(profile, sort_keys=False), encoding="utf-8")
+    deployment_context["request"]["profile"]["digest"] = file_sha256(profile_path)
+    deployment_context["profile"] = profile
+    return verified(deployment_context, schema_registry)
+
+
+def _service_declarations(profile: dict[str, Any]) -> None:
+    profile["health"]["startup"] = _probe("app-startup")
+    profile["health"]["post_deploy"] = _probe("app-ready")
+    profile["services"] = {
+        "zeta": {"mode": "external", "required": True, "probe": _probe("service-ready", "zeta")},
+        "alpha": {
+            "mode": "managed_on_fleet",
+            "required": True,
+            "probe": _probe("service-ready", "alpha"),
+        },
+        "optional": {"mode": "external", "required": False},
+        "mid": {"mode": "external", "required": True, "probe": _probe("service-ready", "mid")},
+    }
+
+
+@dataclass
+class ProbeFailingExecutor(FakeExecutor):
+    failing_command: tuple[str, ...] = ()
+
+    def run(self, command, **kwargs):  # type: ignore[no-untyped-def]
+        command_list = list(command)
+        if tuple(command_list) == self.failing_command:
+            self.commands.append((command_list, dict(kwargs)))
+            # What the real executor raises for a nonzero exit (check=True).
+            raise ExecutionError("command failed (1): service-ready: connection refused")
+        return super().run(command, **kwargs)
+
+
+def _executed(executor: FakeExecutor) -> list[list[str]]:
+    return [command for command, _ in executor.commands]
+
+
+def _latest_receipt(tmp_path: Path) -> dict[str, Any]:
+    """Follow the latest pointer written by ``execute`` to its ledger receipt."""
+    pointer = json.loads((tmp_path / "receipts/latest/deployment.json").read_text(encoding="utf-8"))
+    receipt = ReceiptLedger(tmp_path / "receipts/ledger").load_receipt(pointer["receipt_digest"])
+    return dict(receipt)
+
+
+def test_direct_execution_cannot_bypass_required_service_qualification(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    # B1, B2, B9: the plan was built from a sound profile, but the engine is
+    # handed an unqualifiable one. It refuses before approval, idempotency,
+    # ledger, or any host command.
+    plan = build_plan(
+        verified(deployment_context, schema_registry), created_at="2026-07-21T12:00:01Z"
+    )
+    cases = {
+        "mode-none": {"cache": {"mode": "none", "required": True}},
+        "no-probe-external": {"postgres": {"mode": "external", "required": True}},
+        "no-probe-fleet": {"redis": {"mode": "managed_on_fleet", "required": True}},
+    }
+    for label, services in cases.items():
+        context = {**deployment_context, "profile": dict(deployment_context["profile"])}
+        context["profile"]["services"] = services
+        executor = FakeExecutor(tmp_path / label / "remote", plan.image_ref)
+        (tmp_path / label).mkdir(parents=True, exist_ok=True)
+        with pytest.raises(ContractError):
+            execute(
+                plan=plan,
+                deployment_context=context,
+                executor=executor,
+                tmp_path=tmp_path / label,
+            )
+        assert executor.commands == []
+        assert not (tmp_path / label / "idempotency.json").exists()
+        assert not (tmp_path / label / "receipts").exists()
+        assert not (tmp_path / label / "remote" / "srv").exists()
+
+
+def test_required_service_probes_run_between_startup_and_promotion(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    # B3, B6, B8: startup health, then each required service in name order, then
+    # the stabilization window once, then post-deploy health, then promotion.
+    plan = build_plan(
+        _reverify_with_profile(deployment_context, schema_registry, _service_declarations),
+        created_at="2026-07-21T12:00:01Z",
+    )
+    executor = FakeExecutor(tmp_path / "remote", plan.image_ref)
+    receipt = execute(
+        plan=plan,
+        deployment_context=deployment_context,
+        executor=executor,
+        tmp_path=tmp_path,
+        sleep=lambda seconds: executor.commands.append((["<stabilization>", str(seconds)], {})),
+    )
+    assert receipt["status"] == "PASS"
+    schema_registry.validate(receipt, "deployment-receipt")
+
+    executed = _executed(executor)
+    compose_up = next(
+        index
+        for index, command in enumerate(executed)
+        if command[:3] == ["docker", "compose", "--env-file"]
+    )
+    order = [
+        compose_up,
+        executed.index(["app-startup"]),
+        executed.index(["service-ready", "alpha"]),
+        executed.index(["service-ready", "mid"]),
+        executed.index(["service-ready", "zeta"]),
+        executed.index(["<stabilization>", "30"]),
+        executed.index(["app-ready"]),
+        executed.index(["docker", "image", "prune", "-f"]),
+    ]
+    assert order == sorted(order), executed
+    # Exactly the declared required services, nothing optional and no phantom.
+    assert [c for c in executed if c[:1] == ["service-ready"]] == [
+        ["service-ready", "alpha"],
+        ["service-ready", "mid"],
+        ["service-ready", "zeta"],
+    ]
+    assert [c for c in executed if c == ["<stabilization>", "30"]] == [["<stabilization>", "30"]]
+
+    health = next(step for step in receipt["steps"] if step["kind"] == "health")
+    assert health["details"]["startup"] == {"attempt": 1, "type": "command"}
+    assert health["details"]["services"] == [
+        {
+            "name": "alpha",
+            "mode": "managed_on_fleet",
+            "status": "PASS",
+            "attempt": 1,
+            "type": "command",
+        },
+        {"name": "mid", "mode": "external", "status": "PASS", "attempt": 1, "type": "command"},
+        {"name": "zeta", "mode": "external", "status": "PASS", "attempt": 1, "type": "command"},
+    ]
+    assert health["details"]["stabilization_seconds"] == 30
+    state = json.loads(
+        (tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json").read_text(encoding="utf-8")
+    )
+    assert state["current"]["plan_digest"] == plan.plan_digest
+
+
+def test_required_fleet_managed_service_failure_rolls_back_and_never_passes(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    # B4, B5: app health is green, one required dependency is not. No PASS, no
+    # promotion; the previous release is restored and the candidate removed.
+    previous = bind_release_runtime_env(
+        ReleaseState(
+            request_id="previous-request",
+            source_commit_sha="c" * 40,
+            image_ref="ghcr.io/quantum-l9/seo-bot@sha256:" + "d" * 64,
+            plan_digest="sha256:" + "f" * 64,
+        ),
+        "seo-bot",
+        "staging",
+    )
+    plan = build_plan(
+        _reverify_with_profile(deployment_context, schema_registry, _service_declarations),
+        previous_release=previous,
+        created_at="2026-07-21T12:00:01Z",
+    )
+    executor = ProbeFailingExecutor(
+        tmp_path / "remote", plan.image_ref, failing_command=("service-ready", "mid")
+    )
+    write_runtime_state(executor, "seo-bot", "staging", previous, None)
+    state_path = tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json"
+    state_before = state_path.read_bytes()
+    waited: list[float] = []
+
+    with pytest.raises(
+        ExecutionError,
+        match="required service mid readiness probe failed: health probe failed after 1 attempts",
+    ):
+        execute(
+            plan=plan,
+            deployment_context=deployment_context,
+            executor=executor,
+            tmp_path=tmp_path,
+            sleep=waited.append,
+        )
+
+    executed = _executed(executor)
+    assert ["app-startup"] in executed
+    assert ["service-ready", "alpha"] in executed
+    assert ["service-ready", "mid"] in executed
+    # Nothing after the failing dependency: no later service, no stabilization,
+    # no post-deploy probe, no cleanup.
+    assert ["service-ready", "zeta"] not in executed
+    assert waited == []
+    assert ["docker", "image", "prune", "-f"] not in executed
+    # Previous release restored (rollback compose with its runtime env), candidate removed.
+    assert state_path.read_bytes() == state_before
+    compose_commands = [c for c in executed if c[:2] == ["docker", "compose"]]
+    assert str(previous.runtime_env_path) in compose_commands[-1]
+    # The post-deploy probe never ran for the candidate; its only execution is
+    # the rollback verification of the restored release, after the rollback.
+    rollback_index = len(executed) - 1 - executed[::-1].index(compose_commands[-1])
+    assert [index for index, c in enumerate(executed) if c == ["app-ready"]] == [
+        index for index, c in enumerate(executed) if c == ["app-ready"] and index > rollback_index
+    ]
+    assert len([c for c in executed if c == ["app-ready"]]) == 1
+    candidate_directory = (
+        "/srv/l9/projects/seo-bot/staging/releases/" + plan.plan_digest.removeprefix("sha256:")
+    )
+    assert ["rm", "-rf", "--", candidate_directory] in executed
+    ledger = ReceiptLedger(tmp_path / "receipts/ledger")
+    assert ledger.verify()["entries"] == 1
+    failed = _latest_receipt(tmp_path)
+    assert failed["status"] == "FAIL"
+    assert "required service mid readiness probe failed" in json.dumps(failed)
+    assert not any(
+        step["kind"] == "health" and step["status"] == "PASS" for step in failed["steps"]
+    )
+
+
+def test_required_service_failure_without_previous_release_cannot_promote(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    # B5 on a first deployment: no state is ever written and no PASS is emitted.
+    plan = build_plan(
+        _reverify_with_profile(deployment_context, schema_registry, _service_declarations),
+        created_at="2026-07-21T12:00:01Z",
+    )
+    executor = ProbeFailingExecutor(
+        tmp_path / "remote", plan.image_ref, failing_command=("service-ready", "zeta")
+    )
+    with pytest.raises(ExecutionError, match="required service zeta readiness probe failed"):
+        execute(
+            plan=plan, deployment_context=deployment_context, executor=executor, tmp_path=tmp_path
+        )
+    assert not (tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json").exists()
+    assert ["app-ready"] not in _executed(executor)
+    failed = _latest_receipt(tmp_path)
+    assert failed["status"] == "FAIL"
+
+
+def test_startup_health_failure_blocks_services_stabilization_and_promotion(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    # B8: the startup probe runs first; its failure stops everything after it.
+    plan = build_plan(
+        _reverify_with_profile(deployment_context, schema_registry, _service_declarations),
+        created_at="2026-07-21T12:00:01Z",
+    )
+    executor = ProbeFailingExecutor(
+        tmp_path / "remote", plan.image_ref, failing_command=("app-startup",)
+    )
+    waited: list[float] = []
+    with pytest.raises(ExecutionError, match="startup health probe failed"):
+        execute(
+            plan=plan,
+            deployment_context=deployment_context,
+            executor=executor,
+            tmp_path=tmp_path,
+            sleep=waited.append,
+        )
+    executed = _executed(executor)
+    assert not [c for c in executed if c[:1] == ["service-ready"]]
+    assert waited == []
+    assert ["app-ready"] not in executed
+    assert not (tmp_path / "remote/srv/l9/projects/seo-bot/staging/state.json").exists()
+
+
+def test_optional_and_absent_services_are_neither_gated_nor_claimed(
+    deployment_context, schema_registry, tmp_path: Path
+) -> None:  # type: ignore[no-untyped-def]
+    # B7: an optional dependency (no probe) and a mode-none entry neither block
+    # nor appear as qualified evidence.
+    def declare(profile: dict[str, Any]) -> None:
+        profile["services"] = {
+            "cache": {"mode": "external", "required": False},
+            "unused": {"mode": "none", "required": False},
+        }
+
+    plan = build_plan(
+        _reverify_with_profile(deployment_context, schema_registry, declare),
+        created_at="2026-07-21T12:00:01Z",
+    )
+    executor = FakeExecutor(tmp_path / "remote", plan.image_ref)
+    receipt = execute(
+        plan=plan, deployment_context=deployment_context, executor=executor, tmp_path=tmp_path
+    )
+    assert receipt["status"] == "PASS"
+    assert not [c for c in _executed(executor) if c[:1] == ["service-ready"]]
+    health = next(step for step in receipt["steps"] if step["kind"] == "health")
+    assert health["details"]["services"] == []
