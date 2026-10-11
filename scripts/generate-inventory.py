@@ -37,6 +37,16 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=ROOT / "ansible/inventories/generated/hosts.yml",
     )
+    parser.add_argument(
+        "--profile-root",
+        type=Path,
+        default=None,
+        help=(
+            "directory of consumer deployment profiles materialized from exact source "
+            "commits, laid out as <project id>/<registered profile path>; public ingress "
+            "without a bound profile is blocked, never read from this checkout"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -44,7 +54,7 @@ def main() -> int:
     args = parse_args()
     registry = SchemaRegistry(ROOT / "schemas/v1")
     fleet = load_fleet(args.fleet, registry)
-    generate_ansible_inventory(fleet, args.output)
+    generate_ansible_inventory(fleet, args.output, args.profile_root)
     return 0
 
 

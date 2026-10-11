@@ -213,6 +213,37 @@ def test_deploy_dispatch_seals_the_consumer_profile_from_validate_to_deploy() ->
         }
 
 
+def test_deploy_dispatch_gates_privileged_reads_on_fleet_registration() -> None:
+    workflow = load_workflow(ROOT / ".github/workflows/deploy-dispatch.yml")
+    validate_steps = workflow["jobs"]["validate"]["steps"]
+    assert isinstance(validate_steps, list)
+    named = [str(step.get("name") or step.get("id") or step.get("uses")) for step in validate_steps]
+    gate_index = named.index("Bind request to fleet registration before privileged reads")
+    gate = validate_steps[gate_index]
+    gate_run = str(gate["run"])
+    assert "scripts/prepare-deployment.py" in gate_run
+    assert "--check-registration" in gate_run
+    # The gate itself holds no cross-repository credential.
+    assert "env" not in gate or "GH_TOKEN" not in gate["env"]
+    privileged = [
+        index
+        for index, step in enumerate(validate_steps)
+        if "DEPLOYMENT_EVIDENCE_READ_TOKEN" in str(step.get("env", ""))
+    ]
+    assert privileged, "deploy-dispatch performs credentialed source reads"
+    assert all(gate_index < index for index in privileged)
+
+
+def test_rollback_and_backup_workflows_never_materialize_a_profile_copy() -> None:
+    # Rollback and backup read the profile sealed with the release on the target
+    # host; their workflows must not fetch, mount or pass a profile of their own.
+    for name in ("rollback.yml", "backup-verify.yml"):
+        text = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
+        assert "integrations/consumers" not in text
+        assert "--profile-root" not in text
+        assert "/contents/" not in text
+
+
 def test_configure_hosts_binds_approval_to_generated_plan() -> None:
     path = ROOT / ".github/workflows/configure-hosts.yml"
     workflow = load_workflow(path)

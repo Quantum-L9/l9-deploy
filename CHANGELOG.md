@@ -34,6 +34,33 @@ status: active
   A plan edited around an unchanged digest string is refused before approval is consulted.
 - Request, profile, plan, and receipt contract shapes are unchanged.
 
+### Consumer profile authority closure
+
+- No executable path reads `integrations/consumers/*.deployment.yaml` any more; those
+  files remain test fixtures only. `fleet/registry.yaml` registers every project at its
+  consumer-repository path (`.l9/deployment.yaml`). `l9-cognitive-runtime` publishes it;
+  `SEO-Bot` and `l9-graphiti-memory` do not, so their deployments fail closed at profile
+  resolution and the registry marks them blocked.
+- `deploy-dispatch.yml` binds the request to its fleet registration (registered
+  repository, authorized environment, registered profile path) before any read under
+  `DEPLOYMENT_EVIDENCE_READ_TOKEN`, through `prepare-deployment.py --check-registration`.
+- Each deployment seals its approved `plan.json` and the exact consumer profile bytes in
+  the release directory (`releases/<plan digest>/`) before any transaction step runs.
+  `execute_plan` takes those bytes (`profile_source`) and refuses a profile that is not
+  them.
+- `rollback` restores the previous release with that release's own sealed profile;
+  `backup create`, `backup verify` and `restore test` use the running release's sealed
+  profile. The chain runtime state -> plan content digest -> profile byte digest is
+  verified first; missing or inconsistent material fails before any host mutation, so
+  releases deployed before sealing existed are blocked rather than served a newer
+  profile.
+- `inventory generate` / `scripts/generate-inventory.py` take an optional
+  `--profile-root` (`<project id>/<registered path>`) of source-materialized profiles.
+  Public ingress without a bound profile is listed under `l9_public_ingress_blocked`
+  for adopted hosts and refused for managed hosts.
+- `rollback` accepts `--base-url`; the handler read `args.base_url` without the
+  argument being defined, so every rollback failed before restoring anything.
+
 ## 0.1.5 - 2026-07-22
 
 ### Source-release integrity

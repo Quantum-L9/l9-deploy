@@ -28,7 +28,10 @@ from l9_deploy.errors import ContractError  # noqa: E402
 from l9_deploy.inventory.loader import load_fleet  # noqa: E402
 from l9_deploy.inventory.resolver import resolve_target  # noqa: E402
 from l9_deploy.planning.planner import build_plan  # noqa: E402
-from l9_deploy.requests.verifier import verify_request  # noqa: E402
+from l9_deploy.requests.verifier import (  # noqa: E402
+    require_registered_source,
+    verify_request,
+)
 
 
 def object_document(path: Path) -> dict[str, object]:
@@ -64,10 +67,18 @@ def deployment_base_url(verified, target_address: str | None) -> str:  # type: i
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--request", required=True, type=Path)
-    parser.add_argument("--evidence-root", required=True, type=Path)
+    parser.add_argument(
+        "--check-registration",
+        action="store_true",
+        help=(
+            "only bind the request to its fleet registration (registered repository, "
+            "authorized environment, registered profile path); reads no source material "
+            "and runs before any credentialed cross-repository fetch"
+        ),
+    )
+    parser.add_argument("--evidence-root", type=Path)
     parser.add_argument(
         "--profile-root",
-        required=True,
         type=Path,
         help=(
             "directory holding the consumer deployment profile materialized from the "
@@ -76,7 +87,7 @@ def main() -> int:
         ),
     )
     parser.add_argument("--fleet", default=Path("fleet/registry.yaml"), type=Path)
-    parser.add_argument("--plan", required=True, type=Path)
+    parser.add_argument("--plan", type=Path)
     parser.add_argument("--root", default=Path.cwd(), type=Path)
     args = parser.parse_args()
 
@@ -84,6 +95,21 @@ def main() -> int:
     registry = SchemaRegistry(root / "schemas/v1")
     request = object_document(args.request)
     fleet = load_fleet(args.fleet, registry)
+    if args.check_registration:
+        _, _, project, _ = require_registered_source(request, fleet, registry)
+        sys.stdout.write(f"registered: {project.repository} {project.profile_path}\n")
+        return 0
+    missing = [
+        flag
+        for flag, value in (
+            ("--evidence-root", args.evidence_root),
+            ("--profile-root", args.profile_root),
+            ("--plan", args.plan),
+        )
+        if value is None
+    ]
+    if missing:
+        parser.error("the following arguments are required: " + ", ".join(missing))
     verified = verify_request(
         request,
         fleet,

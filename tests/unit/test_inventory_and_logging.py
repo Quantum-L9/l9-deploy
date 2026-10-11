@@ -52,21 +52,130 @@ def test_inventory_generation_is_deterministic_private_and_role_grouped(
     assert application_hosts["seo-staging-01"]["l9_lifecycle"] == "managed"
 
 
+def _bind_profile(profile_root: Path, project_id: str, registered_path: str, source: Path) -> Path:
+    target = profile_root / project_id / registered_path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(source.read_bytes())
+    return target
+
+
 def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(tmp_path: Path) -> None:
     fleet = yaml.safe_load((ROOT / "fleet/registry.yaml").read_text(encoding="utf-8"))
-    output = tmp_path / "hosts.yml"
-    inventory = generate_ansible_inventory(fleet, output, repository_root=ROOT)
+    project = next(item for item in fleet["projects"] if item["id"] == "l9-cognitive-runtime")
+    assert project["profile_path"] == ".l9/deployment.yaml"
+    assert project["environments"]["staging"]["server_ids"] == ["c1"]
+    assert project["environments"]["staging"]["public_hostnames"] == [
+        "mcp-staging.quantumaipartners.com"
+    ]
+
+    # No profile bound: the adopted host renders without edge configuration and the
+    # unbound ingress is recorded as blocked rather than read from this checkout.
+    inventory = generate_ansible_inventory(fleet, tmp_path / "unbound.yml")
     host = inventory["all"]["children"]["application"]["hosts"]["c1"]
     assert host["ansible_host"] == "46.62.243.82"
     assert host["ansible_user"] == "root"
     assert host["l9_lifecycle"] == "adopted"
     assert host["l9_caddy_sites"] == []
-
-    project = next(item for item in fleet["projects"] if item["id"] == "l9-cognitive-runtime")
-    assert project["environments"]["staging"]["server_ids"] == ["c1"]
-    assert project["environments"]["staging"]["public_hostnames"] == [
-        "mcp-staging.quantumaipartners.com"
+    assert inventory["all"]["vars"]["l9_public_ingress_blocked"] == [
+        {
+            "environment": "staging",
+            "project_id": "l9-cognitive-runtime",
+            "reason": "consumer deployment profile is not bound",
+        }
     ]
+
+    # The consumer's source-owned profile, materialized under a profile root at its
+    # registered path, binds the ingress; C1 still receives no Caddy ownership.
+    profile_root = tmp_path / "profiles"
+    _bind_profile(
+        profile_root,
+        "l9-cognitive-runtime",
+        ".l9/deployment.yaml",
+        ROOT / "integrations/consumers/l9-cognitive-runtime.deployment.yaml",
+    )
+    bound = generate_ansible_inventory(fleet, tmp_path / "bound.yml", profile_root)
+    assert "vars" not in bound["all"]
+    assert bound["all"]["children"]["application"]["hosts"]["c1"]["l9_caddy_sites"] == []
+
+
+def test_registered_profiles_are_source_owned_not_platform_mirrors() -> None:
+    fleet = yaml.safe_load((ROOT / "fleet/registry.yaml").read_text(encoding="utf-8"))
+    for project in fleet["projects"]:
+        assert not project["profile_path"].startswith("integrations/"), project["id"]
+        # A registered path never resolves to a document in this checkout, so no
+        # code path can fall back to a platform-authored copy.
+        assert not (ROOT / project["profile_path"]).exists(), project["id"]
+
+
+def _managed_public_fleet(deployment_context: dict[str, object]) -> dict[str, object]:
+    fleet = json.loads(json.dumps(deployment_context["fleet"]))
+    project = fleet["projects"][0]
+    project["environments"]["staging"]["public_hostnames"] = ["seo-staging.example.com"]
+    return fleet
+
+
+def _public_profile(deployment_context: dict[str, object], tmp_path: Path) -> Path:
+    profile = json.loads(json.dumps(deployment_context["profile"]))
+    profile["network"]["public_ingress"] = {
+        "enabled": True,
+        "hostnames": ["seo-staging.example.com"],
+        "tls": "automatic",
+    }
+    source = tmp_path / "public-profile.yaml"
+    source.write_text(yaml.safe_dump(profile, sort_keys=False), encoding="utf-8")
+    return source
+
+
+def test_managed_public_ingress_without_bound_profile_is_refused(
+    tmp_path: Path, deployment_context: dict[str, object]
+) -> None:
+    fleet = _managed_public_fleet(deployment_context)
+    output = tmp_path / "hosts.yml"
+    # Rendering the managed host without this project's site would rewrite its
+    # Caddy configuration; the generator refuses instead of inventing or dropping it.
+    with pytest.raises(ContractError, match="requires the consumer's source-bound"):
+        generate_ansible_inventory(fleet, output)
+    with pytest.raises(ContractError, match="requires the consumer's source-bound"):
+        generate_ansible_inventory(fleet, output, tmp_path / "empty-profile-root")
+    assert not output.exists()
+
+
+def test_managed_public_ingress_projects_only_the_bound_profile(
+    tmp_path: Path, deployment_context: dict[str, object]
+) -> None:
+    fleet = _managed_public_fleet(deployment_context)
+    profile_root = tmp_path / "profiles"
+    registered = fleet["projects"][0]["profile_path"]  # type: ignore[index]
+    _bind_profile(
+        profile_root, "seo-bot", registered, _public_profile(deployment_context, tmp_path)
+    )
+    inventory = generate_ansible_inventory(fleet, tmp_path / "hosts.yml", profile_root)
+    port = deployment_context["profile"]["runtime"]["container_port"]  # type: ignore[index]
+    assert inventory["all"]["children"]["application"]["hosts"]["seo-staging-01"][
+        "l9_caddy_sites"
+    ] == [
+        {
+            "environment": "staging",
+            "hostname": "seo-staging.example.com",
+            "project_id": "seo-bot",
+            "upstream": f"127.0.0.1:{port}",
+        }
+    ]
+
+
+def test_inventory_profile_root_rejects_symlinked_material(
+    tmp_path: Path, deployment_context: dict[str, object]
+) -> None:
+    from l9_deploy.errors import AuthorizationError
+
+    fleet = _managed_public_fleet(deployment_context)
+    profile_root = tmp_path / "profiles"
+    registered = fleet["projects"][0]["profile_path"]  # type: ignore[index]
+    link = profile_root / "seo-bot" / registered
+    link.parent.mkdir(parents=True)
+    link.symlink_to(_public_profile(deployment_context, tmp_path))
+    with pytest.raises(AuthorizationError, match="crosses a symlink"):
+        generate_ansible_inventory(fleet, tmp_path / "hosts.yml", profile_root)
 
 
 @pytest.mark.parametrize(

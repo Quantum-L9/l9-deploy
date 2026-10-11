@@ -21,6 +21,7 @@ import yaml
 
 from ..canonical import atomic_write_text
 from ..errors import ContractError
+from ..requests.verifier import resolve_registered_profile
 
 _HOSTNAME_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789-")
 
@@ -50,22 +51,34 @@ def _server_connection_address(server: dict[str, Any]) -> str:
     return address
 
 
-def _load_profile(root: Path, profile_path: str) -> dict[str, Any]:
-    candidate = (root / profile_path).resolve()
-    if candidate != root and root not in candidate.parents:
-        raise ContractError(f"deployment profile escapes repository root: {profile_path}")
-    if not candidate.is_file():
-        raise ContractError(f"deployment profile is missing: {profile_path}")
-    value = yaml.safe_load(candidate.read_text(encoding="utf-8"))
+def _load_profile(profile_root: Path | None, project: dict[str, Any]) -> dict[str, Any] | None:
+    """Return the consumer profile bound for ``project``, or ``None`` when none is bound.
+
+    Profiles are consumer-owned source. They are read only from an explicit
+    profile root the caller materialized from the consumer repository at an
+    exact commit, laid out as ``<profile_root>/<project id>/<registered path>``,
+    and never from this checkout. An absent binding is reported to the caller,
+    which decides whether the affected configuration is blocked.
+    """
+    if profile_root is None:
+        return None
+    try:
+        path = resolve_registered_profile(
+            profile_root / str(project["id"]), str(project["profile_path"])
+        )
+    except ContractError:
+        return None
+    value = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
-        raise ContractError(f"deployment profile must be an object: {profile_path}")
+        raise ContractError(f"deployment profile must be an object: {project['id']}")
     return value
 
 
 def _caddy_sites_by_server(
-    fleet: dict[str, Any], repository_root: Path
-) -> dict[str, list[dict[str, str]]]:
+    fleet: dict[str, Any], profile_root: Path | None
+) -> tuple[dict[str, list[dict[str, str]]], list[dict[str, str]]]:
     sites: dict[str, list[dict[str, str]]] = {}
+    blocked: list[dict[str, str]] = []
     seen: dict[str, set[str]] = {}
     server_by_id = {str(server["id"]): server for server in fleet["servers"]}
     for project in sorted(fleet["projects"], key=lambda item: item["id"]):
@@ -77,7 +90,33 @@ def _caddy_sites_by_server(
         if not public_environments:
             continue
 
-        profile = _load_profile(repository_root, project["profile_path"])
+        profile = _load_profile(profile_root, project)
+        if profile is None:
+            # Without the consumer's source-bound profile there is no port, TLS
+            # mode or hostname set to project. Adopted hosts receive no generated
+            # edge configuration, so the binding is recorded as blocked and the
+            # rest of the fleet still renders. A managed host would have its
+            # Caddy sites rewritten without this project's entry, so that
+            # configuration is refused rather than silently dropped.
+            for environment, config in public_environments:
+                for server_id in sorted(config["server_ids"]):
+                    server = server_by_id.get(server_id)
+                    if server is None:
+                        raise ContractError(f"fleet project references unknown server: {server_id}")
+                    if server.get("lifecycle", "managed") != "adopted":
+                        raise ContractError(
+                            "public ingress on a managed server requires the consumer's "
+                            f"source-bound deployment profile: {project['id']}:{environment} "
+                            f"on {server_id}"
+                        )
+                blocked.append(
+                    {
+                        "environment": environment,
+                        "project_id": project["id"],
+                        "reason": "consumer deployment profile is not bound",
+                    }
+                )
+            continue
         runtime = profile.get("runtime")
         network = profile.get("network")
         if not isinstance(runtime, dict) or not isinstance(network, dict):
@@ -134,16 +173,15 @@ def _caddy_sites_by_server(
                     )
     for entries in sites.values():
         entries.sort(key=lambda item: (item["hostname"], item["project_id"], item["environment"]))
-    return sites
+    return sites, blocked
 
 
 def generate_ansible_inventory(
     fleet: dict[str, Any],
     output: Path,
-    repository_root: Path | None = None,
+    profile_root: Path | None = None,
 ) -> dict[str, Any]:
-    root = (repository_root or Path.cwd()).resolve()
-    caddy_sites = _caddy_sites_by_server(fleet, root)
+    caddy_sites, blocked_ingress = _caddy_sites_by_server(fleet, profile_root)
     groups: dict[str, dict[str, Any]] = {}
     for server in fleet["servers"]:
         host_vars = {
@@ -159,6 +197,8 @@ def generate_ansible_inventory(
         for role in server["roles"]:
             groups.setdefault(role, {"hosts": {}})["hosts"][server["id"]] = host_vars
         groups.setdefault(server["environment"], {"hosts": {}})["hosts"][server["id"]] = host_vars
-    inventory = {"all": {"children": groups}}
+    inventory: dict[str, Any] = {"all": {"children": groups}}
+    if blocked_ingress:
+        inventory["all"]["vars"] = {"l9_public_ingress_blocked": blocked_ingress}
     atomic_write_text(output, yaml.safe_dump(inventory, sort_keys=True), mode=0o640)
     return inventory
