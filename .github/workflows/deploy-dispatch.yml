@@ -40,6 +40,15 @@ jobs:
         env:
           REQUEST_JSON: ${{ toJSON(github.event.client_payload) }}
         run: printf '%s' "$REQUEST_JSON" > request.json
+      - name: Bind request to fleet registration before privileged reads
+        # DEPLOYMENT_EVIDENCE_READ_TOKEN may only read a registered repository, and
+        # only its fleet-registered profile path. This check uses the request and
+        # this checkout's fleet alone, so an unregistered repository or substituted
+        # path stops here, before any credentialed cross-repository read below.
+        run: >-
+          uv run --no-sync --no-build python scripts/prepare-deployment.py
+          --request request.json
+          --check-registration
       - name: Download immutable source-run evidence
         env:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_EVIDENCE_READ_TOKEN }}

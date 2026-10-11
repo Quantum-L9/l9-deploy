@@ -35,6 +35,7 @@ from ..evidence.publisher import publish_receipt
 from ..evidence.receipts import create_deployment_receipt
 from ..planning.planner import required_service_probes, verify_plan_digest
 from ..requests.idempotency import IdempotencyStore
+from ..requests.verifier import load_sealed_profile
 from .backups import create_backup, verify_backup_command
 from .compose import compose_path, render_compose
 from .health import run_probe
@@ -47,6 +48,7 @@ from .releases import (
     cleanup_release_directories,
     materialize_release_runtime_env,
     remove_release_directory,
+    seal_release_profile,
     validate_release_runtime_env_path,
 )
 from .rollback import rollback_release
@@ -110,6 +112,7 @@ def execute_plan(
     *,
     plan: DeploymentPlan | dict[str, object],
     profile: DeploymentProfile | dict[str, object],
+    profile_source: bytes,
     executor: Executor,
     expected_plan_digest: str,
     approval_receipt: Path,
@@ -144,6 +147,18 @@ def execute_plan(
     # The approved digest is only meaningful if it still describes this document:
     # a plan whose fields were edited around an unchanged digest string is refused.
     verify_plan_digest(typed_plan)
+    # The profile being executed must be the exact bytes the plan was approved over;
+    # those bytes are what the release seals for later rollback, backup and restore.
+    if (
+        load_sealed_profile(
+            profile_source,
+            plan=typed_plan,
+            repository=typed_profile.project.repository,
+            registry=registry,
+        )
+        != typed_profile
+    ):
+        raise AuthorizationError("executed deployment profile is not the sealed profile")
     _require_health_gate_order(typed_plan)
     verify_approval_receipt(
         approval_receipt,
@@ -238,6 +253,7 @@ def execute_plan(
                 )
             else:
                 executor.run(["test", "-f", str(candidate_runtime_env)])
+            seal_release_profile(executor, typed_plan, profile_source)
             for step in typed_plan.steps:
                 details: dict[str, JsonValue]
                 kind = step.kind

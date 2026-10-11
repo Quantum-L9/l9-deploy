@@ -104,21 +104,36 @@ servers:
       caddy_management: external
     conformance: {profile: adopted-c1, max_age_hours: 24}
 projects:
+  # profile_path is relative to the registered consumer repository and is read only
+  # at the request's exact source commit (deploy-dispatch.yml). This repository holds
+  # no consumer profile authority; integrations/consumers/ are test fixtures only.
+  #
+  # BLOCKED: l9-graphiti-memory is ProductKind=dependency (product-topology.yaml,
+  # ADR-094): a Python distribution with consumer-owned process lifecycle, no OCI
+  # image and no hosted deployment profile. Its repository publishes no
+  # .l9/deployment.yaml, so every deployment request fails closed at profile
+  # resolution. This entry keeps Deploy's host mapping only, pending the actual
+  # hosting consumer, which must register under its own repository and profile.
   - id: graphiti-memory
     repository: Quantum-L9/l9-graphiti-memory
-    profile_path: integrations/consumers/graphiti-memory.deployment.yaml
+    profile_path: .l9/deployment.yaml
     environments:
       staging: {server_ids: [mem-staging-01], infisical_environment: staging}
       production: {server_ids: [mem-prod-01], infisical_environment: prod}
+  # BLOCKED: Quantum-L9/SEO-Bot does not yet publish its consumer-owned
+  # .l9/deployment.yaml (absent at 16a844f829a1d8db01dfad3d66247e9abb4e5501), so
+  # deployment fails closed at profile resolution until SEO-Bot adds it.
   - id: seo-bot
     repository: Quantum-L9/SEO-Bot
-    profile_path: integrations/consumers/seo-bot.deployment.yaml
+    profile_path: .l9/deployment.yaml
     environments:
       staging: {server_ids: [seo-staging-01], infisical_environment: staging}
       production: {server_ids: [seo-prod-01], infisical_environment: prod}
+  # Source-owned profile: Quantum-L9/l9-cognitive-runtime/.l9/deployment.yaml
+  # (present at cd388ecfa5cf14269bbcf7e5c1919557947adcf6).
   - id: l9-cognitive-runtime
     repository: Quantum-L9/l9-cognitive-runtime
-    profile_path: integrations/consumers/l9-cognitive-runtime.deployment.yaml
+    profile_path: .l9/deployment.yaml
     environments:
       staging:
         server_ids: [c1]

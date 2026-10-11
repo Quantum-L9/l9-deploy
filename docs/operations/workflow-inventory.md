@@ -20,8 +20,8 @@ Phase 3 keeps only deployment wiring and its existing operational prerequisites 
 | `deploy-dispatch.yml` | Deployment-required | Validates an immutable release request, resolves the consumer-owned deployment profile from the exact source repository and commit the request names and seals it with the plan, collects protected approval, materializes runtime secrets, verifies provenance, and executes the exact approved plan against the sealed profile bytes. | Only `deploy` may request `id-token: write`. |
 | `deploy-manual.yml` | Deployment-required | Produces the governed repository dispatch that enters `deploy-dispatch.yml`. | No OIDC. |
 | `promote.yml` | Deployment-required | Promotes an already validated deployment request between governed environments. | No OIDC. |
-| `rollback.yml` | Deployment-required | Collects protected incident approval and invokes rollback on the private runner. | No OIDC. |
-| `backup-verify.yml` | Deployment-required safeguard | Verifies recovery artifacts required by the deployment recovery path. | No OIDC. |
+| `rollback.yml` | Deployment-required | Collects protected incident approval and invokes rollback on the private runner. Rollback uses the consumer profile sealed with the restored release on the target host and fails closed when that release's sealed plan and profile cannot be proven; it never reads a profile from this checkout. | No OIDC. |
+| `backup-verify.yml` | Deployment-required safeguard | Verifies recovery artifacts required by the deployment recovery path, using the backup contract of the profile sealed with the running release. | No OIDC. |
 | `drift-detect.yml` | Deployment-required safeguard | Uses short-lived infrastructure credentials to detect environment drift. | Only `plan` may request `id-token: write`. |
 | `fleet-conformance.yml` | Deployment-required safeguard | Verifies private fleet conformance and emits evidence. | No OIDC. |
 | `configure-hosts.yml` | Provisioning-related | Applies approved host configuration through Ansible. | No OIDC; the workflow does not exchange identity. |
