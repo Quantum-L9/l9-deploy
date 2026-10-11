@@ -16,9 +16,14 @@ import pytest
 import yaml
 
 from l9_deploy.canonical import file_sha256
-from l9_deploy.contracts.models import DeploymentProfile
+from l9_deploy.contracts.models import DeploymentProfile, HealthProbe
 from l9_deploy.errors import ContractError
-from l9_deploy.planning.planner import build_plan, required_service_probes
+from l9_deploy.planning.planner import (
+    SERVICE_READINESS_SCOPE,
+    build_plan,
+    required_service_probes,
+    service_probe_evidence,
+)
 from l9_deploy.requests.verifier import verify_request
 
 
@@ -205,6 +210,33 @@ def test_required_service_probe_must_be_executable_by_the_generic_runner(
     profile = _profile_with_probe(deployment_context, probe)
     with pytest.raises(ContractError, match=f"required service postgres {message}"):
         required_service_probes(profile)
+
+
+@pytest.mark.parametrize(
+    "host", ["localhost", "db.localhost", "127.0.0.1", "127.1.2.3", "::1", "[::1]", "::"]
+)
+def test_tcp_service_probe_must_target_the_fleet_not_the_runner(
+    deployment_context, host: str
+) -> None:  # type: ignore[no-untyped-def]
+    # TCP probes connect from the deployment runner. A loopback or unspecified host
+    # would observe the runner itself, so the claim could never be about the target.
+    profile = _profile_with_probe(
+        deployment_context, {"type": "tcp", "host": host, "port": 5432, "timeout_seconds": 5}
+    )
+    with pytest.raises(ContractError, match="resolves on the deployment runner"):
+        required_service_probes(profile)
+
+
+def test_service_probe_evidence_names_what_and_where_it_proved() -> None:
+    tcp = HealthProbe(type="tcp", host="10.90.10.20", port=5432, timeout_seconds=5)
+    command = HealthProbe(type="command", command=("pg_isready",), timeout_seconds=5)
+    assert service_probe_evidence(tcp) == (
+        "tcp connect from the deployment runner to 10.90.10.20:5432 succeeded"
+    )
+    assert service_probe_evidence(command) == "command probe exited 0 on the deployment target"
+    assert "not the dependency's or the product's own semantic readiness" in (
+        SERVICE_READINESS_SCOPE
+    )
 
 
 def test_plan_refuses_http_required_service_probe_that_passes_the_schema(

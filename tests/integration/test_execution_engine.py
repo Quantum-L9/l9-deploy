@@ -1025,16 +1025,21 @@ def test_required_service_probes_run_between_startup_and_promotion(
 
     health = next(step for step in receipt["steps"] if step["kind"] == "health")
     assert health["details"]["startup"] == {"attempt": 1, "type": "command"}
+    on_target = "command probe exited 0 on the deployment target"
     assert health["details"]["services"] == [
         {
-            "name": "alpha",
-            "mode": "managed_on_fleet",
+            "name": name,
+            "mode": mode,
             "status": "PASS",
+            "proves": on_target,
             "attempt": 1,
             "type": "command",
-        },
-        {"name": "mid", "mode": "external", "status": "PASS", "attempt": 1, "type": "command"},
-        {"name": "zeta", "mode": "external", "status": "PASS", "attempt": 1, "type": "command"},
+        }
+        for name, mode in (
+            ("alpha", "managed_on_fleet"),
+            ("mid", "external"),
+            ("zeta", "external"),
+        )
     ]
     assert health["details"]["stabilization_seconds"] == 30
     state = json.loads(
@@ -1691,3 +1696,94 @@ def test_registration_gate_runs_without_source_material_and_refuses_unregistered
     result = _check_registration(wrong_environment, fleet, repo_root, tmp_path / "environment")
     assert result.returncode != 0
     assert "not authorized for environment" in result.stderr
+
+
+def _source_profile_with_probes(deployment_context: dict[str, Any], marker: str) -> bytes:
+    """Re-seal the consumer's source profile with probes tagged ``marker``."""
+    profile = copy.deepcopy(deployment_context["profile"])
+    for name, service in profile.get("services", {}).items():
+        if service.get("required"):
+            service["probe"]["command"] = [marker, name]
+    data = yaml.safe_dump(profile, sort_keys=False).encode("utf-8")
+    deployment_context["profile_path"].write_bytes(data)
+    deployment_context["request"]["profile"]["digest"] = file_sha256(
+        deployment_context["profile_path"]
+    )
+    return data
+
+
+def test_source_owned_profile_drives_readiness_and_its_digest_binds_the_probe_list(
+    deployment_context, repo_root: Path, tmp_path: Path, monkeypatch, capsys
+) -> None:  # type: ignore[no-untyped-def]
+    # The platform-local mirror declares required services without probes: it can
+    # never qualify a deployment, so it cannot be what readiness runs on.
+    mirror = yaml.safe_load(
+        (repo_root / "integrations/consumers/seo-bot.deployment.yaml").read_text(encoding="utf-8")
+    )
+    assert any(
+        service.get("required") and "probe" not in service
+        for service in mirror.get("services", {}).values()
+    )
+    _source_profile_with_probes(deployment_context, "source-owned-probe")
+    required = sorted(
+        name
+        for name, service in deployment_context["profile"]["services"].items()
+        if service.get("required")
+    )
+    assert required, "fixture declares required services"
+
+    # Validate stage: the plan is built from the source profile under its own root.
+    source_root = deployment_context["root"]
+    registered = deployment_context["fleet"]["projects"][0]["profile_path"]
+    plan_path, fleet_path, _, result = _prepare_deployment(
+        deployment_context, repo_root, tmp_path / "validate", source_root
+    )
+    assert result.returncode == 0, result.stderr
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    assert plan["profile_digest"] == file_sha256(source_root / registered)
+
+    executors: list[FakeExecutor] = []
+
+    def fake_target_executor(args, fleet, project, environment, *, mutation=False):  # type: ignore[no-untyped-def]
+        executor = FakeExecutor(Path(args.local_executor_root), plan["image_ref"])
+        executors.append(executor)
+        return executor
+
+    monkeypatch.setattr(cli, "_target_executor", fake_target_executor)
+    monkeypatch.setattr(cli, "execute_plan", functools.partial(execute_plan, sleep=lambda _s: None))
+
+    def deploy(run_name: str) -> int:
+        capsys.readouterr()
+        return cli.main(
+            _deploy_arguments(
+                repo_root=repo_root,
+                tmp_path=tmp_path,
+                plan_path=plan_path,
+                fleet_path=fleet_path,
+                profile_root=source_root,
+                plan=plan,
+                run_name=run_name,
+            )
+        )
+
+    assert deploy("approved") == 0
+    receipt = json.loads(capsys.readouterr().out)
+    executed = [command for command, _ in executors[0].commands]
+    assert [c for c in executed if c[:1] == ["source-owned-probe"]] == [
+        ["source-owned-probe", name] for name in required
+    ]
+    health = next(step for step in receipt["steps"] if step["kind"] == "health")
+    assert [item["name"] for item in health["details"]["services"]] == required
+    for item in health["details"]["services"]:
+        assert item["proves"] == "command probe exited 0 on the deployment target"
+    assert (
+        "not the dependency's or the product's own semantic readiness"
+        in (health["details"]["services_scope"])
+    )
+
+    # Editing the probe list after approval changes the profile bytes the plan's
+    # digest was computed over: refused before any executor or host command.
+    _source_profile_with_probes(deployment_context, "edited-after-approval-probe")
+    assert deploy("edited") == AuthorizationError.exit_code
+    assert "does not match the approved plan profile digest" in capsys.readouterr().err
+    assert len(executors) == 1

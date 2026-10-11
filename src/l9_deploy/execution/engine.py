@@ -33,7 +33,12 @@ from ..evidence.approval import verify_approval_receipt
 from ..evidence.ledger import ReceiptLedger
 from ..evidence.publisher import publish_receipt
 from ..evidence.receipts import create_deployment_receipt
-from ..planning.planner import required_service_probes, verify_plan_digest
+from ..planning.planner import (
+    SERVICE_READINESS_SCOPE,
+    required_service_probes,
+    service_probe_evidence,
+    verify_plan_digest,
+)
 from ..requests.idempotency import IdempotencyStore
 from ..requests.verifier import load_sealed_profile
 from .backups import create_backup, verify_backup_command
@@ -355,6 +360,7 @@ def execute_plan(
                                 "name": service_name,
                                 "mode": typed_profile.services[service_name].mode,
                                 "status": "PASS",
+                                "proves": service_probe_evidence(service_probe),
                                 **outcome,
                             }
                         )
@@ -380,6 +386,7 @@ def execute_plan(
                         "stabilization_seconds": stabilization_seconds,
                         "startup": dict(startup),
                         "services": services,
+                        "services_scope": SERVICE_READINESS_SCOPE,
                     }
                     health_gate_passed = True
                 elif kind == "promote":

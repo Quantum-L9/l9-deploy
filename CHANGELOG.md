@@ -94,11 +94,22 @@ status: active
 - The health `ReceiptStep.details` records `startup` and the ordered `services` results
   beside the existing post-deploy fields. A probe result means exactly what the supplied
   probe checks; it is readiness evidence, not provisioning or lifecycle ownership.
-- Consumer profiles that declare required services without probes
-  (`integrations/consumers/seo-bot.deployment.yaml`,
-  `integrations/consumers/graphiti-memory.deployment.yaml`,
-  `templates/consumer/stateful-container/.l9/deployment.yaml`) are now blocked at planning
-  until they supply one; they are deliberately not edited here.
+- A required-service `tcp` probe whose host is loopback or unspecified (`localhost`,
+  `127.0.0.0/8`, `::1`, `::`, `0.0.0.0`) is refused: TCP probes connect from the deployment
+  runner, so such a host would observe the runner rather than the deployment target.
+- Each passing service entry records `proves` (what was observed and where: a TCP connect
+  from the runner, or a command exiting 0 on the target), and the health step records
+  `services_scope`: platform-observed reachability, never the dependency's or the
+  product's own semantic readiness. A product's full-capability readiness can only be
+  claimed by that product or its hosting consumer with its own evidence.
+- Readiness runs from the source-owned consumer profile sealed under the approved
+  `profile_digest`; a probe list edited after approval is refused before any host command.
+  The platform-local fixtures (`integrations/consumers/seo-bot.deployment.yaml`,
+  `integrations/consumers/graphiti-memory.deployment.yaml`) and the
+  `templates/consumer/stateful-container` template declare required services without
+  probes and would be refused at planning; they are not deployment authority and are
+  deliberately not edited. Test fixtures that add `service-ready` command probes are
+  synthetic and are not rollout evidence.
 
 ## 0.1.5 - 2026-07-22
 

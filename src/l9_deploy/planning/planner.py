@@ -11,6 +11,7 @@ status: active
 
 from __future__ import annotations
 
+import ipaddress
 from datetime import UTC, datetime
 
 from ..canonical import sha256_digest
@@ -54,6 +55,36 @@ _SERVICE_PROBE_GUIDANCE = (
 )
 
 
+def _is_runner_local(host: str) -> bool:
+    candidate = host.strip().lower().strip("[]")
+    if candidate == "localhost" or candidate.endswith(".localhost"):
+        return True
+    try:
+        address = ipaddress.ip_address(candidate)
+    except ValueError:
+        return False
+    return address.is_loopback or address.is_unspecified
+
+
+SERVICE_READINESS_SCOPE = (
+    "generic dependency probes declared by the sealed consumer profile; a pass is "
+    "platform-observed reachability, not the dependency's or the product's own "
+    "semantic readiness"
+)
+
+
+def service_probe_evidence(probe: HealthProbe) -> str:
+    """Describe exactly what a passing required-service probe establishes.
+
+    A pass is generic reachability evidence observed by the platform, recorded
+    with where it was observed. It is never a product's own semantic readiness
+    claim, which only that product or its hosting consumer can evidence.
+    """
+    if probe.type == "tcp":
+        return f"tcp connect from the deployment runner to {probe.host}:{probe.port} succeeded"
+    return f"{probe.type} probe exited 0 on the deployment target"
+
+
 def _require_executable_service_probe(name: str, probe: HealthProbe) -> None:
     """Refuse a required-service probe the generic runner could not execute.
 
@@ -89,6 +120,14 @@ def _require_executable_service_probe(name: str, probe: HealthProbe) -> None:
             raise ContractError(
                 f"required service {name} tcp readiness probe port {probe.port} is not "
                 "a usable port (1-65535)"
+            )
+        if _is_runner_local(probe.host):
+            # TCP probes connect from the deployment runner, not the target host,
+            # so a loopback or unspecified address would measure the runner.
+            raise ContractError(
+                f"required service {name} tcp readiness probe host {probe.host} resolves "
+                "on the deployment runner, not the deployment target; name the "
+                "dependency's fleet address, or use a command probe run on the target"
             )
     elif not probe.command or not all(argument.strip() for argument in probe.command):
         # command and database probes are an argument vector run on the target.
