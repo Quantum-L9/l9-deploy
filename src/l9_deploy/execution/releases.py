@@ -142,7 +142,7 @@ def load_release_profile(
     )
     try:
         plan_document = json.loads(plan_bytes.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError) as exc:
+    except ValueError as exc:  # UnicodeDecodeError is a ValueError
         raise ContractError("sealed release plan is not parseable") from exc
     registry.validate(plan_document, "deployment-plan")
     plan = DeploymentPlan.model_validate(plan_document)

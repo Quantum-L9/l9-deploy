@@ -98,7 +98,18 @@ def main() -> int:
     if args.check_registration:
         _, _, project, _ = require_registered_source(request, fleet, registry)
         sys.stdout.write(f"registered: {project.repository} {project.profile_path}\n")
-        return 0
+    else:
+        _prepare(parser, args, registry, request, fleet)
+    return 0
+
+
+def _prepare(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+    registry: SchemaRegistry,
+    request: dict[str, object],
+    fleet: dict[str, object],
+) -> None:
     missing = [
         flag
         for flag, value in (
@@ -142,7 +153,6 @@ def main() -> int:
     write_output("source_repository", verified.document.source.repository)
     write_output("source_run_id", str(verified.document.source.run_id))
     write_output("base_url", base_url)
-    return 0
 
 
 if __name__ == "__main__":

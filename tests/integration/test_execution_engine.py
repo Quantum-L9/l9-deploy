@@ -888,22 +888,23 @@ def test_execution_refuses_profile_bytes_other_than_the_approved_ones(
     else:
         profile = copy.deepcopy(profile)
         profile["release"]["stabilization_seconds"] = 0
+    arguments: dict[str, Any] = {
+        "plan": plan,
+        "profile": profile,
+        "profile_source": source,
+        "executor": executor,
+        "expected_plan_digest": plan.plan_digest,
+        "approval_receipt": approval_path,
+        "approval_history": history_path,
+        "approval_run_id": 555,
+        "latest_pointer": tmp_path / "latest.json",
+        "receipt_ledger_root": tmp_path / "ledger",
+        "lock_root": tmp_path / "locks",
+        "idempotency_store": IdempotencyStore(tmp_path / "idempotency.json"),
+        "request_digest": "sha256:" + "e" * 64,
+    }
     with pytest.raises(AuthorizationError):
-        execute_plan(
-            plan=plan,
-            profile=profile,
-            profile_source=source,
-            executor=executor,
-            expected_plan_digest=plan.plan_digest,
-            approval_receipt=approval_path,
-            approval_history=history_path,
-            approval_run_id=555,
-            latest_pointer=tmp_path / "latest.json",
-            receipt_ledger_root=tmp_path / "ledger",
-            lock_root=tmp_path / "locks",
-            idempotency_store=IdempotencyStore(tmp_path / "idempotency.json"),
-            request_digest="sha256:" + "e" * 64,
-        )
+        execute_plan(**arguments)
     assert executor.commands == []
     assert not (tmp_path / "ledger").exists()
 

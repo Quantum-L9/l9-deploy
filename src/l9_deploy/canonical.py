@@ -34,12 +34,15 @@ def canonical_json_bytes(value: Any) -> bytes:
     ).encode("utf-8")
 
 
+SHA256_PREFIX = "sha256:"
+
+
 def sha256_digest(value: Any) -> str:
-    return "sha256:" + hashlib.sha256(canonical_json_bytes(value)).hexdigest()
+    return SHA256_PREFIX + hashlib.sha256(canonical_json_bytes(value)).hexdigest()
 
 
 def bytes_sha256(data: bytes) -> str:
-    return "sha256:" + hashlib.sha256(data).hexdigest()
+    return SHA256_PREFIX + hashlib.sha256(data).hexdigest()
 
 
 def file_sha256(path: Path) -> str:
@@ -47,7 +50,7 @@ def file_sha256(path: Path) -> str:
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
-    return "sha256:" + digest.hexdigest()
+    return SHA256_PREFIX + digest.hexdigest()
 
 
 def load_structured(path: Path) -> Any:
