@@ -46,7 +46,7 @@ jobs:
         # this checkout's fleet alone, so an unregistered repository or substituted
         # path stops here, before any credentialed cross-repository read below.
         run: >-
-          uv run python scripts/prepare-deployment.py
+          uv run --no-sync --no-build python scripts/prepare-deployment.py
           --request request.json
           --check-registration
       - name: Download immutable source-run evidence
