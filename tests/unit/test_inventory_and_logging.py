@@ -106,7 +106,8 @@ RETIRED_SERVER_IDS = {"mem-staging-01", "mem-prod-01"}
 def _retired_registrations(fleet: dict[str, object]) -> list[str]:
     projects = fleet["projects"]
     servers = fleet["servers"]
-    assert isinstance(projects, list) and isinstance(servers, list)
+    assert isinstance(projects, list)
+    assert isinstance(servers, list)
     found = [
         f"project:{project['id']}"
         for project in projects
