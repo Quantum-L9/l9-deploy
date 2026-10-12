@@ -11,6 +11,56 @@ status: active
 /L9_META -->
 # Changelog
 
+## Unreleased
+
+### Immutable consumer profile ingestion
+
+- The deployment profile is now consumer-owned source: `deploy-dispatch.yml` resolves
+  `profile.path` from `source.repository` at the exact `source.commit_sha` through the
+  existing read-only evidence transport, verifies the blob against the Git object id,
+  and seals it in the validated-deployment artifact beside the request and plan.
+- `verify_request` and `scripts/prepare-deployment.py` resolve the fleet-registered
+  relative profile path inside an explicit `--profile-root` (symlink- and
+  traversal-confined), check the request digest against those bytes before parsing,
+  and never read a profile from the l9-deploy checkout.
+- `l9-deploy deploy` requires `--profile-root` and reverifies the sealed bytes against
+  `plan.profile_digest`, project, repository, and image before the executor exists;
+  absence, drift, or tampering fails closed before backup, pull, render, migration,
+  Compose, or promotion. `request validate`, `request inspect`, and `plan` take the
+  same `--profile-root`.
+- `plan_digest` is now content-bound: `build_plan` computes it over the plan's canonical
+  wire form, so `plan.json` reproduces its own digest, and both `l9-deploy deploy` and the
+  execution engine recompute it before trusting any plan field (`profile_digest` included).
+  A plan edited around an unchanged digest string is refused before approval is consulted.
+- Request, profile, plan, and receipt contract shapes are unchanged.
+
+### Consumer profile authority closure
+
+- No executable path reads `integrations/consumers/*.deployment.yaml` any more; those
+  files remain test fixtures only. `fleet/registry.yaml` registers every project at its
+  consumer-repository path (`.l9/deployment.yaml`). `l9-cognitive-runtime` publishes it;
+  `SEO-Bot` and `l9-graphiti-memory` do not, so their deployments fail closed at profile
+  resolution and the registry marks them blocked.
+- `deploy-dispatch.yml` binds the request to its fleet registration (registered
+  repository, authorized environment, registered profile path) before any read under
+  `DEPLOYMENT_EVIDENCE_READ_TOKEN`, through `prepare-deployment.py --check-registration`.
+- Each deployment seals its approved `plan.json` and the exact consumer profile bytes in
+  the release directory (`releases/<plan digest>/`) before any transaction step runs.
+  `execute_plan` takes those bytes (`profile_source`) and refuses a profile that is not
+  them.
+- `rollback` restores the previous release with that release's own sealed profile;
+  `backup create`, `backup verify` and `restore test` use the running release's sealed
+  profile. The chain runtime state -> plan content digest -> profile byte digest is
+  verified first; missing or inconsistent material fails before any host mutation, so
+  releases deployed before sealing existed are blocked rather than served a newer
+  profile.
+- `inventory generate` / `scripts/generate-inventory.py` take an optional
+  `--profile-root` (`<project id>/<registered path>`) of source-materialized profiles.
+  Public ingress without a bound profile is listed under `l9_public_ingress_blocked`
+  for adopted hosts and refused for managed hosts.
+- `rollback` accepts `--base-url`; the handler read `args.base_url` without the
+  argument being defined, so every rollback failed before restoring anything.
+
 ## 0.1.5 - 2026-07-22
 
 ### Source-release integrity

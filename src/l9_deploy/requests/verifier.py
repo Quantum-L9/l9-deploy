@@ -7,18 +7,33 @@ tags: [L9_CONTRACT, request-verification]
 owner: platform
 status: active
 --- /L9_META ---
+
+Bind one deployment request to the consumer-authored deployment profile it names.
+
+The profile bytes are never read from the l9-deploy checkout. The caller
+materializes them from the exact source repository and immutable source commit
+named by ``request.source`` (``deploy-dispatch.yml`` does this with the GitHub
+contents API before ``scripts/prepare-deployment.py`` runs) into a dedicated
+*profile root*. This module resolves the registered relative path inside that
+root with path and symlink confinement, checks the request digest against the
+materialized bytes before parsing them, and only then validates the document.
 """
 
 from __future__ import annotations
 
 import fnmatch
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
-from ..canonical import file_sha256, sha256_digest
+import yaml
+
+from ..canonical import bytes_sha256, file_sha256, sha256_digest
 from ..contracts.models import (
+    DeploymentPlan,
     DeploymentProfile,
     DeploymentRequest,
     FleetInventory,
+    FleetProject,
+    ProjectEnvironment,
     VerifiedRequest,
 )
 from ..contracts.validator import SchemaRegistry
@@ -50,15 +65,54 @@ def _verify_public_ingress_alignment(
         raise AuthorizationError("fleet public hostnames do not match deployment profile")
 
 
-def verify_request(
+def resolve_registered_profile(profile_root: Path, relative_path: str) -> Path:
+    """Return the materialized profile file for ``relative_path`` inside ``profile_root``.
+
+    ``relative_path`` is the fleet-registered, consumer-repository-relative profile
+    path. The result is confined to ``profile_root``: absolute paths, ``.``/``..``
+    segments, symlinks on any component, and targets that resolve outside the root
+    are rejected before any byte is read. A missing or non-regular file is a
+    contract failure, never a reason to look anywhere else.
+    """
+    parts = PurePosixPath(relative_path).parts
+    if (
+        not parts
+        or PurePosixPath(relative_path).is_absolute()
+        or any(part in {".", ".."} for part in parts)
+    ):
+        raise AuthorizationError("registered deployment profile path is not confined")
+    root = profile_root.resolve()
+    candidate = root
+    for part in parts:
+        candidate = candidate / part
+        if candidate.is_symlink():
+            raise AuthorizationError(
+                "registered deployment profile path crosses a symlink; "
+                "only materialized source bytes are accepted"
+            )
+    resolved = candidate.resolve()
+    if resolved == root or root not in resolved.parents:
+        raise AuthorizationError("registered deployment profile escapes the profile root")
+    if not candidate.is_file():
+        raise ContractError(
+            f"registered deployment profile is missing from the profile root: {relative_path}"
+        )
+    return candidate
+
+
+def require_registered_source(
     request_document: dict[str, object],
     fleet_document: FleetInventory | dict[str, object],
     registry: SchemaRegistry,
-    repository_root: Path,
-    *,
-    evidence_root: Path,
-    bundle_validator: CanonicalBundleValidator | None = None,
-) -> VerifiedRequest:
+) -> tuple[DeploymentRequest, FleetInventory, FleetProject, ProjectEnvironment]:
+    """Bind a request to its fleet registration using only local, unprivileged inputs.
+
+    This is the allowlist every privileged cross-repository read is gated on: the
+    source repository must be registered, the target environment authorized for
+    it, and the requested profile path must be exactly the registered one. It
+    reads nothing from the source repository, so ``deploy-dispatch.yml`` runs it
+    before any credentialed fetch, and ``verify_request`` runs the same check.
+    """
     registry.validate(request_document, "deployment-request")
     request = DeploymentRequest.model_validate(request_document)
     if isinstance(fleet_document, FleetInventory):
@@ -66,15 +120,69 @@ def verify_request(
     else:
         registry.validate(fleet_document, "fleet-inventory")
         fleet = FleetInventory.model_validate(fleet_document)
-
     project = find_project(fleet, request.source.repository)
     project_environment = require_environment(project, request.target.environment)
-    root = repository_root.resolve()
-    profile_path = (root / project.profile_path).resolve()
-    if profile_path != root and root not in profile_path.parents:
-        raise AuthorizationError("registered deployment profile escapes repository root")
-    if not profile_path.is_file():
-        raise ContractError(f"registered deployment profile is missing: {profile_path}")
+    if request.profile.path != project.profile_path:
+        raise AuthorizationError("deployment profile path does not match fleet registration")
+    return request, fleet, project, project_environment
+
+
+def load_sealed_profile(
+    data: bytes,
+    *,
+    plan: DeploymentPlan,
+    repository: str,
+    registry: SchemaRegistry,
+) -> DeploymentProfile:
+    """Return the profile sealed with ``plan``, or refuse.
+
+    ``data`` is the exact byte string the plan's ``profile_digest`` (and therefore
+    its approval) was computed over. The digest is checked before the bytes are
+    interpreted; the parsed document must then validate and still name the plan's
+    project, the fleet-registered repository, and an image the plan deploys. This
+    is the one binding between a plan and a profile; the deploy stage, rollback,
+    backup and restore all reach the profile through it.
+    """
+    if bytes_sha256(data) != plan.profile_digest:
+        raise AuthorizationError(
+            "sealed deployment profile does not match the approved plan profile digest"
+        )
+    try:
+        document = yaml.safe_load(data.decode("utf-8"))
+    except (UnicodeDecodeError, yaml.YAMLError) as exc:
+        raise ContractError(f"sealed deployment profile is not parseable: {exc}") from exc
+    if not isinstance(document, dict):
+        raise ContractError("sealed deployment profile must be an object")
+    registry.validate(document, "deployment-profile")
+    profile = DeploymentProfile.model_validate(document)
+    if profile.project.id != plan.project_id:
+        raise AuthorizationError("sealed deployment profile project id does not match plan")
+    if profile.project.repository != repository:
+        raise AuthorizationError(
+            "sealed deployment profile repository does not match fleet registration"
+        )
+    if not plan.image_ref.startswith(profile.artifact.image + "@"):
+        raise AuthorizationError("plan image is not allowed by the sealed deployment profile")
+    return profile
+
+
+def verify_request(
+    request_document: dict[str, object],
+    fleet_document: FleetInventory | dict[str, object],
+    registry: SchemaRegistry,
+    profile_root: Path,
+    *,
+    evidence_root: Path,
+    bundle_validator: CanonicalBundleValidator | None = None,
+) -> VerifiedRequest:
+    request, fleet, project, project_environment = require_registered_source(
+        request_document, fleet_document, registry
+    )
+    profile_path = resolve_registered_profile(profile_root, project.profile_path)
+    # The requester's digest claim is checked against the materialized source bytes
+    # before those bytes are parsed: an unclaimed document is never interpreted.
+    if request.profile.digest != file_sha256(profile_path):
+        raise AuthorizationError("deployment profile digest mismatch")
     profile_document = registry_document(profile_path)
     registry.validate(profile_document, "deployment-profile")
     profile = DeploymentProfile.model_validate(profile_document)
@@ -85,11 +193,6 @@ def verify_request(
         raise AuthorizationError("deployment profile repository does not match request source")
     if profile.artifact.image != request.artifact.image:
         raise AuthorizationError("requested image repository is not allowed by deployment profile")
-    actual_profile_digest = file_sha256(profile_path)
-    if request.profile.digest != actual_profile_digest:
-        raise AuthorizationError("deployment profile digest mismatch")
-    if request.profile.path != project.profile_path:
-        raise AuthorizationError("deployment profile path does not match fleet registration")
     _verify_public_ingress_alignment(profile, project_environment.public_hostnames)
 
     verify_canonical_release_evidence(

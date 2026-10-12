@@ -27,6 +27,7 @@ from .contracts.loader import load_document
 from .contracts.models import (
     DeploymentPlan,
     DeploymentProfile,
+    FleetProject,
     ReleaseState,
     RuntimeState,
     ServerProfile,
@@ -39,7 +40,7 @@ from .evidence.publisher import publish_json, publish_receipt
 from .evidence.receipts import create_receipt, verify_receipt_digest
 from .execution.backups import create_backup
 from .execution.engine import execute_plan
-from .execution.releases import validate_release_runtime_env_path
+from .execution.releases import load_release_profile, validate_release_runtime_env_path
 from .execution.remote import Host, LocalExecutor, RemoteExecutor
 from .execution.rollback import rollback_release
 from .integrations import ansible as ansible_integration
@@ -48,10 +49,15 @@ from .inventory.generator import generate_ansible_inventory
 from .inventory.loader import load_fleet
 from .inventory.resolver import resolve_target
 from .logging import configure_logging
-from .planning.planner import build_plan
+from .planning.planner import build_plan, verify_plan_digest
 from .redaction import redact
 from .requests.idempotency import IdempotencyStore
-from .requests.verifier import request_digest, verify_request
+from .requests.verifier import (
+    load_sealed_profile,
+    request_digest,
+    resolve_registered_profile,
+    verify_request,
+)
 
 Handler = Callable[[argparse.Namespace], Any]
 
@@ -130,7 +136,7 @@ def _request_context(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str
         request,
         fleet,
         reg,
-        repository_root(args),
+        Path(args.profile_root),
         evidence_root=Path(args.evidence_root),
     )
     return request, fleet, verified
@@ -230,14 +236,42 @@ def _target_executor(
     return RemoteExecutor(_host_from_server(server), timeout=args.timeout)
 
 
+def _sealed_profile(
+    args: argparse.Namespace,
+    reg: SchemaRegistry,
+    plan: DeploymentPlan,
+    project: dict[str, Any],
+) -> tuple[DeploymentProfile, bytes]:
+    """Load the profile bytes sealed with the approved plan, or refuse.
+
+    The plan is not permission to read a platform-local profile. The deploy
+    stage only accepts the document materialized under ``--profile-root`` at the
+    fleet-registered relative path, and only when its byte digest equals the
+    ``profile_digest`` the plan (and therefore the approval) was computed over.
+    Any absence, drift, or identity mismatch fails here, before the executor is
+    even constructed. The bytes are returned with the profile so the release can
+    seal exactly what was approved.
+    """
+    profile_path = resolve_registered_profile(Path(args.profile_root), str(project["profile_path"]))
+    data = profile_path.read_bytes()
+    profile = load_sealed_profile(
+        data, plan=plan, repository=str(project["repository"]), registry=reg
+    )
+    return profile, data
+
+
 def cmd_deploy(args: argparse.Namespace) -> dict[str, Any]:
-    root = repository_root(args)
     reg = registry(args)
     plan_document = object_document(Path(args.plan))
     reg.validate(plan_document, "deployment-plan")
     plan = DeploymentPlan.model_validate(plan_document)
     if plan.environment != args.environment:
         raise AuthorizationError("command environment does not match plan")
+    if plan.plan_digest != args.expected_plan_digest:
+        raise AuthorizationError("expected plan digest does not match plan")
+    # Bind the approved digest string to this document's content before any
+    # field of it (profile_digest included) is trusted.
+    verify_plan_digest(plan)
     fleet = load_fleet(Path(args.fleet), reg)
     project = next(
         (item for item in _fleet_items(fleet, "projects") if item["id"] == plan.project_id),
@@ -245,15 +279,14 @@ def cmd_deploy(args: argparse.Namespace) -> dict[str, Any]:
     )
     if not isinstance(project, dict):
         raise ContractError("plan project is not present in fleet")
-    profile_document = object_document(root / str(project["profile_path"]))
-    reg.validate(profile_document, "deployment-profile")
-    profile = DeploymentProfile.model_validate(profile_document)
+    profile, profile_source = _sealed_profile(args, reg, plan, project)
     executor = _target_executor(args, fleet, project, args.environment, mutation=True)
     idempotency = IdempotencyStore(Path(args.idempotency_store))
     latest_pointer = Path(args.output or "receipts/latest/deployment.json")
     result = execute_plan(
         plan=plan,
         profile=profile,
+        profile_source=profile_source,
         executor=executor,
         expected_plan_digest=args.expected_plan_digest,
         approval_receipt=Path(args.approval_receipt),
@@ -299,21 +332,24 @@ def _remote_state(executor: Any, project: str, environment: str) -> dict[str, An
     return state.model_dump(mode="json", by_alias=True, exclude_none=True)
 
 
-def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
-    root = repository_root(args)
-    reg = registry(args)
-    fleet = load_fleet(Path(args.fleet), reg)
+def _registered_project(fleet: dict[str, Any], project_id: str) -> FleetProject:
     project = next(
-        (item for item in _fleet_items(fleet, "projects") if item["id"] == args.project), None
+        (item for item in _fleet_items(fleet, "projects") if item["id"] == project_id), None
     )
     if not isinstance(project, dict):
         raise ContractError("project is not registered")
-    profile_document = object_document(root / str(project["profile_path"]))
-    reg.validate(profile_document, "deployment-profile")
-    profile = DeploymentProfile.model_validate(profile_document)
+    return FleetProject.model_validate(project)
+
+
+def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
+    reg = registry(args)
+    fleet = load_fleet(Path(args.fleet), reg)
+    project = _registered_project(fleet, args.project)
     request_id = args.request_id or "manual-rollback"
     require_mutation_approval(args, request_id=request_id)
-    executor = _target_executor(args, fleet, project, args.environment, mutation=True)
+    executor = _target_executor(
+        args, fleet, project.model_dump(mode="json"), args.environment, mutation=True
+    )
     state = _remote_state(executor, args.project, args.environment)
     previous = state.get("previous")
     previous_release = ReleaseState.model_validate(previous) if isinstance(previous, dict) else None
@@ -322,6 +358,11 @@ def cmd_rollback(args: argparse.Namespace) -> dict[str, Any]:
         if isinstance(state.get("current"), dict)
         else None
     )
+    if previous_release is None:
+        raise ExecutionError("previous release is unavailable; rollback is blocked")
+    # The release being restored is checked against the profile it was approved
+    # with, sealed in its own release directory; never the current or a later one.
+    profile = load_release_profile(executor, previous_release, project, args.environment, reg)
     result = rollback_release(
         executor,
         args.project,
@@ -388,7 +429,9 @@ def cmd_receipt_ledger_verify(args: argparse.Namespace) -> dict[str, Any]:
 def cmd_inventory_generate(args: argparse.Namespace) -> dict[str, Any]:
     fleet = load_fleet(Path(args.fleet), registry(args))
     output = Path(args.output or "ansible/inventories/generated/hosts.yml")
-    inventory = generate_ansible_inventory(fleet, output)
+    inventory = generate_ansible_inventory(
+        fleet, output, Path(args.profile_root) if args.profile_root else None
+    )
     # The command owns --output as the inventory destination. Prevent the generic
     # emitter from replacing that file with the summary document after return.
     args.output = None
@@ -518,24 +561,29 @@ def cmd_config_apply(args: argparse.Namespace) -> dict[str, Any]:
 
 def _project_profile(
     args: argparse.Namespace, *, mutation: bool = False
-) -> tuple[dict[str, Any], DeploymentProfile, Any]:
+) -> tuple[FleetProject, DeploymentProfile, Any]:
+    """Return the profile of the release currently running in the environment.
+
+    Backup and restore act on the data of the running release, so they use the
+    consumer profile that release was approved with, sealed in its release
+    directory. There is no platform-local or floating-source fallback: without
+    sealed material for the current release the command fails before any
+    backup or restore command runs.
+    """
     reg = registry(args)
     fleet = load_fleet(Path(args.fleet), reg)
-    project = next(
-        (item for item in _fleet_items(fleet, "projects") if item["id"] == args.project), None
+    project = _registered_project(fleet, args.project)
+    executor = _target_executor(
+        args, fleet, project.model_dump(mode="json"), args.environment, mutation=mutation
     )
-    if not isinstance(project, dict):
-        raise ContractError("project is not registered")
-    profile_document = object_document(repository_root(args) / project["profile_path"])
-    reg.validate(profile_document, "deployment-profile")
-    profile = DeploymentProfile.model_validate(profile_document)
-    executor = _target_executor(args, fleet, project, args.environment, mutation=mutation)
+    state = RuntimeState.model_validate(_remote_state(executor, args.project, args.environment))
+    profile = load_release_profile(executor, state.current, project, args.environment, reg)
     return project, profile, executor
 
 
 def cmd_backup_create(args: argparse.Namespace) -> dict[str, Any]:
-    _, profile, executor = _project_profile(args, mutation=True)
     require_mutation_approval(args, request_id=args.request_id or "manual-backup")
+    _, profile, executor = _project_profile(args, mutation=True)
     return cast(
         dict[str, Any],
         create_backup(
@@ -564,8 +612,8 @@ def cmd_backup_verify(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def cmd_restore_test(args: argparse.Namespace) -> dict[str, Any]:
-    _, profile, executor = _project_profile(args, mutation=True)
     require_mutation_approval(args, request_id=args.request_id or "manual-restore-test")
+    _, profile, executor = _project_profile(args, mutation=True)
     config = profile.backup
     if config is None:
         raise ContractError("profile has no backup contract")
@@ -638,6 +686,25 @@ def add_mutation(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--receipt-ledger-root", default="receipts/ledger")
 
 
+def add_profile_root(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--profile-root",
+        required=True,
+        help=(
+            "directory holding the consumer deployment profile materialized from the exact "
+            "source repository and commit; the fleet-registered relative path is resolved "
+            "inside it and never inside this checkout"
+        ),
+    )
+
+
+INVENTORY_PROFILE_ROOT_HELP = (
+    "directory of consumer deployment profiles materialized from exact source commits, "
+    "laid out as <project id>/<registered profile path>; public ingress without a bound "
+    "profile is blocked, and profiles are never read from this checkout"
+)
+
+
 def add_adopted_host_mutation(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--allow-adopted-host-mutation",
@@ -673,15 +740,18 @@ def build_parser() -> argparse.ArgumentParser:
         p = leaf(rs, name, handler, f"{name} a release request")
         p.add_argument("--request", required=True)
         p.add_argument("--fleet", default="fleet/registry.yaml")
+        add_profile_root(p)
     p = leaf(top, "plan", cmd_plan, "create a deterministic deployment plan")
     p.add_argument("--request", required=True)
     p.add_argument("--fleet", default="fleet/registry.yaml")
+    add_profile_root(p)
     p.add_argument("--previous-state")
     p = leaf(top, "deploy", cmd_deploy, "execute an approved deployment plan")
     add_mutation(p)
     add_adopted_host_mutation(p)
     p.add_argument("--plan", required=True)
     p.add_argument("--fleet", default="fleet/registry.yaml")
+    add_profile_root(p)
     p.add_argument("--runtime-env-file")
     p.add_argument("--base-url")
     p.add_argument("--idempotency-store", default="state/runtime/idempotency.json")
@@ -696,6 +766,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_adopted_host_mutation(p)
     p.add_argument("--project", required=True)
     p.add_argument("--fleet", default="fleet/registry.yaml")
+    p.add_argument("--base-url")
     p.add_argument("--local-executor-root")
     p = leaf(top, "status", cmd_status, "read current deployment state")
     p.add_argument("--project", required=True)
@@ -712,6 +783,7 @@ def build_parser() -> argparse.ArgumentParser:
     invs = inventory.add_subparsers(dest="command", required=True)
     p = leaf(invs, "generate", cmd_inventory_generate, "render Ansible inventory")
     p.add_argument("--fleet", default="fleet/registry.yaml")
+    p.add_argument("--profile-root", help=INVENTORY_PROFILE_ROOT_HELP)
     p = leaf(invs, "validate", cmd_inventory_validate, "validate fleet references")
     p.add_argument("--fleet", default="fleet/registry.yaml")
     host = top.add_parser("host")

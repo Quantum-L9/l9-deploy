@@ -15,10 +15,30 @@ from datetime import UTC, datetime
 
 from ..canonical import sha256_digest
 from ..contracts.models import DeploymentPlan, PlanStep, ReleaseState, VerifiedRequest
+from ..errors import AuthorizationError
 from ..inventory.resolver import resolve_target
 from .backups import backup_required
 from .migrations import migration_step
 from .topology import target_server_ids
+
+_UNSEALED_PLAN_DIGEST = "sha256:" + "0" * 64
+
+
+def plan_digest_of(document: dict[str, object]) -> str:
+    """Return the digest of a plan document's content, ignoring its ``plan_digest``.
+
+    The digest is taken over the plan's canonical wire form (the alias-bound JSON
+    dump of ``DeploymentPlan``), so a plan serialized to ``plan.json`` and loaded
+    again reproduces its own digest. Approval binds to this value; anything that
+    changes the content, ``profile_digest`` included, changes the digest.
+    """
+    return sha256_digest({key: value for key, value in document.items() if key != "plan_digest"})
+
+
+def verify_plan_digest(plan: DeploymentPlan) -> None:
+    """Refuse a plan whose ``plan_digest`` string does not match its content."""
+    if plan_digest_of(plan.model_dump(mode="json", by_alias=True)) != plan.plan_digest:
+        raise AuthorizationError("plan digest does not match plan content")
 
 
 def build_plan(
@@ -85,6 +105,12 @@ def build_plan(
         "previous_release": previous.model_dump(mode="json", by_alias=True) if previous else None,
         "steps": [step.model_dump(mode="json", by_alias=True) for step in steps],
         "created_at": created_at or datetime.now(UTC).isoformat(),
+        "plan_digest": _UNSEALED_PLAN_DIGEST,
     }
-    payload["plan_digest"] = sha256_digest(payload)
-    return DeploymentPlan.model_validate(payload)
+    # Canonicalize through the contract model first so the digest covers exactly
+    # the bytes a later stage reloads from plan.json (verify_plan_digest).
+    canonical = DeploymentPlan.model_validate(payload).model_dump(mode="json", by_alias=True)
+    canonical["plan_digest"] = plan_digest_of(canonical)
+    plan = DeploymentPlan.model_validate(canonical)
+    verify_plan_digest(plan)
+    return plan
