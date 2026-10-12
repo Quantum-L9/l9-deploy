@@ -55,6 +55,19 @@ def profile() -> dict[str, Any]:
         "interval_seconds": 1,
     }
     value["health"]["startup"] = copy.deepcopy(value["health"]["post_deploy"])
+    # The consumer example declares required fleet-managed services without
+    # probes, which planning now refuses. The fixture supplies the typed probe
+    # the consumer would own; tests that need a distinct or failing probe
+    # override these entries.
+    for name, service in value.get("services", {}).items():
+        if service.get("required"):
+            service["probe"] = {
+                "type": "command",
+                "command": ["service-ready", name],
+                "timeout_seconds": 5,
+                "attempts": 1,
+                "interval_seconds": 1,
+            }
     return value
 
 

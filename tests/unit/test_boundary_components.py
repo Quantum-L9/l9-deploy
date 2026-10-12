@@ -221,6 +221,24 @@ def test_run_command_timeout_terminates_process_group() -> None:
         run_command([sys.executable, "-c", "import time; time.sleep(5)"], timeout=1)
 
 
+def test_health_command_probe_reports_real_nonzero_exit_as_failure(tmp_path: Path) -> None:
+    # A real generic probe failure through the real local executor: the
+    # dependency's own check exits nonzero and the probe fails closed.
+    from l9_deploy.execution.remote import LocalExecutor
+
+    probe = HealthProbe(
+        type="command",
+        command=("sh", "-c", "echo not ready >&2; exit 3"),
+        timeout_seconds=5,
+        attempts=1,
+        interval_seconds=0,
+    )
+    expected = r"health probe failed after 1 attempts: command failed \(3\)"
+    executor = LocalExecutor(tmp_path)
+    with pytest.raises(ExecutionError, match=expected):
+        run_probe(probe, executor=executor)
+
+
 def test_health_command_probe_and_http_scheme_restriction() -> None:
     calls: list[tuple[tuple[str, ...], dict[str, object]]] = []
 

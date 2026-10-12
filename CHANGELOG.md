@@ -61,6 +61,56 @@ status: active
 - `rollback` accepts `--base-url`; the handler read `args.base_url` without the
   argument being defined, so every rollback failed before restoring anything.
 
+### Declared service readiness
+
+- `build_plan` qualifies the profile's `services` map before a plan exists: a
+  `required: true` service with `mode: none`, or a required `external` /
+  `managed_on_fleet` service without a typed `probe`, is a contract failure. Optional
+  services are not a gate and are never claimed. The plan shape and digest inputs are
+  unchanged; the declaration is bound by the sealed profile digest.
+- `execute_plan` applies the same qualification before approval, idempotency, or any host
+  command, so a direct caller cannot bypass it. The existing `health` step now runs the
+  profile's `health.startup` probe, then every required service's declared probe in name
+  order, then the configured stabilization window once, then `health.post_deploy`; any
+  failure raises with the phase named before promotion and takes the existing rollback and
+  failure-receipt path. `health.post_deploy` remains the rollback verification probe.
+- Qualification also refuses a required-service probe the generic runner could not
+  execute, before a plan exists and again in `execute_plan`: a `tcp` probe needs a host and
+  a port in 1-65535; `command` and `database` probes need a non-empty argument vector.
+  Whether the dependency answers stays a runtime fact; preflight only establishes that the
+  question can be asked.
+- A required service may not declare an `http` readiness probe. HTTP probes are issued
+  against the application's own base URL, the only HTTP origin the platform knows, so an
+  application response cannot qualify an independent dependency and the contract carries
+  no binding that would make an application-proxied path explicit. Consumers are directed
+  to `tcp` or `command`/`database` probes, which name their own target. The engine also
+  never hands the application base URL to a service probe. Application startup and
+  post-deploy HTTP probes are unchanged.
+- `execute_plan` refuses, before any side effect, a plan that is not one complete
+  transaction: exactly one `deploy`, exactly one `health` strictly after it, and exactly one
+  `promote` strictly after that. A plan missing or duplicating any of these phases, or a
+  plan that would run `deploy` and stop, can no longer return a PASS receipt. Promotion
+  itself still refuses unless the health step completed in the same transaction.
+- The health `ReceiptStep.details` records `startup` and the ordered `services` results
+  beside the existing post-deploy fields. A probe result means exactly what the supplied
+  probe checks; it is readiness evidence, not provisioning or lifecycle ownership.
+- A required-service `tcp` probe whose host is loopback or unspecified (`localhost`,
+  `127.0.0.0/8`, `::1`, `::`, `0.0.0.0`) is refused: TCP probes connect from the deployment
+  runner, so such a host would observe the runner rather than the deployment target.
+- Each passing service entry records `proves` (what was observed and where: a TCP connect
+  from the runner, or a command exiting 0 on the target), and the health step records
+  `services_scope`: platform-observed reachability, never the dependency's or the
+  product's own semantic readiness. A product's full-capability readiness can only be
+  claimed by that product or its hosting consumer with its own evidence.
+- Readiness runs from the source-owned consumer profile sealed under the approved
+  `profile_digest`; a probe list edited after approval is refused before any host command.
+  The platform-local fixtures (`integrations/consumers/seo-bot.deployment.yaml`,
+  `integrations/consumers/graphiti-memory.deployment.yaml`) and the
+  `templates/consumer/stateful-container` template declare required services without
+  probes and would be refused at planning; they are not deployment authority and are
+  deliberately not edited. Test fixtures that add `service-ready` command probes are
+  synthetic and are not rollout evidence.
+
 ## 0.1.5 - 2026-07-22
 
 ### Source-release integrity
