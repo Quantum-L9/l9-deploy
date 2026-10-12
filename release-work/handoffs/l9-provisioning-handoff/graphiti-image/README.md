@@ -11,6 +11,12 @@ status: active
 /L9_META -->
 # graphiti-memory container image (Open Q2)
 
+> **SUPERSEDED (2026-10-12) — do not commit or publish.** Memory is ProductKind
+> `dependency` (`l9-graphiti-memory/product-topology.yaml`): it has no standalone
+> runtime image or fleet deploy. `Dockerfile` and `publish-image.yml` are kept as
+> history only. The `graphiti-memory` deployment profile and fleet registration they
+> targeted have been removed from `l9-deploy`.
+
 `l9-graphiti-memory` publishes a PyPI wheel + a TS client but **no container
 image**. The fleet deploy of `l9-memory-server` needs one. These two files are
 authored **for the `Quantum-L9/l9-graphiti-memory` repo** — commit them there,

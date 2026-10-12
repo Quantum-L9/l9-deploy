@@ -11,6 +11,7 @@ status: active
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -96,6 +97,53 @@ def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(
     bound = generate_ansible_inventory(fleet, tmp_path / "bound.yml", profile_root)
     assert "vars" not in bound["all"]
     assert bound["all"]["children"]["application"]["hosts"]["c1"]["l9_caddy_sites"] == []
+
+
+RETIRED_DEPENDENCY_REPOSITORIES = {"Quantum-L9/l9-graphiti-memory"}
+RETIRED_SERVER_IDS = {"mem-staging-01", "mem-prod-01"}
+
+
+def _retired_registrations(fleet: dict[str, object]) -> list[str]:
+    projects = fleet["projects"]
+    servers = fleet["servers"]
+    assert isinstance(projects, list) and isinstance(servers, list)
+    found = [
+        f"project:{project['id']}"
+        for project in projects
+        if project["repository"] in RETIRED_DEPENDENCY_REPOSITORIES
+    ]
+    found += [f"server:{server['id']}" for server in servers if server["id"] in RETIRED_SERVER_IDS]
+    return found
+
+
+def test_retired_memory_dependency_has_no_application_registration(schema_registry) -> None:  # type: ignore[no-untyped-def]
+    # l9-graphiti-memory is a dependency whose runtime identity is its consumer's:
+    # it is not an application project and owns no fleet hosts.
+    fleet = yaml.safe_load((ROOT / "fleet/registry.yaml").read_text(encoding="utf-8"))
+    assert _retired_registrations(fleet) == []
+    projects = {project["id"]: project for project in fleet["projects"]}
+    assert set(projects) == {"seo-bot", "l9-cognitive-runtime"}
+    c1 = next(server for server in fleet["servers"] if server["id"] == "c1")
+    assert c1["lifecycle"] == "adopted"
+    assert c1["labels"]["caddy_management"] == "external"
+    load_fleet(ROOT / "fleet/registry.yaml", schema_registry)
+
+    # Re-registering the dependency as an OCI application, or reviving its hosts,
+    # is detected.
+    revived = copy.deepcopy(fleet)
+    revived["projects"].append(
+        {
+            "id": "graphiti-memory",
+            "repository": "Quantum-L9/l9-graphiti-memory",
+            "profile_path": ".l9/deployment.yaml",
+            "environments": {
+                "staging": {"server_ids": ["mem-staging-01"], "infisical_environment": "staging"}
+            },
+        }
+    )
+    template = next(server for server in fleet["servers"] if server["id"] == "seo-staging-01")
+    revived["servers"].append({**copy.deepcopy(template), "id": "mem-staging-01"})
+    assert _retired_registrations(revived) == ["project:graphiti-memory", "server:mem-staging-01"]
 
 
 def test_registered_profiles_are_source_owned_not_platform_mirrors() -> None:

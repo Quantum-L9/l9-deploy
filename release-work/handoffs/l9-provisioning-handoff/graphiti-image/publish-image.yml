@@ -9,6 +9,8 @@
 # owner: platform
 # status: active
 # --- /L9_META ---
+# SUPERSEDED (2026-10-12) — DO NOT PLACE OR RUN. Memory is ProductKind dependency
+# and has no standalone image; kept as history only. See ./README.md.
 # GHCR publish workflow FOR Quantum-L9/l9-graphiti-memory.
 # Place at .github/workflows/publish-image.yml in THAT repo (not l9-deploy).
 # Publishes ghcr.io/quantum-l9/l9-graphiti-memory by digest, with provenance + SBOM.

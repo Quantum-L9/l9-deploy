@@ -37,30 +37,6 @@ servers:
     roles: [management]
     labels: {managed_by: l9-deployment-platform}
     conformance: {profile: management-runner, max_age_hours: 24}
-  # Application/cache host for the l9-graphiti-memory active-memory service (memory
-  # server + its private, ACL-scoped Redis co-located; v1 is rolling-single-host).
-  # Provisional private IPs below MUST equal TF_VAR_servers[<id>].private_ip supplied
-  # from Infisical at provision time (no automated tofu -> registry feedback exists).
-  - schema: l9.server-profile/v1
-    id: mem-staging-01
-    environment: staging
-    provider: hetzner
-    private_ip: 10.90.10.10
-    public_ip: null
-    ssh: {user: l9deploy, port: 22}
-    roles: [application, cache]
-    labels: {managed_by: l9-deployment-platform, workload: graphiti-memory}
-    conformance: {profile: application, max_age_hours: 24}
-  - schema: l9.server-profile/v1
-    id: mem-prod-01
-    environment: production
-    provider: hetzner
-    private_ip: 10.90.20.10
-    public_ip: null
-    ssh: {user: l9deploy, port: 22}
-    roles: [application, cache]
-    labels: {managed_by: l9-deployment-platform, workload: graphiti-memory}
-    conformance: {profile: application, max_age_hours: 24}
   # Application/worker host for SEO-Bot (registration only; its full deploy stays
   # gated on postgres, which is out of scope for this change).
   - schema: l9.server-profile/v1
@@ -108,18 +84,10 @@ projects:
   # at the request's exact source commit (deploy-dispatch.yml). This repository holds
   # no consumer profile authority; integrations/consumers/ are test fixtures only.
   #
-  # BLOCKED: l9-graphiti-memory is ProductKind=dependency (product-topology.yaml,
-  # ADR-094): a Python distribution with consumer-owned process lifecycle, no OCI
-  # image and no hosted deployment profile. Its repository publishes no
-  # .l9/deployment.yaml, so every deployment request fails closed at profile
-  # resolution. This entry keeps Deploy's host mapping only, pending the actual
-  # hosting consumer, which must register under its own repository and profile.
-  - id: graphiti-memory
-    repository: Quantum-L9/l9-graphiti-memory
-    profile_path: .l9/deployment.yaml
-    environments:
-      staging: {server_ids: [mem-staging-01], infisical_environment: staging}
-      production: {server_ids: [mem-prod-01], infisical_environment: prod}
+  # Quantum-L9/l9-graphiti-memory is not registered: it is ProductKind=dependency
+  # (product-topology.yaml, ADR-094) whose runtime identity is its consumer's, so it
+  # has no application project here and no dedicated hosts. A consumer that runs it
+  # registers under its own repository and profile.
   # BLOCKED: Quantum-L9/SEO-Bot does not yet publish its consumer-owned
   # .l9/deployment.yaml (absent at 16a844f829a1d8db01dfad3d66247e9abb4e5501), so
   # deployment fails closed at profile resolution until SEO-Bot adds it.
