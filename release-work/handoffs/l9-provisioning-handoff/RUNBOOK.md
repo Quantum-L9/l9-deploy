@@ -11,6 +11,12 @@ status: active
 /L9_META -->
 # Operator Runbook — Parts B/C (exact commands)
 
+> **SUPERSEDED for Memory (2026-10-12).** Do not provision `mem-staging-01` /
+> `mem-prod-01`, run `configure-memory.yml`, build a Memory image, or deploy
+> `l9-memory-server`. Memory is ProductKind `dependency` and runs inside its consumer
+> (see `README.md`). Those steps are withdrawn below; the management-runner and
+> SEO-Bot steps are unchanged.
+
 Run from a checkout of `Quantum-L9/l9-deploy` at branch
 `claude/l9-deploy-skill-install-rs1fuf` unless noted. All secrets come from your
 own vault / Infisical (see `secrets/`). Placeholders look like `<...>`.
@@ -18,8 +24,8 @@ own vault / Infisical (see `secrets/`). Placeholders look like `<...>`.
 Subnets (created by the management env): management `10.90.1.0/24`, staging
 `10.90.10.0/24`, production `10.90.20.0/24`. Provisional host IPs already in
 `fleet/registry.yaml` — `TF_VAR_servers[<id>].private_ip` MUST match them:
-`mem-staging-01 10.90.10.10`, `mem-prod-01 10.90.20.10`,
-`seo-staging-01 10.90.10.20`, `seo-prod-01 10.90.20.20`.
+`seo-staging-01 10.90.10.20`, `seo-prod-01 10.90.20.20`. (The former `mem-*`
+hosts are retired and are no longer registered.)
 
 ---
 
@@ -83,8 +89,8 @@ Confirm the runner shows labels `l9-deployment,hetzner-private`, is registered t
 
 ## Phase 4 — Staging (now via the designed workflows; runner exists)
 1. In Infisical `staging`: set `TF_VAR_network_id` = management's `network_id`,
-   and `TF_VAR_servers` including `mem-staging-01` (10.90.10.10) and
-   `seo-staging-01` (10.90.10.20) with matching private IPs, server types, roles.
+   and `TF_VAR_servers` including `seo-staging-01` (10.90.10.20) with matching
+   private IP, server type and roles. Do not include the retired `mem-*` hosts.
 2. Run the GitHub Actions **`provision-plan.yml`** (environment: `staging`),
    review the uploaded `infrastructure-plan.json` + digest, then run
    **`provision-apply.yml`** (protected environment `staging`, `plan-run-id`,
@@ -93,37 +99,26 @@ Confirm the runner shows labels `l9-deployment,hetzner-private`, is registered t
 ```bash
 uv run l9-deploy inventory generate --fleet fleet/registry.yaml
 INV=ansible/inventories/generated/hosts.yml
-# Configure the memory (cache) host: docker, redis, sqlite_backup, conformance.
 uv run l9-deploy config apply --playbook ansible/playbooks/bootstrap.yml       --inventory "$INV" --limit staging <mutation-args>
 uv run l9-deploy config apply --playbook ansible/playbooks/harden.yml          --inventory "$INV" --limit staging <mutation-args>
-uv run l9-deploy config apply --playbook ansible/playbooks/configure-memory.yml --inventory "$INV" --limit cache \
-  -e l9_redis_acl_password=<from-infisical> <mutation-args>
 uv run l9-deploy config apply --playbook ansible/playbooks/verify.yml          --inventory "$INV" --limit staging <mutation-args>
-uv run l9-deploy host verify --server mem-staging-01 --fleet fleet/registry.yaml
 ```
+(Withdrawn: the `configure-memory.yml` step and the `host verify` of the retired
+Memory cache host.)
 `<mutation-args>` = `--environment staging --expected-plan-digest <d>
 --approval-receipt <r> --approval-history <h> --approval-run-id <id>
 --requester <you> --receipt-ledger-root receipts/ledger`.
 
 ## Phase 5 — Production
-Repeat Phase 4 against the production subnet (`10.90.20.0/24`), `mem-prod-01`,
-`seo-prod-01`, and the production protected-environment approval.
+Repeat Phase 4 against the production subnet (`10.90.20.0/24`), `seo-prod-01`,
+and the production protected-environment approval.
 
-## Phase 6 — Deploy the memory server (first real end-to-end deploy)
-Prerequisite: the GHCR image exists (build via `graphiti-image/`).
-```bash
-# Register is already done (fleet/registry.yaml projects[].graphiti-memory).
-# Build a deployment request bound to the published image digest, then:
-uv run l9-deploy request validate --request request.json --fleet fleet/registry.yaml --json
-uv run l9-deploy plan --request request.json --fleet fleet/registry.yaml --output plan.json --json
-# Staging first (approval_required: false for staging), then deploy:
-uv run l9-deploy deploy --plan plan.json --fleet fleet/registry.yaml \
-  --runtime-env-file <deploy-render.env> --base-url http://mem-staging-01:8200 <mutation-args>
-# The backup step now runs the declared verify_command (l9-sqlite-verify) in-band
-# and fails closed if the SQLite snapshot cannot be verified.
-uv run l9-deploy status --project graphiti-memory --environment staging --fleet fleet/registry.yaml
-```
-Then promote to production via `provision`/`deploy` with the protected approval.
+## Phase 6 — WITHDRAWN (standalone Memory deploy)
+This phase deployed `l9-memory-server` as its own fleet application from a
+standalone image. It is retired and has no replacement commands here: Memory is
+ProductKind `dependency`, has no deployment profile of its own, and is no longer
+registered in `fleet/registry.yaml`. A consumer that runs Memory deploys it through
+that consumer's own `.l9/deployment.yaml`.
 
 ## Phase 7 — Register SEO-Bot (register only; deploy gated on postgres)
 `seo-bot` is already in `fleet/registry.yaml`. Complete consumer-side onboarding

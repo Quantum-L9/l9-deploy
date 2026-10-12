@@ -11,8 +11,10 @@ status: active
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
+import os
 from pathlib import Path
 
 import pytest
@@ -59,7 +61,9 @@ def _bind_profile(profile_root: Path, project_id: str, registered_path: str, sou
     return target
 
 
-def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(tmp_path: Path) -> None:
+def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(
+    tmp_path: Path, container_service_profile: dict[str, object]
+) -> None:
     fleet = yaml.safe_load((ROOT / "fleet/registry.yaml").read_text(encoding="utf-8"))
     project = next(item for item in fleet["projects"] if item["id"] == "l9-cognitive-runtime")
     assert project["profile_path"] == ".l9/deployment.yaml"
@@ -87,15 +91,60 @@ def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(tmp_path: 
     # The consumer's source-owned profile, materialized under a profile root at its
     # registered path, binds the ingress; C1 still receives no Caddy ownership.
     profile_root = tmp_path / "profiles"
-    _bind_profile(
-        profile_root,
-        "l9-cognitive-runtime",
-        ".l9/deployment.yaml",
-        ROOT / "integrations/consumers/l9-cognitive-runtime.deployment.yaml",
-    )
+    source = tmp_path / "source-profile.yaml"
+    source.write_text(yaml.safe_dump(container_service_profile, sort_keys=False), encoding="utf-8")
+    _bind_profile(profile_root, "l9-cognitive-runtime", ".l9/deployment.yaml", source)
     bound = generate_ansible_inventory(fleet, tmp_path / "bound.yml", profile_root)
     assert "vars" not in bound["all"]
     assert bound["all"]["children"]["application"]["hosts"]["c1"]["l9_caddy_sites"] == []
+
+
+RETIRED_DEPENDENCY_REPOSITORIES = {"Quantum-L9/l9-graphiti-memory"}
+RETIRED_SERVER_IDS = {"mem-staging-01", "mem-prod-01"}
+
+
+def _retired_registrations(fleet: dict[str, object]) -> list[str]:
+    projects = fleet["projects"]
+    servers = fleet["servers"]
+    assert isinstance(projects, list)
+    assert isinstance(servers, list)
+    found = [
+        f"project:{project['id']}"
+        for project in projects
+        if project["repository"] in RETIRED_DEPENDENCY_REPOSITORIES
+    ]
+    found += [f"server:{server['id']}" for server in servers if server["id"] in RETIRED_SERVER_IDS]
+    return found
+
+
+def test_retired_memory_dependency_has_no_application_registration(schema_registry) -> None:  # type: ignore[no-untyped-def]
+    # l9-graphiti-memory is a dependency whose runtime identity is its consumer's:
+    # it is not an application project and owns no fleet hosts.
+    fleet = yaml.safe_load((ROOT / "fleet/registry.yaml").read_text(encoding="utf-8"))
+    assert _retired_registrations(fleet) == []
+    projects = {project["id"]: project for project in fleet["projects"]}
+    assert set(projects) == {"seo-bot", "l9-cognitive-runtime"}
+    c1 = next(server for server in fleet["servers"] if server["id"] == "c1")
+    assert c1["lifecycle"] == "adopted"
+    assert c1["labels"]["caddy_management"] == "external"
+    load_fleet(ROOT / "fleet/registry.yaml", schema_registry)
+
+    # Re-registering the dependency as an OCI application, or reviving its hosts,
+    # is detected.
+    revived = copy.deepcopy(fleet)
+    revived["projects"].append(
+        {
+            "id": "graphiti-memory",
+            "repository": "Quantum-L9/l9-graphiti-memory",
+            "profile_path": ".l9/deployment.yaml",
+            "environments": {
+                "staging": {"server_ids": ["mem-staging-01"], "infisical_environment": "staging"}
+            },
+        }
+    )
+    template = next(server for server in fleet["servers"] if server["id"] == "seo-staging-01")
+    revived["servers"].append({**copy.deepcopy(template), "id": "mem-staging-01"})
+    assert _retired_registrations(revived) == ["project:graphiti-memory", "server:mem-staging-01"]
 
 
 def test_registered_profiles_are_source_owned_not_platform_mirrors() -> None:
@@ -105,6 +154,40 @@ def test_registered_profiles_are_source_owned_not_platform_mirrors() -> None:
         # A registered path never resolves to a document in this checkout, so no
         # code path can fall back to a platform-authored copy.
         assert not (ROOT / project["profile_path"]).exists(), project["id"]
+
+    # No platform-local profile document may stand in for a registered project:
+    # profile authority is the consumer's own source at the request's commit.
+    # seo-bot keeps its pre-adoption fixture only while Quantum-L9/SEO-Bot publishes
+    # no consumer-owned profile; the fixture is test input and is never registered.
+    pending_consumer_profiles = {"seo-bot"}
+    registered = {project["id"] for project in fleet["projects"]}
+    # Hidden directories are scanned: a copied consumer profile lands at
+    # `.l9/deployment.yaml`. Only VCS, environment and tool caches are skipped.
+    skipped = {
+        ".git",
+        ".venv",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        "__pycache__",
+        "node_modules",
+        "templates",
+    }
+    mirrors: dict[str, str] = {}
+    for directory, subdirectories, files in os.walk(ROOT):
+        subdirectories[:] = [name for name in subdirectories if name not in skipped]
+        for name in files:
+            path = Path(directory) / name
+            if not name.endswith((".yaml", ".yml")) or path.is_symlink():
+                continue
+            text = path.read_text(encoding="utf-8")
+            if "l9.deployment-profile/v1" not in text:
+                continue
+            document = yaml.safe_load(text)
+            project_id = document.get("project", {}).get("id") if document else None
+            if project_id in registered:
+                mirrors[project_id] = str(path.relative_to(ROOT))
+    assert set(mirrors) <= pending_consumer_profiles, mirrors
 
 
 def _managed_public_fleet(deployment_context: dict[str, object]) -> dict[str, object]:

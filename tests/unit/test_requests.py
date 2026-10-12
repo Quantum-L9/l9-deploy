@@ -174,6 +174,19 @@ def test_request_verifier_rejects_source_commit_drift(deployment_context, schema
         _verify_with(deployment_context, schema_registry, request=request)
 
 
+@pytest.mark.parametrize("commit_sha", ["f" * 39, "F" * 40, "g" * 40, "main"])
+def test_request_verifier_rejects_malformed_source_commit_sha(
+    deployment_context, schema_registry, commit_sha: str
+) -> None:  # type: ignore[no-untyped-def]
+    # The profile is read at the exact source commit, so a value that is not a
+    # full lowercase object id is refused before any profile byte is resolved.
+    request = copy.deepcopy(deployment_context["request"])
+    request["source"]["commit_sha"] = commit_sha
+    with pytest.raises(ContractError, match="contract validation failed"):
+        _verify_with(deployment_context, schema_registry, request=request)
+    assert not deployment_context["bundle_validator"].calls
+
+
 def test_request_verifier_rejects_source_run_drift(deployment_context, schema_registry) -> None:  # type: ignore[no-untyped-def]
     request = copy.deepcopy(deployment_context["request"])
     request["source"]["run_id"] = request["source"]["run_id"] + 1

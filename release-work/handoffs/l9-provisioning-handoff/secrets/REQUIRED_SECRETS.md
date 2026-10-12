@@ -31,7 +31,11 @@ in Infisical and are rendered at deploy time (`runtime_mode: deploy_render`).
 | `TF_VAR_servers` | **staging/prod only** — HCL/JSON map; `private_ip` MUST match `fleet/registry.yaml` |
 | `L9_STATE_BUCKET`, `L9_STATE_REGION`, `L9_STATE_ENDPOINT`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | backend.hcl render in workflows |
 
-## Active-memory (graphiti-memory), per env slug — rendered into the deploy env file
+## Active-memory (graphiti-memory) — SUPERSEDED (2026-10-12), do not populate
+The standalone Memory deploy these keys served is retired: Memory is ProductKind
+`dependency` and runs inside its consumer, whose own profile declares any secrets it
+needs. The table is kept as history only.
+
 | Key | Consumer |
 |---|---|
 | `l9_redis_acl_password` | `ansible/roles/redis` ACL user + the service's Redis credential |
