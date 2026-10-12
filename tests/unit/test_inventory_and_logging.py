@@ -112,15 +112,25 @@ def test_registered_profiles_are_source_owned_not_platform_mirrors() -> None:
     # no consumer-owned profile; the fixture is test input and is never registered.
     pending_consumer_profiles = {"seo-bot"}
     registered = {project["id"] for project in fleet["projects"]}
+    # Hidden directories are scanned: a copied consumer profile lands at
+    # `.l9/deployment.yaml`. Only VCS, environment and tool caches are skipped.
+    skipped = {
+        ".git",
+        ".venv",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        "__pycache__",
+        "node_modules",
+        "templates",
+    }
     mirrors: dict[str, str] = {}
     for directory, subdirectories, files in os.walk(ROOT):
-        subdirectories[:] = [
-            name for name in subdirectories if not name.startswith(".") and name != "templates"
-        ]
+        subdirectories[:] = [name for name in subdirectories if name not in skipped]
         for name in files:
-            if not name.endswith((".yaml", ".yml")):
-                continue
             path = Path(directory) / name
+            if not name.endswith((".yaml", ".yml")) or path.is_symlink():
+                continue
             text = path.read_text(encoding="utf-8")
             if "l9.deployment-profile/v1" not in text:
                 continue
