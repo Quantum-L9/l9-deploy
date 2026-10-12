@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 
 import pytest
@@ -59,7 +60,9 @@ def _bind_profile(profile_root: Path, project_id: str, registered_path: str, sou
     return target
 
 
-def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(tmp_path: Path) -> None:
+def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(
+    tmp_path: Path, container_service_profile: dict[str, object]
+) -> None:
     fleet = yaml.safe_load((ROOT / "fleet/registry.yaml").read_text(encoding="utf-8"))
     project = next(item for item in fleet["projects"] if item["id"] == "l9-cognitive-runtime")
     assert project["profile_path"] == ".l9/deployment.yaml"
@@ -87,12 +90,9 @@ def test_cognitive_runtime_adopts_c1_without_claiming_caddy_ownership(tmp_path: 
     # The consumer's source-owned profile, materialized under a profile root at its
     # registered path, binds the ingress; C1 still receives no Caddy ownership.
     profile_root = tmp_path / "profiles"
-    _bind_profile(
-        profile_root,
-        "l9-cognitive-runtime",
-        ".l9/deployment.yaml",
-        ROOT / "integrations/consumers/l9-cognitive-runtime.deployment.yaml",
-    )
+    source = tmp_path / "source-profile.yaml"
+    source.write_text(yaml.safe_dump(container_service_profile, sort_keys=False), encoding="utf-8")
+    _bind_profile(profile_root, "l9-cognitive-runtime", ".l9/deployment.yaml", source)
     bound = generate_ansible_inventory(fleet, tmp_path / "bound.yml", profile_root)
     assert "vars" not in bound["all"]
     assert bound["all"]["children"]["application"]["hosts"]["c1"]["l9_caddy_sites"] == []
@@ -105,6 +105,30 @@ def test_registered_profiles_are_source_owned_not_platform_mirrors() -> None:
         # A registered path never resolves to a document in this checkout, so no
         # code path can fall back to a platform-authored copy.
         assert not (ROOT / project["profile_path"]).exists(), project["id"]
+
+    # No platform-local profile document may stand in for a registered project:
+    # profile authority is the consumer's own source at the request's commit.
+    # seo-bot keeps its pre-adoption fixture only while Quantum-L9/SEO-Bot publishes
+    # no consumer-owned profile; the fixture is test input and is never registered.
+    pending_consumer_profiles = {"seo-bot"}
+    registered = {project["id"] for project in fleet["projects"]}
+    mirrors: dict[str, str] = {}
+    for directory, subdirectories, files in os.walk(ROOT):
+        subdirectories[:] = [
+            name for name in subdirectories if not name.startswith(".") and name != "templates"
+        ]
+        for name in files:
+            if not name.endswith((".yaml", ".yml")):
+                continue
+            path = Path(directory) / name
+            text = path.read_text(encoding="utf-8")
+            if "l9.deployment-profile/v1" not in text:
+                continue
+            document = yaml.safe_load(text)
+            project_id = document.get("project", {}).get("id") if document else None
+            if project_id in registered:
+                mirrors[project_id] = str(path.relative_to(ROOT))
+    assert set(mirrors) <= pending_consumer_profiles, mirrors
 
 
 def _managed_public_fleet(deployment_context: dict[str, object]) -> dict[str, object]:

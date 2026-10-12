@@ -72,6 +72,85 @@ def profile() -> dict[str, Any]:
 
 
 @pytest.fixture
+def container_service_profile() -> dict[str, Any]:
+    """Synthetic container-service profile with public ingress and runtime environment.
+
+    Test data only, shaped like a consumer-owned ``.l9/deployment.yaml``. Profile
+    authority stays in the consumer repository and is read at the request's exact
+    source commit; this repository keeps no copy for any executable path to read.
+    """
+    return {
+        "schema": "l9.deployment-profile/v1",
+        "project": {
+            "id": "l9-cognitive-runtime",
+            "repository": "Quantum-L9/l9-cognitive-runtime",
+            "owner_team": "platform",
+            "runtime_profile": "container-service",
+        },
+        "artifact": {
+            "registry": "ghcr.io",
+            "image": "ghcr.io/quantum-l9/l9-cognitive-runtime",
+            "require_digest": True,
+            "require_provenance_attestation": True,
+            "require_sbom_attestation": True,
+        },
+        "runtime": {
+            "architecture": "linux/amd64",
+            "container_port": 8080,
+            "user": "non_root",
+            "read_only_root_filesystem": True,
+            "stop_grace_seconds": 30,
+            "environment": {
+                "L9_ALLOWED_HOSTS": "mcp-staging.quantumaipartners.com",
+                "L9_REQUIRE_AUTH": "true",
+                "L9_MCP_RESOURCE_URL": "https://mcp-staging.quantumaipartners.com/v1/mcp",
+            },
+        },
+        "health": {
+            phase: {
+                "type": "http",
+                "path": "/readyz",
+                "expected_status": 200,
+                "timeout_seconds": 10,
+                "interval_seconds": 5,
+                "attempts": attempts,
+            }
+            for phase, attempts in (("startup", 24), ("post_deploy", 12))
+        },
+        "release": {
+            "strategy": "rolling-single-host",
+            "retain_successful_releases": 5,
+            "automatic_rollback": True,
+            "production_approval_required": True,
+            "stabilization_seconds": 30,
+        },
+        "migrations": {"enabled": False, "backup_required": False},
+        "secrets": {
+            "authority": "infisical",
+            "runtime_mode": "deploy_render",
+            "project_slug": "l9-cognitive-runtime",
+            "environment_mapping": {"staging": "staging", "production": "prod"},
+        },
+        "network": {
+            "public_ingress": {
+                "enabled": True,
+                "hostnames": ["mcp-staging.quantumaipartners.com"],
+                "tls": "automatic",
+            },
+            "private_dependencies_only": True,
+        },
+        "policy": {
+            "allowed_source_refs": {
+                "staging": ["refs/heads/main"],
+                "production": ["refs/tags/v*"],
+            },
+            "require_clean_ci_gate": True,
+            "require_profile_digest_match": True,
+        },
+    }
+
+
+@pytest.fixture
 def deployment_context(tmp_path: Path, profile: dict[str, Any]) -> dict[str, Any]:
     profile_path = tmp_path / "profiles" / "seo-bot.yaml"
     profile_path.parent.mkdir(parents=True)

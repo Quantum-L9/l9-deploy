@@ -43,7 +43,7 @@ def _fleet() -> dict[str, object]:
     project = {
         "id": "l9-cognitive-runtime",
         "repository": "Quantum-L9/l9-cognitive-runtime",
-        "profile_path": "integrations/consumers/l9-cognitive-runtime.deployment.yaml",
+        "profile_path": ".l9/deployment.yaml",
         "environments": {
             "staging": {
                 "server_ids": ["c1"],

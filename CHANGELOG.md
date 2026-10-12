@@ -13,6 +13,23 @@ status: active
 
 ## Unreleased
 
+### Legacy consumer profile pruning
+
+- Removed `integrations/consumers/l9-cognitive-runtime.deployment.yaml`, a byte-identical
+  copy of the consumer-owned `Quantum-L9/l9-cognitive-runtime/.l9/deployment.yaml`, and
+  `integrations/consumers/graphiti-memory.deployment.yaml`, a standalone runtime profile
+  for a product whose admitted kind is a dependency. No executable path read either file;
+  the fleet registrations for both projects are unchanged.
+- Tests that rendered Compose and bound public ingress from the cognitive-runtime copy now
+  take a synthetic `container_service_profile` fixture in `tests/conftest.py`.
+- `integrations/consumers/seo-bot.deployment.yaml` is kept, blocked: `Quantum-L9/SEO-Bot`
+  publishes no consumer-owned profile, and the file is still the input to the test
+  `profile` fixture and to `scripts/validate-contracts.py`. It is not registered and no
+  deployment reads it.
+- A registered project's deployment profile may no longer exist anywhere in this checkout
+  outside `templates/`, except the blocked seo-bot fixture; a malformed source commit SHA
+  is refused by the request contract before any profile byte is resolved.
+
 ### Immutable consumer profile ingestion
 
 - The deployment profile is now consumer-owned source: `deploy-dispatch.yml` resolves
@@ -104,8 +121,7 @@ status: active
   claimed by that product or its hosting consumer with its own evidence.
 - Readiness runs from the source-owned consumer profile sealed under the approved
   `profile_digest`; a probe list edited after approval is refused before any host command.
-  The platform-local fixtures (`integrations/consumers/seo-bot.deployment.yaml`,
-  `integrations/consumers/graphiti-memory.deployment.yaml`) and the
+  The platform-local fixture (`integrations/consumers/seo-bot.deployment.yaml`) and the
   `templates/consumer/stateful-container` template declare required services without
   probes and would be refused at planning; they are not deployment authority and are
   deliberately not edited. Test fixtures that add `service-ready` command probes are
