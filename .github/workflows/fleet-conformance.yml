@@ -27,7 +27,7 @@ jobs:
       - run: uv run python scripts/generate-inventory.py
       - run: ansible-playbook -i ansible/inventories/generated/hosts.yml ansible/playbooks/verify.yml
       - run: uv run l9-deploy fleet verify --fleet fleet/registry.yaml --output fleet-conformance.json --json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: fleet-conformance-${{ github.run_id }}
